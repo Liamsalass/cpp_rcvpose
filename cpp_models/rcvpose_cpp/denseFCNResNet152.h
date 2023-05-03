@@ -38,7 +38,7 @@ class DenseFCNResNet152Impl : public torch::nn::Module {
         torch::nn::Sequential conv_up1;
         torch::nn::Upsample up1;
         torch::nn::Sequential conv7;
-        torch::nn::Sequential conv8;
+        torch::nn::Conv2d conv8;
 };
 
 TORCH_MODULE(DenseFCNResNet152);

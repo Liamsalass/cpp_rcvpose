@@ -54,9 +54,24 @@ DenseFCNResNet152Impl::DenseFCNResNet152Impl(int input_channels, int output_chan
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
 	));
 	up3(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
-
-	
-
+	conv_up2(torch::nn::Sequential(
+		torch::nn::Conv2d(torch::nn::Conv2dOptions(256 + 256, 128, 3).padding(1).stride(1)),
+		torch::nn::BatchNorm2d(128),
+		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
+	));
+	up2(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
+	conv_up1(torch::nn::Sequential(
+		torch::nn::Conv2d(torch::nn::Conv2dOptions(64 + 128, 64, 3).padding(1).stride(1)),
+		torch::nn::BatchNorm2d(64),
+		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
+	));
+	up1(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
+	conv7(torch::nn::Sequential(
+		torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 32, 3).padding(1).stride(1)),
+		torch::nn::BatchNorm2d(32),
+		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
+	));
+	conv8(torch::nn::Conv2dOptions(32, output_channels, 1).padding(0).stride(1));
 }
 
 torch::Tensor DenseFCNResNet152Impl::forward(torch::Tensor x)

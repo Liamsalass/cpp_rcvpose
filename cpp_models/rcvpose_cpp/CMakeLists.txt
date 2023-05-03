@@ -20,7 +20,7 @@ find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Add source to this project's executable.
-add_executable (rcvpose_cpp "rcvpose_cpp.cpp" "rcvpose_cpp.h" "bottleneck.h" "bottleneck.cpp")
+add_executable (rcvpose_cpp "rcvpose_cpp.cpp" "rcvpose_cpp.h" "bottleneck.h" "bottleneck.cpp" "data_loader.h" "data_loader.cpp")
 
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
 

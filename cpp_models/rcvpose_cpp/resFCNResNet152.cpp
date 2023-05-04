@@ -1,8 +1,5 @@
 
-
 #include "resFCNResNet152.h"
-
-using namespace std;
 
 
 ResFCNResNet152Impl::ResFCNResNet152Impl(int input_channels, int output_channels) :

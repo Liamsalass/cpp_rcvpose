@@ -7,3 +7,7 @@
 
 // TODO: Reference additional headers your program requires here.
 #include <torch/torch.h>
+#include "resFCNResNet152.h"
+#include "bottleneck.h"
+#include "denseFCNResNet152.h"
+

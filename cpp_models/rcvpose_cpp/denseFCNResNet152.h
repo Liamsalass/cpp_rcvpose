@@ -7,7 +7,7 @@
 class DenseFCNResNet152Impl : public torch::nn::Module {
 	public :
 		DenseFCNResNet152Impl(int input_channels = 3, int output_channels = 2);
-		torch::Tensor forward(torch::Tensor x);
+		std::tuple<torch::Tensor, torch::Tensor> forward(torch::Tensor x);
 
 	private :
 		int input_channels, output_channels;

@@ -1,22 +1,18 @@
-
-
 #include "RMapDataset.h"
-#include <fstream>
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include <torch/types.h>
+
+using namespace cv;
 
 RMapDataset::RMapDataset(
     const std::string& root,
     const std::string& dname,
     const std::string& set,
     const std::string& obj_name,
-    const std::string& kpt_num,
+    const std::string& kpt_num
     //const torch::transforms::transforms_t& transform
 )
     : root_(root),
     set_(set),
-    transform_(transform),
+    //transform_(transform),
     obj_name_(obj_name),
     dname_(dname),
     kpt_num_(kpt_num)

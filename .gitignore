@@ -1,3 +1,4 @@
 cpp_models/rcvpose_cpp/libtorch
+cpp_models/rcvpose_cpp/opencv
 cpp_models/rcvpose_cpp/.vs
 cpp_models/rcvpose_cpp/out

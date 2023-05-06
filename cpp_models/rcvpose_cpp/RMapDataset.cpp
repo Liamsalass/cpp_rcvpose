@@ -34,18 +34,12 @@ RMapDataset::RMapDataset(
     }
 }
 
-torch::data::Example<> RMapDataset::get(size_t index) {
-    std::string img_id = ids_[index];
-    torch::Tensor target_torch;
-    torch::Tensor img_torch;
-    torch::Tensor sem_target_torch;
+torch::data::Example<> RMapDataset::get(size_t index)
+{
+    return torch::data::Example<>();
+}
 
-    if (dname_ == "lm") {
-        std::string radial_path = radialpath_ % img_id;
-        cv::Mat cv_radial = cv::imread(radial_path, cv::IMREAD_GRAYSCALE);
-        cv::Mat cv_img = cv::imread(imgpath_ % img_id, cv::IMREAD_COLOR);
-        cv::cvtColor(cv_img, cv_img, cv::COLOR_BGR2RGB);
-        cv::normalize(cv_radial, cv_radial, 0, 1, cv::NORM_MINMAX, CV_32F);
-
-        cv::Mat cv_sem_radial = cv_radial.clone();
-        cv::threshold(cv_sem_radial, cv
+c10::optional<size_t> RMapDataset::size() const
+{
+    return c10::optional<size_t>();
+}

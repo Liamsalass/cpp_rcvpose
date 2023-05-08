@@ -19,26 +19,28 @@ RMapDataset::RMapDataset(
 {
     //TODfix casting errors
     //detrmine the correct paths based on dataset name
-    if (dname == "lm") {
-        //LM
-        std::sprintf(imgpath_, "%s/%s/%s/%s/%s/%s/%%s.png", root.c_str(), dname.c_str(), obj_name.c_str(), set.c_str(), kpt_num.c_str(), "%s");
-        std::sprintf(radialpath_, "%s/%s/%s/%s/%s/%s/%%s.png", root.c_str(), dname.c_str(), obj_name.c_str(), set.c_str(), kpt_num.c_str(), "%s");
-        std::sprintf(imgsetpath_, "%s/%s/%s/%s/%s/%s.txt", root.c_str(), dname.c_str(), obj_name.c_str(), set.c_str(), kpt_num.c_str(), "%s");
-    }
-    else {
-        //YCB
-        //std::sprintf(_h5path, "%s/%s.hdf5", root.c_str(), obj_name.c_str());
-        std::sprintf(imgsetpath_, "%s/%s/Split/%s.txt", root.c_str(), obj_name.c_str(), "%s");
-        //h5f = new h5py.File(_h5path.c_str(), "r");
-    }
-    std::ifstream infile(std::sprintf(imgsetpath_, set.c_str()));
-    std::string line;
-    while (std::getline(infile, line)) {
-        ids_.push_back(line);
-    }
+    std::string imgset_path = root + (dname == "lm" ? "/LINEMOD/" + obj_name + "/Split/" : "/" + obj_name + "/Split/") + set + ".txt";
+    std::ifstream infile(imgset_path);
+    std::string img_id;
 
-
-    std::cout << "Loaded " << ids_.size() << " images for dataset " << dname_ << " set " << set_ << " object " << obj_name_ << std::endl;
+    while (infile >> img_id) {
+        ids_.push_back(img_id);
+        if (dname == "lm") {
+            std::string img_path = root + "/LINEMOD/" + obj_name + "/JPEGImages/" + img_id + ".jpg";
+            std::string radial_path = root + "/LINEMOD/" + obj_name + "/Out_pt" + kpt_num + "_dm/" + img_id + "*.npy";
+            glob_t result;
+            glob(radial_path.c_str(), GLOB_TILDE, NULL, &result);
+            for (size_t i = 0; i < result.gl_pathc; i++) {
+                radialpaths_.push_back(result.gl_pathv[i]);
+            }
+            imgpaths_.push_back(img_path);
+            globfree(&result);
+        }
+        else {
+            std::string h5_path = root + "/" + obj_name + ".hdf5";
+        }
+        std::cout << "Loaded " << ids_.size() << " images for dataset " << dname_ << " set " << set_ << " object " << obj_name_ << std::endl;
+    }
 }
 
 
@@ -46,7 +48,7 @@ RMapDataset::RMapDataset(
 // TODO: Check implementation
 torch::data::Example<> RMapDataset::get(size_t index)
 {
-    
+   
 }
 //override the size method to infer the size of the dataset
 c10::optional<size_t> RMapDataset::size() const

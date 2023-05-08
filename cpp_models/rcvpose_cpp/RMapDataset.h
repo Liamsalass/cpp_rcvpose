@@ -1,16 +1,25 @@
 #ifndef R_MAP_DATASET_HPP
 #define R_MAP_DATASET_HPP
 
-#include <torch/torch.h>
-#include <torch/utils.h>
+#include <torch/data/datasets.h>
+#include <torch/data/example.h>
+#include <torch/types.h>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
+#include <memory>
+#include <algorithm>
+#include <glob.h>
+#include <utility>
 
 
-//Figure out how to include h5pp and open cv
-
-#include <h5pp/h5pp.h>
-#include <opencv2/opencv.hpp>
+//Figure out how to include hdf5
+#include <hdf5.h>
+//#include <npy.hpp>
 
 
 class RMapDataset : public torch::data::datasets::Dataset<RMapDataset> {
@@ -37,9 +46,9 @@ private:
     std::string kpt_num_;
     std::function<torch::Tensor(torch::Tensor)> transform_;
 
-    std::string imgpath_;
-    std::string radialpath_;
-    std::string imgsetpath_;
+    std::vector<std::string> imgpath_;
+    std::vector<std::string> radialpath_;
+    std::vector<std::string> imgsetpath_;
     std::vector<std::string> ids_;
     //h5::File h5f_;
 };

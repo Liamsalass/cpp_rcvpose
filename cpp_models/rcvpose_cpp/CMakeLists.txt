@@ -8,11 +8,15 @@ endif()
 
 project ("main")
 
-set(CMAKE_PREFIX_PATH ./libtorch ;./opencv)
+set(CMAKE_PREFIX_PATH ./libtorch ;./opencv; ./open3d)
 
 # Find and include OpenCV and h5pp libraries
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(Open3D REQUIRED)
+include_directories(${Open3D_INCLUDE_DIRS})
+
 # find_package(h5pp REQUIRED)
 # include_directories(${h5pp_INCLUDE_DIRS})
 
@@ -45,7 +49,9 @@ add_executable (main
 "AccumulatorSpace.cpp"
 )
 
-target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES})
+include_directories(${Open3D_INCLUDE_DIRS})
+
 # target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${h5pp_LIBRARIES})
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

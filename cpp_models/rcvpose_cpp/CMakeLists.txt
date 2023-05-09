@@ -24,7 +24,7 @@ find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Add source to this project's executable.
-add_executable (train  "train.h" "train.cpp" "models/bottleneck.h" "models/bottleneck.cpp" "data_loader.h" "data_loader.cpp" "models/denseFCNResNet152.h" "models/denseFCNResNet152.cpp" "models/resFCNResNet152.h" "models/resFCNResNet152.cpp" "RMapDataset.cpp" "RMapDataset.h" "util/horn.cpp" "util/horn.h")
+add_executable (train  "train.h" "train.cpp" "models/bottleneck.h" "models/bottleneck.cpp" "data_loader.h" "data_loader.cpp" "models/denseFCNResNet152.h" "models/denseFCNResNet152.cpp" "models/resFCNResNet152.h" "models/resFCNResNet152.cpp" "RMapDataset.cpp" "RMapDataset.h" "util/horn.cpp" "util/horn.h" "AccumulatorSpace.h" "AccumulatorSpace.cpp")
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS})
 # target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${h5pp_LIBRARIES})
 

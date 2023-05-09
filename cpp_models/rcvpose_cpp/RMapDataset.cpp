@@ -1,45 +1,40 @@
 #include "RMapDataset.h"
 
 using namespace cv;
+using namespace std;
+namespace fs = std::filesystem;
 
 RMapDataset::RMapDataset(
     const std::string& root,
     const std::string& dname,
     const std::string& set,
     const std::string& obj_name,
-    const std::string& kpt_num
-    //const torch::transforms::transforms_t& transform
-)
-    : root_(root),
+    const std::string& kpt_num,
+    const std::function<torch::Tensor(torch::Tensor)>& transform
+) :
+    root_(root),
     set_(set),
-    //transform_(transform),
     obj_name_(obj_name),
     dname_(dname),
-    kpt_num_(kpt_num)
+    kpt_num_(kpt_num),
+    transform_(transform)
 {
-    if (dname_ == "lm") {
-        imgpath_ = root_ + "/LINEMOD/" + obj_name_ + "/JPEGImages/%s.jpg";
-        radialpath_ = root_ + "/LINEMOD/" + obj_name_ + "/Out_pt" + kpt_num_ + "_dm/%s.npy";
-        imgsetpath_ = root_ + "/LINEMOD/" + obj_name_ + "/Split/%s.txt";
-    }
-    else {
-        //YCB
-        imgsetpath_ = root_ + "/" + obj_name_ + "/Split/%s.txt";
-        //_h5path = root_ + "/" + obj_name_ + ".hdf5";
-    }
-    std::ifstream file(imgsetpath_ % set_);
-    std::string img_id;
-    while (std::getline(file, img_id)) {
-        ids_.emplace_back(img_id);
-    }
+    
 }
 
+
+//override the get method to return a single example
+// TODO: Check implementation
 torch::data::Example<> RMapDataset::get(size_t index)
 {
-    return torch::data::Example<>();
+   
 }
-
+//override the size method to infer the size of the dataset
 c10::optional<size_t> RMapDataset::size() const
 {
-    return c10::optional<size_t>();
+    //check if the ids_ vector is empty
+    if (ids_.empty()) {
+		return c10::nullopt;
+	}
+    return ids_.size();    
 }

@@ -59,12 +59,4 @@ private:
 };
 
 
-
-
-
-
-
-
-
-
 #endif // TRAIN_H

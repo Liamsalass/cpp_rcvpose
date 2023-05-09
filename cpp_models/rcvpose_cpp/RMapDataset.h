@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <glob.h>
 #include <utility>
+#include <filesystem>
+
 
 
 //Figure out how to include hdf5

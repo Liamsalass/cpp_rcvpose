@@ -13,16 +13,19 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include <glob.h>
+
 #include <utility>
 #include <filesystem>
 
 
 
 //Figure out how to include hdf5
-#include <hdf5.h>
+//#include <hdf5.h>
 //#include <npy.hpp>
 
+
+//Do I need?
+// #include <glob.h>
 
 class RMapDataset : public torch::data::datasets::Dataset<RMapDataset> {
 public:

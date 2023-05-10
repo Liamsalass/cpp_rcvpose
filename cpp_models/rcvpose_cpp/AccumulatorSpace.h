@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include <open3d/geometry/PointCloud.h>
 #include "utils.h"
 #include "util/horn.h"
 #include "models/denseFCNResNet152.h"
@@ -84,14 +85,16 @@ const std::array<std::array<double, 3>, 3> linemod_K = { {{572.4114, 0., 325.261
                                                   {0., 0., 1.}} };
 
 
-//To be optimized
+//To be optimized (Should I use an api?)
 Matrix dot (Matrix A, Matrix B);
 
 std::vector<Matrix, Matrix> project (Matrix xyz, Matrix, Matrix RT);
 
-Matrix rgbd_to_point_cloud(Matrix K, cv::Mat depth);
+open3d::geometry::PointCloud rgbd_to_point_cloud(Matrix K, Matrix depth);
 
 Matrix rgbd_to_color_point_cloud(Matrix K, cv::Mat depth, cv::Mat rgb);
 
 Matrix rgbd_to_point_cloud_no_depth(Matrix K, cv::Mat depth);
+
+Matrix rgbd_to_color_point_cloud_no_depth(Matrix K, cv::Mat depth, cv::Mat rgb);
 

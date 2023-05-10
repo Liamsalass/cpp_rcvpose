@@ -83,3 +83,4 @@ open3d::geometry::PointCloud rdbd_to_point_cloud(Mat& rgb, Mat& depth)
 	// Return point cloud
 	return pcd;
 }
+

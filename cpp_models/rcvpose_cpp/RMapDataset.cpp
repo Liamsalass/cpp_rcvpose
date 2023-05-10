@@ -23,6 +23,10 @@ RMapDataset::RMapDataset(
 }
 
 
+RMapDataset::RMapDataset(const std::string& root, const std::string& dname, const std::string& set, const std::string& obj_name, const std::string& kpt_num, const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform)
+{
+}
+
 //override the get method to return a single example
 // TODO: Check implementation
 torch::data::Example<> RMapDataset::get(size_t index)

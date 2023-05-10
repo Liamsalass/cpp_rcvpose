@@ -4,12 +4,13 @@
 
 // Main file for training pipeline
 
-#include "models/denseFCNResNet152.h
-#include "models/denseFCNResNet50.h"
+#include "models/denseFCNResNet152.h"
+#include "models/resFCNResNet152.h"
 #include "AccumulatorSpace.h"
 #include "utils.h"
 #include <torch/torch.h>
 #include "data_loader.h"
+#include "options.h"
 
 struct Options {
     std::string mode = "train";
@@ -34,7 +35,7 @@ public:
     Trainer(
         RData& train_loader,
         RData& val_loader,
-        const Options& options,
+        const Options& options
         // SummaryWriter& vis
     );
 private:
@@ -44,7 +45,7 @@ private:
     torch::optim::Optimizer optim_;
     RData train_loader_;
     RData val_loader_;
-    std::vector<torch::optim::lr_scheduler> schedulers_;
+    std::vector<torch::optim::LRScheduler> schedulers_;
     // SummaryWriter vis_;
     int epoch_;
     int iter_;

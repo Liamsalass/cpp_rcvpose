@@ -29,7 +29,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Add source to this project's executable.
 add_executable (main
-"main.h"
+
 "train.cpp"  
 "train.h" 
 "train.cpp" 
@@ -47,7 +47,9 @@ add_executable (main
 "util/horn.h" 
 "AccumulatorSpace.h" 
 "AccumulatorSpace.cpp"
- "RadiusLM.h" "RadiusLM.cpp")
+"RadiusLM.h" 
+"RadiusLM.cpp"
+ "options.h")
 
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES})
 include_directories(${Open3D_INCLUDE_DIRS})

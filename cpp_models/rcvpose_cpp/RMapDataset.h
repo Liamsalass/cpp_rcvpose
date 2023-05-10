@@ -35,13 +35,15 @@ public:
         const std::string& set,
         const std::string& obj_name,
         const std::string& kpt_num,
-        const std::function<torch::Tensor(torch::Tensor)>& transform
+        const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> &transform (cv::Mat, cv::Mat)
     );
 
     torch::data::Example<> get(size_t index) override;
 
     //pass c10::optional because the dataset size may be unknown and could also be null
     c10::optional<size_t> size() const override;
+
+    std::vector<std::string> ids_;
 
 private:
     std::string root_;
@@ -54,7 +56,7 @@ private:
     std::vector<std::string> imgpath_;
     std::vector<std::string> radialpath_;
     std::vector<std::string> imgsetpath_;
-    std::vector<std::string> ids_;
+
     //h5::File h5f_;
 };
 

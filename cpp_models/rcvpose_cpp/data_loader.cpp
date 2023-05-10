@@ -23,5 +23,6 @@ c10::optional<size_t> RData::size() const
 }
 
 std::tuple<torch::data::datasets::Dataset<RData>, torch::data::datasets::Dataset<RData>> get_data_loaders(Options opts) {
+	std::vector<std::string> modes = { "train", "test" };
 
 }

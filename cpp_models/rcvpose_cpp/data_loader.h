@@ -11,6 +11,8 @@
 #include "RMapDataset.h"
 #include <opencv2/core.hpp>
 #include "options.h"
+#include <iostream>
+#include <string>
 
 class RData : public RMapDataset {
 public:

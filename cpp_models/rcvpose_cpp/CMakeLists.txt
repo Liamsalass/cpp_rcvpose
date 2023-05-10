@@ -47,9 +47,7 @@ add_executable (main
 "util/horn.h" 
 "AccumulatorSpace.h" 
 "AccumulatorSpace.cpp"
-"Radius3D_lm.h"
-"Radius3D_lm.cpp"
-)
+ "RadiusLM.h" "RadiusLM.cpp")
 
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES})
 include_directories(${Open3D_INCLUDE_DIRS})

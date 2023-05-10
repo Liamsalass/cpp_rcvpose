@@ -1,6 +1,5 @@
 #include "AccumulatorSpace.h"
 
-namespace 
 
 Matrix dot(Matrix A, Matrix B) {
     int n = A.size(), m = A[0].size(), p = B[0].size();

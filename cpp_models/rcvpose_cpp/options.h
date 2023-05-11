@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 
-
 struct Options {
     std::string mode = "train";
     int gpu_id = -1;

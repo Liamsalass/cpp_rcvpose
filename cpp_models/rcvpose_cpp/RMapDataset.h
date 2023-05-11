@@ -27,7 +27,7 @@
 //Do I need?
 // #include <glob.h>
 
-class RMapDataset : public torch::data::datasets::Dataset<RMapDataset> {
+class RMapDataset : public torch::data::datasets::MapDataset {
 public:
     RMapDataset(
         const std::string& root,
@@ -38,10 +38,10 @@ public:
         const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> &transform (cv::Mat, cv::Mat)
     );
 
-    torch::data::Example<> get(size_t index) override;
+    torch::data::Example<> get(size_t index);
 
     //pass c10::optional because the dataset size may be unknown and could also be null
-    c10::optional<size_t> size() const override;
+    c10::optional<size_t> size() const;
 
     std::vector<std::string> ids_;
 

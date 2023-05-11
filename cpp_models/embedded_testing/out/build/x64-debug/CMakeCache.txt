@@ -15,10 +15,10 @@
 ########################
 
 //Path to a library.
-C10_CUDA_LIBRARY:FILEPATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libtorch/lib/c10_cuda.lib
+C10_CUDA_LIBRARY:FILEPATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/lib/c10_cuda.lib
 
 //Path to a library.
-CAFFE2_NVRTC_LIBRARY:FILEPATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libtorch/lib/caffe2_nvrtc.lib
+CAFFE2_NVRTC_LIBRARY:FILEPATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/lib/caffe2_nvrtc.lib
 
 //Path to a program.
 CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/lib.exe
@@ -377,7 +377,7 @@ CUDA_nvcuvenc_LIBRARY:FILEPATH=CUDA_nvcuvenc_LIBRARY-NOTFOUND
 CUDA_nvcuvid_LIBRARY:FILEPATH=CUDA_nvcuvid_LIBRARY-NOTFOUND
 
 //The directory containing a CMake configuration file for Caffe2.
-Caffe2_DIR:PATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/share/cmake/Caffe2
+Caffe2_DIR:PATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/share/cmake/Caffe2
 
 //The directory containing a CMake configuration file for MKLDNN.
 MKLDNN_DIR:PATH=MKLDNN_DIR-NOTFOUND
@@ -386,31 +386,35 @@ MKLDNN_DIR:PATH=MKLDNN_DIR-NOTFOUND
 MKL_DIR:PATH=MKL_DIR-NOTFOUND
 
 //The directory containing a CMake configuration file for Open3D.
-Open3D_DIR:PATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/open3d/CMake
+Open3D_DIR:PATH=C:/open3d/CMake
 
 //The directory containing a CMake configuration file for OpenCV.
 OpenCV_DIR:PATH=C:/opencv/build
 
+//Overwrite cached values read from Python library (classic search).
+// Turn off if cross-compiling and manually setting these values.
+PYBIND11_PYTHONLIBS_OVERWRITE:BOOL=ON
+
+//Python version to use for compiling modules
+PYBIND11_PYTHON_VERSION:STRING=
+
+//Path to a program.
+PYTHON_EXECUTABLE:FILEPATH=C:/Users/User/anaconda3/python.exe
+
 //Path to a library.
-TORCH_LIBRARY:FILEPATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libtorch/lib/torch.lib
+TORCH_LIBRARY:FILEPATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/lib/torch.lib
 
 //The directory containing a CMake configuration file for Torch.
-Torch_DIR:PATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/share/cmake/Torch
+Torch_DIR:PATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/share/cmake/Torch
 
 //Path to a library.
-c10_LIBRARY:FILEPATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libtorch/lib/c10.lib
-
-//Value Computed by CMake
-embedded_test_BINARY_DIR:STATIC=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug
-
-//Value Computed by CMake
-embedded_test_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-embedded_test_SOURCE_DIR:STATIC=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing
+c10_LIBRARY:FILEPATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/lib/c10.lib
 
 //Path to a library.
-kineto_LIBRARY:FILEPATH=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libtorch/lib/kineto.lib
+kineto_LIBRARY:FILEPATH=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/lib/kineto.lib
+
+//The directory containing a CMake configuration file for pybind11.
+pybind11_DIR:PATH=C:/Users/User/anaconda3/share/cmake/pybind11
 
 //Value Computed by CMake
 test_BINARY_DIR:STATIC=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug
@@ -642,7 +646,7 @@ CUDA_cusolver_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CUDA_cusparse_LIBRARY
 CUDA_cusparse_LIBRARY-ADVANCED:INTERNAL=1
 //Location of make2cmake.cmake
-CUDA_make2cmake:INTERNAL=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/share/cmake/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/make2cmake.cmake
+CUDA_make2cmake:INTERNAL=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/share/cmake/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/make2cmake.cmake
 //ADVANCED property for variable: CUDA_nppc_LIBRARY
 CUDA_nppc_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CUDA_nppial_LIBRARY
@@ -672,19 +676,39 @@ CUDA_nvcuvenc_LIBRARY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CUDA_nvcuvid_LIBRARY
 CUDA_nvcuvid_LIBRARY-ADVANCED:INTERNAL=1
 //Location of parse_cubin.cmake
-CUDA_parse_cubin:INTERNAL=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/share/cmake/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/parse_cubin.cmake
+CUDA_parse_cubin:INTERNAL=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/share/cmake/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/parse_cubin.cmake
 //Location of run_nvcc.cmake
-CUDA_run_nvcc:INTERNAL=C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/share/cmake/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/run_nvcc.cmake
+CUDA_run_nvcc:INTERNAL=C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/share/cmake/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/run_nvcc.cmake
 //Details about finding CUDA
 FIND_PACKAGE_MESSAGE_DETAILS_CUDA:INTERNAL=[C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.8][C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.8/bin/nvcc.exe][C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.8/include][C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.8/lib/x64/cudart_static.lib][v11.8()]
 //Details about finding Open3D
-FIND_PACKAGE_MESSAGE_DETAILS_Open3D:INTERNAL=[C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/open3d/CMake/Open3DConfig.cmake][v0.17.0()]
+FIND_PACKAGE_MESSAGE_DETAILS_Open3D:INTERNAL=[C:/open3d/CMake/Open3DConfig.cmake][v0.17.0()]
 //Details about finding OpenCV
 FIND_PACKAGE_MESSAGE_DETAILS_OpenCV:INTERNAL=[C:/opencv/build][v4.6.0()]
+//Details about finding PYTHON
+FIND_PACKAGE_MESSAGE_DETAILS_PYTHON:INTERNAL=C:/Users/User/anaconda3/python.exe3.9.13
 //Details about finding Python
 FIND_PACKAGE_MESSAGE_DETAILS_Python:INTERNAL=[C:/Users/User/anaconda3/python.exe][cfound components: Interpreter ][v3.9.13()]
+//Details about finding PythonInterp
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[C:/Users/User/anaconda3/python.exe][v3.9.13(3.6)]
 //Details about finding Torch
-FIND_PACKAGE_MESSAGE_DETAILS_Torch:INTERNAL=[C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libtorch/lib/torch.lib][C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/include;C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/libs/libtorch/include/torch/csrc/api/include;C:\Program Files\NVIDIA Corporation\NvToolsExt\/include][v()]
+FIND_PACKAGE_MESSAGE_DETAILS_Torch:INTERNAL=[C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/lib/torch.lib][C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/include;C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch/include/torch/csrc/api/include;C:\Program Files\NVIDIA Corporation\NvToolsExt\/include][v()]
+//Test HAS_MSVC_GL_LTCG
+HAS_MSVC_GL_LTCG:INTERNAL=1
+//Python executable during the last CMake run
+PYBIND11_PYTHON_EXECUTABLE_LAST:INTERNAL=C:/Users/User/anaconda3/python.exe
+//ADVANCED property for variable: PYTHON_EXECUTABLE
+PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
+PYTHON_INCLUDE_DIRS:INTERNAL=C:/Users/User/anaconda3/include
+PYTHON_IS_DEBUG:INTERNAL=0
+PYTHON_LIBRARIES:INTERNAL=C:/Users/User/anaconda3/libs/python39.lib
+PYTHON_MODULE_EXTENSION:INTERNAL=.cp39-win_amd64.pyd
+PYTHON_MODULE_PREFIX:INTERNAL=
+PYTHON_VERSION:INTERNAL=3.9.13
+PYTHON_VERSION_MAJOR:INTERNAL=3
+PYTHON_VERSION_MINOR:INTERNAL=9
+Python_ADDITIONAL_VERSIONS:INTERNAL=3.11;3.10;3.9;3.8;3.7;3.6
+_Python:INTERNAL=PYTHON
 //Compiler reason failure
 _Python_Compiler_REASON_FAILURE:INTERNAL=
 //Development reason failure
@@ -700,6 +724,8 @@ _Python_Interpreter_REASON_FAILURE:INTERNAL=
 _Python_NumPy_REASON_FAILURE:INTERNAL=
 //Result of TRY_COMPILE
 compile_result:INTERNAL=TRUE
+//Directories where pybind11 and possibly Python headers are located
+pybind11_INCLUDE_DIRS:INTERNAL=C:/Users/User/anaconda3/include;C:/Users/User/anaconda3/include
 //Result of try_run()
 run_result:INTERNAL=0
 

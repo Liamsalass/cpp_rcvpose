@@ -48,18 +48,18 @@ Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" p
 The CXX compiler identification is MSVC, found in "C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/3.25.1-msvc1/CompilerIdCXX/CMakeCXXCompilerId.exe"
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-mgmbj7
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-nngzkq
 
-Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_ae654 && [1/2] Building C object CMakeFiles\cmTC_ae654.dir\CMakeCCompilerABI.c.obj
-[2/2] Linking C executable cmTC_ae654.exe
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_525a1 && [1/2] Building C object CMakeFiles\cmTC_525a1.dir\CMakeCCompilerABI.c.obj
+[2/2] Linking C executable cmTC_525a1.exe
 
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-ukfsxu
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-exqkc5
 
-Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_8d406 && [1/2] Building CXX object CMakeFiles\cmTC_8d406.dir\CMakeCXXCompilerABI.cpp.obj
-[2/2] Linking CXX executable cmTC_8d406.exe
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_8b347 && [1/2] Building CXX object CMakeFiles\cmTC_8b347.dir\CMakeCXXCompilerABI.cpp.obj
+[2/2] Linking CXX executable cmTC_8b347.exe
 
 
 
@@ -398,6 +398,7 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 [DEBUG:VsDevCmd.bat] --------------------- VS Developer Command Prompt Environment [pre-init] ---------------------
 ALLUSERSPROFILE=C:\ProgramData
 APPDATA=C:\Users\User\AppData\Roaming
+CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 CMAKE_BUILD_TYPE=Debug
 CMAKE_CXX_COMPILER=cl.exe
 CMAKE_C_COMPILER=cl.exe
@@ -412,9 +413,10 @@ CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
+CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\
 DriverData=C:\Windows\System32\Drivers\DriverData
-EFC_9392=1
+EFC_1632=1
 ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
 EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 ForceIdentityAuthenticationType=Embedded
@@ -429,9 +431,14 @@ FSHARPINSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7
 GCExpConfigUsedInSession=1
 HOMEDRIVE=C:
 HOMEPATH=\Users\User
+IIS_BIN=C:\Program Files\IIS Express
+IIS_DRIVE=C:
+IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites
+IIS_USER_HOME=C:\Users\User\Documents\IISExpress
 INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 LIB=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22000.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22000.0\\um\x64
 LIBPATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319
+LIBTORCH_DIR=C:\libtorch
 LOCALAPPDATA=C:\Users\User\AppData\Local
 LOGONSERVER=\\LIAMS-ZENBOOK
 MSBuildLoadMicrosoftTargetsReadOnly=true
@@ -443,6 +450,8 @@ NVTOOLSEXT_PATH=C:\Program Files\NVIDIA Corporation\NvToolsExt\
 OneDrive=C:\Users\User\OneDrive - Queen's University
 OneDriveCommercial=C:\Users\User\OneDrive - Queen's University
 OneDriveConsumer=C:\Users\User\OneDrive
+OPEN3D_DIR=C:\open3d
+OPENCV_DIR=C:\opencv\build
 OS=Windows_NT
 Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\bin\Roslyn;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0\\x64;C:\Program Files (x86)\Windows Kits\10\bin\\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\amd64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\nodejs\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\dotnet\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.3.0\;C:\Program Files\CMake\bin;C:\Program Files\TortoiseSVN\bin;C:\Program Files (x86)\GnuWin32\bin;C:\MinGW\bin;C:\libs\libtorch;C:\libs\open3d;C:\libs\opencv\build;C:\Users\User\anaconda3;C:\Users\User\anaconda3\Library\mingw-w64\bin;C:\Users\User\anaconda3\Library\usr\bin;C:\Users\User\anaconda3\Library\bin;C:\Users\User\anaconda3\Scripts;C:\Users\User\AppData\Local\Microsoft\WindowsApps;C:\Users\User\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\User\AppData\Roaming\npm;C:\Users\User\.dotnet\tools;C:\Users\User\opencv\build\x64\vc16\bin;;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\ConnectionManagerExe
 PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
@@ -458,7 +467,8 @@ ProgramW6432=C:\Program Files
 PROMPT=$P$G
 PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 PUBLIC=C:\Users\Public
-ServiceHubLogSessionKey=C7F57F81
+RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe
+ServiceHubLogSessionKey=D75B12AC
 SESSIONNAME=Console
 SignInWithHomeTenantOnly=False
 SystemDrive=C:
@@ -2983,6 +2993,7 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 [DEBUG:VsDevCmd.bat] --------------------- VS Developer Command Prompt Environment [post-init] ---------------------
 ALLUSERSPROFILE=C:\ProgramData
 APPDATA=C:\Users\User\AppData\Roaming
+CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 CMAKE_BUILD_TYPE=Debug
 CMAKE_CXX_COMPILER=cl.exe
 CMAKE_C_COMPILER=cl.exe
@@ -2997,9 +3008,10 @@ CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
+CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\
 DriverData=C:\Windows\System32\Drivers\DriverData
-EFC_9392=1
+EFC_1632=1
 ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
 EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 ForceIdentityAuthenticationType=Embedded
@@ -3014,9 +3026,14 @@ FSHARPINSTALLDIR=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7
 GCExpConfigUsedInSession=1
 HOMEDRIVE=C:
 HOMEPATH=\Users\User
+IIS_BIN=C:\Program Files\IIS Express
+IIS_DRIVE=C:
+IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites
+IIS_USER_HOME=C:\Users\User\Documents\IISExpress
 INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 LIB=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22000.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22000.0\\um\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22000.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22000.0\\um\x64
 LIBPATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319
+LIBTORCH_DIR=C:\libtorch
 LOCALAPPDATA=C:\Users\User\AppData\Local
 LOGONSERVER=\\LIAMS-ZENBOOK
 MSBuildLoadMicrosoftTargetsReadOnly=true
@@ -3028,6 +3045,8 @@ NVTOOLSEXT_PATH=C:\Program Files\NVIDIA Corporation\NvToolsExt\
 OneDrive=C:\Users\User\OneDrive - Queen's University
 OneDriveCommercial=C:\Users\User\OneDrive - Queen's University
 OneDriveConsumer=C:\Users\User\OneDrive
+OPEN3D_DIR=C:\open3d
+OPENCV_DIR=C:\opencv\build
 OS=Windows_NT
 Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\bin\Roslyn;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0\\x64;C:\Program Files (x86)\Windows Kits\10\bin\\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\amd64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\bin\Roslyn;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0\\x64;C:\Program Files (x86)\Windows Kits\10\bin\\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\amd64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\nodejs\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\dotnet\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.3.0\;C:\Program Files\CMake\bin;C:\Program Files\TortoiseSVN\bin;C:\Program Files (x86)\GnuWin32\bin;C:\MinGW\bin;C:\libs\libtorch;C:\libs\open3d;C:\libs\opencv\build;C:\Users\User\anaconda3;C:\Users\User\anaconda3\Library\mingw-w64\bin;C:\Users\User\anaconda3\Library\usr\bin;C:\Users\User\anaconda3\Library\bin;C:\Users\User\anaconda3\Scripts;C:\Users\User\AppData\Local\Microsoft\WindowsApps;C:\Users\User\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\User\AppData\Roaming\npm;C:\Users\User\.dotnet\tools;C:\Users\User\opencv\build\x64\vc16\bin;;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\ConnectionManagerExe;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\ConnectionManagerExe
 PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
@@ -3044,7 +3063,8 @@ ProgramW6432=C:\Program Files
 PROMPT=$P$G
 PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 PUBLIC=C:\Users\Public
-ServiceHubLogSessionKey=C7F57F81
+RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe
+ServiceHubLogSessionKey=D75B12AC
 SESSIONNAME=Console
 SignInWithHomeTenantOnly=False
 SystemDrive=C:
@@ -3133,10 +3153,11 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 
 C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_SPECTRE= 
 
-C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_000027d0_00000000-2 
+C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00002d64_00000000-2 
 #$ C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/HostX64/x64/../../../../../../../VC/Auxiliary/Build/vcvars64.bat
 #$ ALLUSERSPROFILE=C:\ProgramData
 #$ APPDATA=C:\Users\User\AppData\Roaming
+#$ CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 #$ CMAKE_BUILD_TYPE=Debug
 #$ CMAKE_CXX_COMPILER=cl.exe
 #$ CMAKE_C_COMPILER=cl.exe
@@ -3151,9 +3172,10 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 #$ CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 #$ CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 #$ CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
+#$ CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 #$ DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\
 #$ DriverData=C:\Windows\System32\Drivers\DriverData
-#$ EFC_9392=1
+#$ EFC_1632=1
 #$ ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
 #$ EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 #$ ForceIdentityAuthenticationType=Embedded
@@ -3168,9 +3190,14 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 #$ GCExpConfigUsedInSession=1
 #$ HOMEDRIVE=C:
 #$ HOMEPATH=\Users\User
+#$ IIS_BIN=C:\Program Files\IIS Express
+#$ IIS_DRIVE=C:
+#$ IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites
+#$ IIS_USER_HOME=C:\Users\User\Documents\IISExpress
 #$ INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 #$ LIB=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22000.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22000.0\\um\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22000.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22000.0\\um\x64
 #$ LIBPATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319
+#$ LIBTORCH_DIR=C:\libtorch
 #$ LOCALAPPDATA=C:\Users\User\AppData\Local
 #$ LOGONSERVER=\\LIAMS-ZENBOOK
 #$ MSBuildLoadMicrosoftTargetsReadOnly=true
@@ -3182,6 +3209,8 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 #$ OneDrive=C:\Users\User\OneDrive - Queen's University
 #$ OneDriveCommercial=C:\Users\User\OneDrive - Queen's University
 #$ OneDriveConsumer=C:\Users\User\OneDrive
+#$ OPEN3D_DIR=C:\open3d
+#$ OPENCV_DIR=C:\opencv\build
 #$ OS=Windows_NT
 #$ Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\bin\Roslyn;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0\\x64;C:\Program Files (x86)\Windows Kits\10\bin\\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\amd64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\bin\Roslyn;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools;C:\Program Files (x86)\Windows Kits\10\bin\10.0.22000.0\\x64;C:\Program Files (x86)\Windows Kits\10\bin\\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\amd64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\libnvvp;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\libnvvp;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\nodejs\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\dotnet\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.3.0\;C:\Program Files\CMake\bin;C:\Program Files\TortoiseSVN\bin;C:\Program Files (x86)\GnuWin32\bin;C:\MinGW\bin;C:\libs\libtorch;C:\libs\open3d;C:\libs\opencv\build;C:\Users\User\anaconda3;C:\Users\User\anaconda3\Library\mingw-w64\bin;C:\Users\User\anaconda3\Library\usr\bin;C:\Users\User\anaconda3\Library\bin;C:\Users\User\anaconda3\Scripts;C:\Users\User\AppData\Local\Microsoft\WindowsApps;C:\Users\User\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\User\AppData\Roaming\npm;C:\Users\User\.dotnet\tools;C:\Users\User\opencv\build\x64\vc16\bin;;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\ConnectionManagerExe;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\ConnectionManagerExe
 #$ PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
@@ -3198,7 +3227,8 @@ C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-deb
 #$ PROMPT=$P$G
 #$ PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 #$ PUBLIC=C:\Users\Public
-#$ ServiceHubLogSessionKey=C7F57F81
+#$ RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe
+#$ ServiceHubLogSessionKey=D75B12AC
 #$ SESSIONNAME=Console
 #$ SignInWithHomeTenantOnly=False
 #$ SystemDrive=C:
@@ -3542,6 +3572,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [[DEBUG:VsDevCmd.bat] --------------------- VS Developer Command Prompt Environment [pre-init] ---------------------]
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -3556,8 +3587,9 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_9392=1]
+  considering line: [EFC_1632=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -3579,6 +3611,10 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [GCExpConfigUsedInSession=1]
   considering line: [HOMEDRIVE=C:]
   considering line: [HOMEPATH=\Users\User]
+  considering line: [IIS_BIN=C:\Program Files\IIS Express]
+  considering line: [IIS_DRIVE=C:]
+  considering line: [IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites]
+  considering line: [IIS_USER_HOME=C:\Users\User\Documents\IISExpress]
   considering line: [INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include]
@@ -3599,6 +3635,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0]
   considering line: [C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0]
   considering line: [C:\Windows\Microsoft.NET\Framework64\v4.0.30319]
+  considering line: [LIBTORCH_DIR=C:\libtorch]
   considering line: [LOCALAPPDATA=C:\Users\User\AppData\Local]
   considering line: [LOGONSERVER=\\LIAMS-ZENBOOK]
   considering line: [MSBuildLoadMicrosoftTargetsReadOnly=true]
@@ -3608,6 +3645,8 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [NVTOOLSEXT_PATH=C:\Program Files\NVIDIA Corporation\NvToolsExt;OneDrive=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveCommercial=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveConsumer=C:\Users\User\OneDrive]
+  considering line: [OPEN3D_DIR=C:\open3d]
+  considering line: [OPENCV_DIR=C:\opencv\build]
   considering line: [OS=Windows_NT]
   considering line: [Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages]
@@ -3678,7 +3717,8 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=C7F57F81]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=D75B12AC]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -6763,6 +6803,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [[DEBUG:VsDevCmd.bat] --------------------- VS Developer Command Prompt Environment [post-init] ---------------------]
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -6777,8 +6818,9 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_9392=1]
+  considering line: [EFC_1632=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -6809,6 +6851,10 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [GCExpConfigUsedInSession=1]
   considering line: [HOMEDRIVE=C:]
   considering line: [HOMEPATH=\Users\User]
+  considering line: [IIS_BIN=C:\Program Files\IIS Express]
+  considering line: [IIS_DRIVE=C:]
+  considering line: [IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites]
+  considering line: [IIS_USER_HOME=C:\Users\User\Documents\IISExpress]
   considering line: [INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include]
@@ -6849,6 +6895,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0]
   considering line: [C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0]
   considering line: [C:\Windows\Microsoft.NET\Framework64\v4.0.30319]
+  considering line: [LIBTORCH_DIR=C:\libtorch]
   considering line: [LOCALAPPDATA=C:\Users\User\AppData\Local]
   considering line: [LOGONSERVER=\\LIAMS-ZENBOOK]
   considering line: [MSBuildLoadMicrosoftTargetsReadOnly=true]
@@ -6858,6 +6905,8 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [NVTOOLSEXT_PATH=C:\Program Files\NVIDIA Corporation\NvToolsExt;OneDrive=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveCommercial=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveConsumer=C:\Users\User\OneDrive]
+  considering line: [OPEN3D_DIR=C:\open3d]
+  considering line: [OPENCV_DIR=C:\opencv\build]
   considering line: [OS=Windows_NT]
   considering line: [Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages]
@@ -6944,7 +6993,8 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=C7F57F81]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=D75B12AC]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -7031,7 +7081,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_HELP= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_VER= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_SPECTRE= ]
-  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_000027d0_00000000-2 ]
+  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00002d64_00000000-2 ]
   considering line: [C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/HostX64/x64/../../../../../../../VC/Auxiliary/Build/vcvars64.bat]
   considering line: [erase tmp/a_dlink.reg.c]
   considering line: [CMakeCUDACompilerId.cu]
@@ -7327,6 +7377,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [[DEBUG:VsDevCmd.bat] --------------------- VS Developer Command Prompt Environment [pre-init] ---------------------]
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -7341,8 +7392,9 @@ Parsed CUDA nvcc include information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_9392=1]
+  considering line: [EFC_1632=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -7364,6 +7416,10 @@ Parsed CUDA nvcc include information from above output:
   considering line: [GCExpConfigUsedInSession=1]
   considering line: [HOMEDRIVE=C:]
   considering line: [HOMEPATH=\Users\User]
+  considering line: [IIS_BIN=C:\Program Files\IIS Express]
+  considering line: [IIS_DRIVE=C:]
+  considering line: [IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites]
+  considering line: [IIS_USER_HOME=C:\Users\User\Documents\IISExpress]
   considering line: [INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include]
@@ -7384,6 +7440,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0]
   considering line: [C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0]
   considering line: [C:\Windows\Microsoft.NET\Framework64\v4.0.30319]
+  considering line: [LIBTORCH_DIR=C:\libtorch]
   considering line: [LOCALAPPDATA=C:\Users\User\AppData\Local]
   considering line: [LOGONSERVER=\\LIAMS-ZENBOOK]
   considering line: [MSBuildLoadMicrosoftTargetsReadOnly=true]
@@ -7393,6 +7450,8 @@ Parsed CUDA nvcc include information from above output:
   considering line: [NVTOOLSEXT_PATH=C:\Program Files\NVIDIA Corporation\NvToolsExt;OneDrive=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveCommercial=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveConsumer=C:\Users\User\OneDrive]
+  considering line: [OPEN3D_DIR=C:\open3d]
+  considering line: [OPENCV_DIR=C:\opencv\build]
   considering line: [OS=Windows_NT]
   considering line: [Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages]
@@ -7463,7 +7522,8 @@ Parsed CUDA nvcc include information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=C7F57F81]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=D75B12AC]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -10548,6 +10608,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [[DEBUG:VsDevCmd.bat] --------------------- VS Developer Command Prompt Environment [post-init] ---------------------]
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -10562,8 +10623,9 @@ Parsed CUDA nvcc include information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_9392=1]
+  considering line: [EFC_1632=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -10594,6 +10656,10 @@ Parsed CUDA nvcc include information from above output:
   considering line: [GCExpConfigUsedInSession=1]
   considering line: [HOMEDRIVE=C:]
   considering line: [HOMEPATH=\Users\User]
+  considering line: [IIS_BIN=C:\Program Files\IIS Express]
+  considering line: [IIS_DRIVE=C:]
+  considering line: [IIS_SITES_HOME=C:\Users\User\Documents\My Web Sites]
+  considering line: [IIS_USER_HOME=C:\Users\User\Documents\IISExpress]
   considering line: [INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include]
@@ -10634,6 +10700,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22000.0]
   considering line: [C:\Program Files (x86)\Windows Kits\10\References\10.0.22000.0]
   considering line: [C:\Windows\Microsoft.NET\Framework64\v4.0.30319]
+  considering line: [LIBTORCH_DIR=C:\libtorch]
   considering line: [LOCALAPPDATA=C:\Users\User\AppData\Local]
   considering line: [LOGONSERVER=\\LIAMS-ZENBOOK]
   considering line: [MSBuildLoadMicrosoftTargetsReadOnly=true]
@@ -10643,6 +10710,8 @@ Parsed CUDA nvcc include information from above output:
   considering line: [NVTOOLSEXT_PATH=C:\Program Files\NVIDIA Corporation\NvToolsExt;OneDrive=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveCommercial=C:\Users\User\OneDrive - Queen's University]
   considering line: [OneDriveConsumer=C:\Users\User\OneDrive]
+  considering line: [OPEN3D_DIR=C:\open3d]
+  considering line: [OPENCV_DIR=C:\opencv\build]
   considering line: [OS=Windows_NT]
   considering line: [Path=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\bin\HostX64\x64]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages]
@@ -10729,7 +10798,8 @@ Parsed CUDA nvcc include information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=C7F57F81]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=D75B12AC]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -10816,7 +10886,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_HELP= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_VER= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_SPECTRE= ]
-  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_000027d0_00000000-2 ]
+  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\cpp_models\embedded_testing\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00002d64_00000000-2 ]
   considering line: [C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/HostX64/x64/../../../../../../../VC/Auxiliary/Build/vcvars64.bat]
   considering line: [erase tmp/a_dlink.reg.c]
   considering line: [CMakeCUDACompilerId.cu]
@@ -10863,16 +10933,16 @@ Parsed CUDA nvcc include information from above output:
 
 
 Detecting CUDA compiler ABI info compiled with the following output:
-Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-k2hdct
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-b4t8kq
 
-Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_b94fe && [1/2] Building CUDA object CMakeFiles\cmTC_b94fe.dir\CMakeCUDACompilerABI.cu.obj
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_0b1c6 && [1/2] Building CUDA object CMakeFiles\cmTC_0b1c6.dir\CMakeCUDACompilerABI.cu.obj
 cl : Command line warning D9002 : ignoring unknown option '-v'
 CMakeCUDACompilerABI.cu
 cl : Command line warning D9002 : ignoring unknown option '-v'
 CMakeCUDACompilerABI.cu
 CMakeCUDACompilerABI.cu
 cl : Command line warning D9002 : ignoring unknown option '-v'
-[2/2] Linking CUDA executable cmTC_b94fe.exe
+[2/2] Linking CUDA executable cmTC_0b1c6.exe
 
 
 
@@ -10882,16 +10952,16 @@ Parsed CUDA implicit include dir info from above output: rv=start
 
 Parsed CUDA implicit link information from above output:
   link line regex: [^( *|.*[/\])(link\.exe|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-k2hdct]
+  ignore line: [Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-b4t8kq]
   ignore line: []
-  ignore line: [Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_b94fe && [1/2] Building CUDA object CMakeFiles\cmTC_b94fe.dir\CMakeCUDACompilerABI.cu.obj]
+  ignore line: [Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_0b1c6 && [1/2] Building CUDA object CMakeFiles\cmTC_0b1c6.dir\CMakeCUDACompilerABI.cu.obj]
   ignore line: [cl : Command line warning D9002 : ignoring unknown option '-v']
   ignore line: [CMakeCUDACompilerABI.cu]
   ignore line: [cl : Command line warning D9002 : ignoring unknown option '-v']
   ignore line: [CMakeCUDACompilerABI.cu]
   ignore line: [CMakeCUDACompilerABI.cu]
   ignore line: [cl : Command line warning D9002 : ignoring unknown option '-v']
-  ignore line: [[2/2] Linking CUDA executable cmTC_b94fe.exe]
+  ignore line: [[2/2] Linking CUDA executable cmTC_0b1c6.exe]
   ignore line: []
   ignore line: []
   implicit libs: []
@@ -10899,4 +10969,14 @@ Parsed CUDA implicit link information from above output:
   implicit dirs: []
   implicit fwks: []
 
+
+Performing C++ SOURCE FILE Test HAS_MSVC_GL_LTCG succeeded with the following output:
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/cpp_models/embedded_testing/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-qpgobi
+
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_d834e && [1/2] Building CXX object CMakeFiles\cmTC_d834e.dir\src.cxx.obj
+[2/2] Linking CXX executable cmTC_d834e.exe
+
+
+Source file was:
+int main() { return 0; }
 

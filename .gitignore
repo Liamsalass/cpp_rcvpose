@@ -6,3 +6,4 @@ cpp_models/rcvpose_cpp/out
 cpp_models/rcvpose_cpp/CMake-hdf5-1.14.0
 cpp_models/embedded_testing/libs
 cpp_models/embedded_testing/.vs
+cpp_models/embedded_testing/out

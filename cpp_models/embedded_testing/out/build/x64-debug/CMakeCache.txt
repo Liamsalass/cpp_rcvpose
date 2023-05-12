@@ -699,9 +699,9 @@ HAS_MSVC_GL_LTCG:INTERNAL=1
 PYBIND11_PYTHON_EXECUTABLE_LAST:INTERNAL=C:/Users/User/anaconda3/python.exe
 //ADVANCED property for variable: PYTHON_EXECUTABLE
 PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
-PYTHON_INCLUDE_DIRS:INTERNAL=C:/Users/User/anaconda3/include
+PYTHON_INCLUDE_DIRS:INTERNAL=C:/Users/User/anaconda3/envs/rcvpose/include
 PYTHON_IS_DEBUG:INTERNAL=0
-PYTHON_LIBRARIES:INTERNAL=C:/Users/User/anaconda3/libs/python39.lib
+PYTHON_LIBRARIES:INTERNAL=C:/Users/User/anaconda3/envs/rcvpose/libs/python39.lib
 PYTHON_MODULE_EXTENSION:INTERNAL=.cp39-win_amd64.pyd
 PYTHON_MODULE_PREFIX:INTERNAL=
 PYTHON_VERSION:INTERNAL=3.9.13
@@ -725,7 +725,7 @@ _Python_NumPy_REASON_FAILURE:INTERNAL=
 //Result of TRY_COMPILE
 compile_result:INTERNAL=TRUE
 //Directories where pybind11 and possibly Python headers are located
-pybind11_INCLUDE_DIRS:INTERNAL=C:/Users/User/anaconda3/include;C:/Users/User/anaconda3/include
+pybind11_INCLUDE_DIRS:INTERNAL=C:/Users/User/anaconda3/include;C:/Users/User/anaconda3/envs/rcvpose/include
 //Result of try_run()
 run_result:INTERNAL=0
 

@@ -9,6 +9,14 @@ endif()
 project ("test")
 set(CMAKE_PREFIX_PATH "C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch")
 set(TARGET_NAME test)
+
+# Set the PYTHONHOME environment variable
+set(ENV{PYTHONHOME} "C:/Users/User/anaconda3/envs/rcvpose")
+
+# Set the PYTHONPATH environment variable
+set(ENV{PYTHONPATH} "C:/Users/User/anaconda3/envs/rcvpose/Lib")
+
+
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 

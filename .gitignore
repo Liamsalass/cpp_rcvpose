@@ -7,3 +7,4 @@ rcvpose_cpp/CMake-hdf5-1.14.0
 embedded_testing/libs
 embedded_testing/.vs
 embedded_testing/out
+embedded_testing/bin

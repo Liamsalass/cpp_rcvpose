@@ -8,11 +8,18 @@ endif()
 
 project ("main")
 
-set(CMAKE_PREFIX_PATH ./libtorch ;./opencv)
+set(CMAKE_PREFIX_PATH "C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch")
 
 # Find and include OpenCV and h5pp libraries
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(Open3D REQUIRED)
+include_directories(${Open3D_INCLUDE_DIRS})
+
+find_package (Python REQUIRED)
+include_directories(${Python_INCLUDE_DIRS})
+
 # find_package(h5pp REQUIRED)
 # include_directories(${h5pp_INCLUDE_DIRS})
 
@@ -25,7 +32,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Add source to this project's executable.
 add_executable (main
-"main.h"
+
 "train.cpp"  
 "train.h" 
 "train.cpp" 
@@ -43,9 +50,14 @@ add_executable (main
 "util/horn.h" 
 "AccumulatorSpace.h" 
 "AccumulatorSpace.cpp"
-)
+"RadiusLM.h" 
+"RadiusLM.cpp"
+ "options.h")
 
-target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Python_LIBRARIES})
+
+include_directories(${Open3D_INCLUDE_DIRS})
+
 # target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${h5pp_LIBRARIES})
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

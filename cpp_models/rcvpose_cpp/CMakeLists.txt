@@ -8,7 +8,7 @@ endif()
 
 project ("main")
 
-set(CMAKE_PREFIX_PATH ./libtorch ;./opencv; ./open3d)
+set(CMAKE_PREFIX_PATH "C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch")
 
 # Find and include OpenCV and h5pp libraries
 find_package(OpenCV REQUIRED)

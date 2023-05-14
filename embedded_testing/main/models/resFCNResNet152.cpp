@@ -74,6 +74,34 @@ ResFCNResNet152Impl::ResFCNResNet152Impl(int input_channels, int output_channels
 	));
 
 	conv8(torch::nn::Conv2dOptions(64, output_channels, 1).stride(1));
+
+	//Register Components
+	register_module("conv1", conv1);
+	register_module("bn1", bn1);
+	register_module("relu", relu);
+	register_module("maxpool", maxpool);
+	register_module("block1up", block1up);
+	register_module("block1", block1);
+	register_module("block2up", block2up);
+	register_module("block2", block2);
+	register_module("block3up", block3up);
+	register_module("block3", block3);
+	register_module("block4up", block4up);
+	register_module("block4", block4);
+	register_module("conv_up4_1", conv_up4_1);
+	register_module("conv_up4", conv_up4);
+	register_module("up4", up4);
+	register_module("conv_up3_1", conv_up3_1);
+	register_module("conv_up3", conv_up3);
+	register_module("up3", up3);
+	register_module("conv_up2_1", conv_up2_1);
+	register_module("conv_up2", conv_up2);
+	register_module("up2", up2);
+	register_module("conv_up1_1", conv_up1_1);
+	register_module("conv_up1", conv_up1);
+	register_module("up1", up1);
+	register_module("conv7", conv7);
+	register_module("conv8", conv8);
 }
 
 std::tuple<torch::Tensor, torch::Tensor> ResFCNResNet152Impl::forward(torch::Tensor x)

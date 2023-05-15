@@ -8,3 +8,5 @@ embedded_testing/libs
 embedded_testing/.vs
 embedded_testing/out
 embedded_testing/bin
+datasets/
+embedded_testing

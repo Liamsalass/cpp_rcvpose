@@ -13,10 +13,10 @@ int main(int argc, char* argv[])
 {
 	try {
 		py::scoped_interpreter guard{};
-		auto exampleModule = py::module::import("scripts.example");
-		auto func = exampleModule.attr("add");
-		int sum = func(3, 5).cast<int>();
-		cout << sum << endl;
+		auto radius3d_lm = py::module::import("scripts.3DRadius_lm");
+		auto exe_radiuslm = radius3d_lm.attr("exe_radiuslm");
+		exe_radiuslm();
+		cout << "Test completed" << endl;
 	}
 	catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;

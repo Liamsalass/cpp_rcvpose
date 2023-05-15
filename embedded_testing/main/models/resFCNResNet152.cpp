@@ -4,7 +4,33 @@ namespace nn = torch::nn;
 
 ResFCNResNet152Impl::ResFCNResNet152Impl(int input_channels, int output_channels) :
 	input_channels(input_channels),
-	output_channels(output_channels)
+	output_channels(output_channels),
+	conv1(nullptr),
+	bn1(nullptr),
+	relu(nullptr),
+	maxpool(nullptr),
+	block1up(nullptr),
+	block1(nullptr),
+	block2up(nullptr),
+	block2(nullptr),
+	block3up(nullptr),
+	block3(nullptr),
+	block4up(nullptr),
+	block4(nullptr),
+	conv_up4(nullptr),
+	conv_up4_1(nullptr),
+	up4(nullptr),
+	conv_up3(nullptr),
+	conv_up3_1(nullptr),
+	up3(nullptr),
+	conv_up2(nullptr),
+	conv_up2_1(nullptr),
+	up2(nullptr),
+	conv_up1(nullptr),
+	conv_up1_1(nullptr),
+	up1(nullptr),
+	conv7(nullptr),
+	conv8(nullptr)
 {
 	// Encoders
 	nn::Conv2d conv1(nn::Conv2dOptions(input_channels, 64, 7).stride(2).padding(3).bias(false));

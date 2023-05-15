@@ -27,23 +27,23 @@
 //Do I need?
 // #include <glob.h>
 
-class RMapDataset : public torch::data::datasets::MapDataset {
+class RMapDataset : public torch::data::datasets::Dataset<RMapDataset> {
 public:
+    using TransformFunction = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>(const cv::Mat&, const cv::Mat&);
+
     RMapDataset(
         const std::string& root,
         const std::string& dname,
         const std::string& set,
         const std::string& obj_name,
         const std::string& kpt_num,
-        const std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> &transform (cv::Mat, cv::Mat)
+        TransformFunction& transform = nullptr
     );
 
-    torch::data::Example<> get(size_t index);
+    torch::data::Example<> get(size_t index) override;
 
     //pass c10::optional because the dataset size may be unknown and could also be null
-    c10::optional<size_t> size() const;
-
-    std::vector<std::string> ids_;
+    c10::optional<size_t> size() const override;
 
 private:
     std::string root_;
@@ -51,11 +51,14 @@ private:
     std::string obj_name_;
     std::string dname_;
     std::string kpt_num_;
-    std::function<torch::Tensor(torch::Tensor)> transform_;
+    TransformFunction& transform_;
 
-    std::vector<std::string> imgpath_;
-    std::vector<std::string> radialpath_;
-    std::vector<std::string> imgsetpath_;
+    std::vector<std::string> ids_;
+
+    std::string h5path_;
+    std::string imgpath_;
+    std::string radialpath_;
+    std::string imgsetpath_;
 
     //h5::File h5f_;
 };

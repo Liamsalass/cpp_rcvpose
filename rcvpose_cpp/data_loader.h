@@ -13,6 +13,7 @@
 #include "options.h"
 #include <iostream>
 #include <string>
+#include <vector>
 
 class RData : public RMapDataset {
 public:
@@ -25,8 +26,6 @@ public:
 	);
 
 	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(cv::Mat img, cv::Mat lbl);
-
-	c10::optional<size_t> size() const override;
 
 
 private:

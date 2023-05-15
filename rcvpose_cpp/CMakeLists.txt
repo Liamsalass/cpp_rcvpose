@@ -6,7 +6,8 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project ("main")
+set (TARGET_NAME "rcvpose")
+project (${TARGET_NAME})
 
 set(CMAKE_PREFIX_PATH "C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch")
 
@@ -31,9 +32,10 @@ find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Add source to this project's executable.
-add_executable (main
-
-"train.cpp"  
+add_executable (
+	${TARGET_NAME}
+	"main.cpp"
+	"train.cpp"  
 "train.h" 
 "train.cpp" 
 "models/bottleneck.h" 
@@ -61,5 +63,5 @@ include_directories(${Open3D_INCLUDE_DIRS})
 # target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${h5pp_LIBRARIES})
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET main PROPERTY CXX_STANDARD 17)
+  set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 17)
 endif()

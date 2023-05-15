@@ -5,42 +5,30 @@ namespace nn = torch::nn;
 DenseFCNResNet152Impl::DenseFCNResNet152Impl(int input_channels, int output_channels) :
 	input_channels(input_channels),
 	output_channels(output_channels),
-	conv1(nullptr),
-	bn1(nullptr),
-	relu(nullptr),
-	maxpool(nullptr),
-	block1up(nullptr),
-	block1(nullptr),
-	block2up(nullptr),
-	block2(nullptr),
-	block3up(nullptr),
-	block3(nullptr),
-	block4up(nullptr),
-	block4(nullptr),
-	conv_up4(nullptr),
-	up4(nullptr),
-	conv_up3(nullptr),
-	up3(nullptr),
-	conv_up2(nullptr),
-	up2(nullptr),
-	up1(nullptr),
-	conv7(nullptr),
-	conv8(nullptr)
-{
-	// Initialize resnet encoders
-	// conv1 deviates from the original implementation by having input channels as a parameter, instead of being hardcoded to 3
-	nn::Conv2d conv1 = torch::nn::Conv2d(torch::nn::Conv2dOptions(input_channels, 64, 7).stride(2).padding(3).bias(false));
-	nn::BatchNorm2d bn1(64);
-	nn::ReLU relu(torch::nn::ReLUOptions().inplace(true));
-	nn::MaxPool2d maxpool(torch::nn::MaxPool2dOptions(3).stride(2).padding(1));
-	Bottleneck block1up(64, 64, 1, true);
-	nn::Sequential block1(torch::nn::Sequential(Bottleneck(256, 64, 1), Bottleneck(256, 64, 1), Bottleneck(256, 64, 1)));
-	Bottleneck block2up(256, 128, 2, true);
-	nn::Sequential block2(torch::nn::Sequential(Bottleneck(512, 128, 1), Bottleneck(512, 128, 1),
+
+	// Encoders
+	conv1(torch::nn::Conv2dOptions(input_channels, 64, 7).stride(2).padding(3).bias(false)),
+
+	bn1(64),
+
+	relu(torch::nn::ReLUOptions().inplace(true)),
+
+	maxpool(torch::nn::MaxPool2dOptions(3).stride(2).padding(1)),
+
+	block1up(64, 64, 1, true),
+
+	block1(torch::nn::Sequential(Bottleneck(256, 64, 1), Bottleneck(256, 64, 1), Bottleneck(256, 64, 1))),
+
+	block2up(256, 128, 2, true),
+
+	block2(torch::nn::Sequential(Bottleneck(512, 128, 1), Bottleneck(512, 128, 1),
 		Bottleneck(512, 128, 1), Bottleneck(512, 128, 1), Bottleneck(512, 128, 1),
-		Bottleneck(512, 128, 1), Bottleneck(512, 128, 1), Bottleneck(512, 128, 1)));
-	Bottleneck block3up(512, 256, 2, true);
-	nn::Sequential block3(torch::nn::Sequential(Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
+		Bottleneck(512, 128, 1), Bottleneck(512, 128, 1), Bottleneck(512, 128, 1))
+	),
+
+	block3up(512, 256, 2, true),
+
+	block3(torch::nn::Sequential(Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
 		Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
 		Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
 		Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
@@ -52,50 +40,66 @@ DenseFCNResNet152Impl::DenseFCNResNet152Impl(int input_channels, int output_chan
 		Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
 		Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
 		Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1), Bottleneck(1024, 256, 1),
-		Bottleneck(1024, 256, 1)));
-	Bottleneck block4up(1024, 512, 2, true);
-	nn::Sequential block4(torch::nn::Sequential(Bottleneck(2048, 512, 1), Bottleneck(2048, 512, 1), Bottleneck(2048, 512, 1)));
-	nn::Conv2d conv6(torch::nn::Conv2dOptions(2048, 1024, 3).stride(1).padding(1));
-	nn::BatchNorm2d bn6(1024);
+		Bottleneck(1024, 256, 1))),
+
+	block4up(1024, 512, 2, true),
+
+	block4(torch::nn::Sequential(Bottleneck(2048, 512, 1), Bottleneck(2048, 512, 1), Bottleneck(2048, 512, 1))),
+
+	conv6(torch::nn::Conv2dOptions(2048, 1024, 3).stride(1).padding(1)),
+
+	bn6(1024),
+
 	// Initialize decoders
-	nn::Sequential conv_up5(torch::nn::Sequential(
+	conv_up5(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(2048 + 1024, 1024, 3).padding(1)),
 		torch::nn::BatchNorm2d(1024),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
-	));
-	//Why does scale factor have to be a vector?
-	nn::Upsample up5(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
-	nn::Sequential conv_up4(torch::nn::Sequential(
+	)),
+
+	up5(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false)),
+
+	conv_up4(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(1024 + 1024, 512, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(512),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
-	));
-	nn::Upsample up4(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
-	nn::Sequential conv_up3(torch::nn::Sequential(
+	)),
+
+	up4(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false)),
+
+	conv_up3(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(512 + 512, 256, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(256),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
-	));
-	nn::Upsample up3(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
-	nn::Sequential conv_up2(torch::nn::Sequential(
+	)),
+
+	up3(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false)),
+
+	conv_up2(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(256 + 256, 128, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(128),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
-	));
-	nn::Upsample up2(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2, 2 })).mode(torch::kBilinear).align_corners(false));
-	nn::Sequential conv_up1(torch::nn::Sequential(
+	)),
+
+	up2(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2, 2 })).mode(torch::kBilinear).align_corners(false)),
+
+	conv_up1(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(64 + 128, 64, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(64),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
-	));
-	nn::Upsample up1(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false));
-	nn::Sequential conv7(torch::nn::Sequential(
+	)),
+
+	up1(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(false)),
+
+	conv7(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 32, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(32),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
-	));
-	nn::Conv2d conv8(torch::nn::Conv2dOptions(32, output_channels, 1).padding(0).stride(1));
+	)),
 
+	conv8(torch::nn::Conv2dOptions(32, output_channels, 1).padding(0).stride(1))
+
+{
 	//Register modules
     register_module("conv1", conv1);
 	register_module("bn1", bn1);

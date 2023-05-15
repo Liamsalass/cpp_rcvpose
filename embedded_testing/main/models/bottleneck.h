@@ -6,7 +6,6 @@
 
 class BottleneckImpl : public torch::nn::Module {
 public:
-
     BottleneckImpl(int in_channels, int channels, int stride = 1, bool upsample = false);
 
     torch::Tensor forward(torch::Tensor x);

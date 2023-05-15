@@ -11,7 +11,6 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-	std::cout << "[cpp] Hello World!" << std::endl;
 	try {
 		py::scoped_interpreter guard{};
 		auto exampleModule = py::module::import("scripts.example");

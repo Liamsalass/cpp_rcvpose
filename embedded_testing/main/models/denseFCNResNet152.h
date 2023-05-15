@@ -2,6 +2,7 @@
 #define DENSEFCNRESNET152_H
 
 #include <torch/torch.h>
+#include <torch/serialize/tensor.h>
 #include "bottleneck.h"
 
 class DenseFCNResNet152Impl : public torch::nn::Module {

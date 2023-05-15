@@ -16,13 +16,13 @@ private:
 	torch::nn::BatchNorm2d bn1{ nullptr };
 	torch::nn::ReLU relu{ nullptr };
 	torch::nn::MaxPool2d maxpool{ nullptr };
-	Bottleneck block1up{ nullptr };
+	Bottleneck block1up = nullptr;
 	torch::nn::Sequential block1{ nullptr };
-	Bottleneck block2up{ nullptr };
+	Bottleneck block2up = nullptr;
 	torch::nn::Sequential block2{ nullptr };
-	Bottleneck block3up{ nullptr };
+	Bottleneck block3up = nullptr;
 	torch::nn::Sequential block3{ nullptr };
-	Bottleneck block4up{ nullptr };
+	Bottleneck block4up = nullptr;
 	torch::nn::Sequential block4{ nullptr };
 	// Decoders
 	torch::nn::Sequential conv_up4{ nullptr };

@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+
 class RData : public RMapDataset {
 public:
 	RData(
@@ -34,6 +35,6 @@ private:
 
 };
 
-std::tuple<torch::data::datasets::Dataset<RData>, torch::data::datasets::Dataset<RData>> get_data_loaders(Options opts);
+std::tuple<RData, RData> get_data_loaders(Options opts);
 
 #endif // DATALOADER_H

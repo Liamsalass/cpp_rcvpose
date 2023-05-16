@@ -27,9 +27,15 @@
 //Do I need?
 // #include <glob.h>
 
-class RMapDataset : public torch::data::datasets::Dataset<RMapDataset> {
+struct myExample {
+    torch::Tensor img;
+    torch::Tensor lbl;
+    torch::Tensor sem_lbl;
+};
+
+class RMapDataset : public torch::data::datasets::Dataset<RMapDataset, myExample> {
 public:
-    using TransformFunction = std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>(const cv::Mat&, const cv::Mat&);
+    using TransformFunction = std::tuple<torch::Tensor, torch::Tensor>(const cv::Mat&, const cv::Mat&);
 
     RMapDataset(
         const std::string& root,
@@ -37,10 +43,10 @@ public:
         const std::string& set,
         const std::string& obj_name,
         const std::string& kpt_num,
-        TransformFunction& transform = nullptr
+        TransformFunction& transform
     );
 
-    torch::data::Example<> get(size_t index) override;
+    myExample get(size_t index) override;
 
     //pass c10::optional because the dataset size may be unknown and could also be null
     c10::optional<size_t> size() const override;

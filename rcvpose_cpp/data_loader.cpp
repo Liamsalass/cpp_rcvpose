@@ -17,10 +17,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	
 }
 
-c10::optional<size_t> RData::size() const
-{
-	return ids_.size();
-}
+
 
 std::tuple<torch::data::datasets::Dataset<RData>, torch::data::datasets::Dataset<RData>> get_data_loaders(Options opts) {
 	std::vector<std::string> modes = { "train", "test" };

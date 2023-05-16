@@ -1,6 +1,7 @@
 #include "RMapDataset.h"
 
 
+namespace fs = std::filesystem;
 
 RMapDataset::RMapDataset(
 	const std::string& root,
@@ -23,6 +24,7 @@ RMapDataset::RMapDataset(
 		imgsetpath_ = root_ + "/LINEMODE/" + obj_name + "/Split/";
 	}
 	else if (dname == "ycb") {
+		std::cout << "YCB Unfinished" << std::endl;
 		h5path_ = root_ + "/YCB/" + obj_name + "/" ;
 		imgpath_ = root_ + "/YCB/" + obj_name + "/Split/ ";
 	}
@@ -30,33 +32,56 @@ RMapDataset::RMapDataset(
 		std::cout << "Dataset name not recognized" << std::endl;
 	}
 
-	std::ifstream f(imgsetpath_);
-	std::string line;
-	while (std::getline(f, line)) {
-		ids_.push_back(line);
+	//Gather all img paths 
+	for (const auto& entry : fs::directory_iterator(imgpath_)) {
+		if (entry.path().extension() == ".jpg") {
+			std::string img_id = entry.path().filename().string();
+			ids_.push_back(img_id);
+		}
 	}
 }
 
-// Override the get() method
-torch::data::Example<> RMapDataset::get(size_t index) {
+
+
+
+// Not an overide get() method because requires return of tuple of tensors
+myExample RMapDataset::get(size_t index) {
 	auto img_id = ids_[index];
-	torch::Tensor target;
-	cv::Mat img;
+	cv::Mat img, target;
+	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> img_data;
+
 	if (dname_ == "lm") {
-		target = torch::from_blob(std::vector<float>(radialpath_ + img_id + ".npy").data(), { 1 });
+		//Needs cnpy to read file
+		auto data = std::vector<float>(radialpath_ + img_id + ".npy");
+
 		img = cv::imread(imgpath_ + img_id + ".jpg");
 		cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
-	}
-	else {
+		
+	} else {
 		std::cout << "YCB implementation unfinished" << std::endl;
 		// YCB
 		// Load data from HDF5 file
 	}
-	if (transform_) {
-		auto [img_torch, target_torch, sem_target_torch] = std::apply(transform_, std::make_tuple(img, target));
-		return { img_torch, target_torch };
+
+	if (transform_ != nullptr) {
+		img_data = transform_(img, target);
+		return myExample{ std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data) };
 	}
-	return { torch::from_blob(img.data, {img.rows, img.cols, 3}, torch::kByte), target };
+	else {
+		//If no transform function is provided, return the image and target as is
+		//Convert img and target to tensors
+		auto img_tensor = torch::from_blob(img.data, { img.rows, img.cols, 3 }, torch::kByte);
+		img_tensor = img_tensor.permute({ 2, 0, 1 }); //convert to CxHxW
+		img_tensor = img_tensor.toType(torch::kFloat);
+		img_tensor = img_tensor.div(255); //normalize to [0,1]
+
+		auto target_tensor = torch::from_blob(target.data, { target.rows, target.cols, 3 }, torch::kByte);
+		target_tensor = target_tensor.permute({ 2, 0, 1 }); //convert to CxHxW
+		target_tensor = target_tensor.toType(torch::kFloat);
+		target_tensor = target_tensor.div(255); //normalize to [0,1]
+
+		return myExample{ img_tensor, target_tensor, torch::Tensor() };
+	}
 }
 
 c10::optional<size_t> RMapDataset::size() const {

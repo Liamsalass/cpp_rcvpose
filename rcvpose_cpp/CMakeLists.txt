@@ -10,10 +10,23 @@ set (TARGET_NAME "rcvpose")
 project (${TARGET_NAME})
 
 set(CMAKE_PREFIX_PATH "C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch")
+set(BOOST_ROOT "C:/boost_1_82_0")
+
+
+# For cnpy++, needs to be fixed for RMapDataset
+# include(FetchContent)
+# FetchContent_Declare(cnpy++
+#     GIT_REPOSITORY "https://gitlab.iap.kit.edu/mreininghaus/cnpypp.git"
+#     GIT_SHALLOW True
+# )
+# FetchContent_MakeAvailable(cnpy++)
 
 # Find and include OpenCV and h5pp libraries
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package (Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(Open3D REQUIRED)
 include_directories(${Open3D_INCLUDE_DIRS})
@@ -56,7 +69,9 @@ add_executable (
 "RadiusLM.cpp"
  "options.h")
 
-target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Python_LIBRARIES})
+# target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Python_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Python_LIBRARIES} ${Boost_LIBS})
+
 
 include_directories(${Open3D_INCLUDE_DIRS})
 

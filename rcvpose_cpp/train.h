@@ -22,6 +22,11 @@ public:
         const Options& options
         // SummaryWriter& vis
     );
+
+    void test();
+    void train();
+
+
 private:
     Options options_;
     torch::Device device_;
@@ -37,10 +42,6 @@ private:
     int max_iter_;
     float best_acc_mean;
     std::string out_;
-
-    void test();
-    void train();
-
 };
 
 

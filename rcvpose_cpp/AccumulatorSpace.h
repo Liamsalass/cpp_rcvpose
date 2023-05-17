@@ -8,7 +8,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <open3d/geometry/PointCloud.h>
-#include "utils.h"
+#include "utils.hpp"
 #include "util/horn.h"
 #include "models/denseFCNResNet152.h"
 #include "models/resFCNResNet152.h"

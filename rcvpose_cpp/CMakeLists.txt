@@ -52,8 +52,9 @@ add_executable (
 	"RadiusLM.h" 
 	"RadiusLM.h" 
 	"RadiusLM.cpp"
-	"options.h"
+	"options.hpp"
 	"npy.hpp"
+	"utils.hpp"
 )
 
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Boost_LIBS})

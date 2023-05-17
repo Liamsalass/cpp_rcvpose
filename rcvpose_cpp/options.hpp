@@ -15,5 +15,5 @@ struct Options {
     std::string model_dir = "ckpts/";
     bool demo_mode = false;
     bool test_occ = false;
-    std::map < std::string, float> cfg;
+    std::map < std::string, std::vector<float>> cfg;
 };

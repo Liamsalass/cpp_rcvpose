@@ -13,7 +13,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-
+#include "npy.hpp"
 #include <utility>
 #include <filesystem>
 
@@ -27,37 +27,40 @@
 //Do I need?
 // #include <glob.h>
 
+// get return structure
 struct myExample {
     torch::Tensor img;
     torch::Tensor lbl;
     torch::Tensor sem_lbl;
 };
 
+
+
 class RMapDataset : public torch::data::datasets::Dataset<RMapDataset, myExample> {
 public:
-    using TransformFunction = std::tuple<torch::Tensor, torch::Tensor>(const cv::Mat&, const cv::Mat&);
-
     RMapDataset(
         const std::string& root,
         const std::string& dname,
         const std::string& set,
         const std::string& obj_name,
-        const std::string& kpt_num,
-        TransformFunction& transform
+        const int& kpt_num
     );
 
+
+    // Override get() function to return three tensors at index, the lbl, sem_lbl, and img
     myExample get(size_t index) override;
 
     //pass c10::optional because the dataset size may be unknown and could also be null
     c10::optional<size_t> size() const override;
 
+    virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(const cv::Mat& img, const std::vector<double>& target) = 0;
+
 private:
-    std::string root_;
-    std::string set_;
-    std::string obj_name_;
-    std::string dname_;
-    std::string kpt_num_;
-    TransformFunction& transform_;
+    const std::string root_;
+    const std::string set_;
+    const std::string obj_name_;
+    const std::string dname_;
+    const int kpt_num_;
 
     std::vector<std::string> ids_;
 

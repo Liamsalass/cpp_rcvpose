@@ -1,16 +1,19 @@
 #include <iostream>
 #include <string>
 #include "train.h"
-#include "options.h"
+#include "options.hpp"
 #include "data_loader.h"
 #include <torch/torch.h>
-#include "utils.h"
+#include "utils.hpp"
 #include <warning.h>
 #include <boost/program_options.hpp>
 
 
 using namespace std;
 namespace po = boost::program_options;
+
+typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>> TrainLoader;
+typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>> TestLoader;
 
 // Main code
 int main(int argc, char* args[])
@@ -57,6 +60,8 @@ int main(int argc, char* args[])
     opts.model_dir = vm["model_dir"].as<std::string>();
     opts.demo_mode = vm["demo_mode"].as<bool>();
     opts.test_occ = vm["test_occ"].as<bool>();
+
+    // Set up config, cfg is a map of shape std::string, std::vector<float>
     opts.cfg = get_config().at(1);
 
 
@@ -79,9 +84,16 @@ int main(int argc, char* args[])
     else
         cout << "Test mode" << endl;
 
-    std::tuple<RData, RData> data = get_data_loaders(opts);
+    std::pair<
+        std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>>,
+        std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>>
+    > data_loaders = 
+        get_data_loaders(opts);
+    
+    TrainLoader train_loader = std::move(data_loaders.first);
+    TestLoader test_loader = std::move(data_loaders.second);
 
-    Trainer trainer(get<0>(data), get<1>(data), opts);
+    Trainer trainer(train_loader, test_loader, opts);
 	
     if (opts.mode == "test") {
 		trainer.test();

@@ -7,18 +7,19 @@
 #include "models/denseFCNResNet152.h"
 #include "models/resFCNResNet152.h"
 #include "AccumulatorSpace.h"
-#include "utils.h"
+#include "utils.hpp"
 #include <torch/torch.h>
 #include "data_loader.h"
-#include "options.h"
+#include "options.hpp"
 
-
+typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>> TrainLoader;
+typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>> TestLoader;
 
 class Trainer {
 public:
     Trainer(
-        RData& train_loader,
-        RData& val_loader,
+        TrainLoader& train_loader,
+        TestLoader& val_loader,
         const Options& options
         // SummaryWriter& vis
     );

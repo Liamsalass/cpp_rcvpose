@@ -95,7 +95,7 @@ myExample RMapDataset::get(size_t index) {
 		return myExample{ std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data) };
 	}
 
-	if (transform) {
+	if (&transform) {
 		img_data = transform(img, data);
 	}
 	else {

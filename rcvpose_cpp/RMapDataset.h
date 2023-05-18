@@ -53,7 +53,7 @@ public:
     //pass c10::optional because the dataset size may be unknown and could also be null
     c10::optional<size_t> size() const override;
 
-    virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(const cv::Mat& img, const std::vector<double>& target) = 0;
+    virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(cv::Mat& img, cv::Mat& target) = 0;
 
 private:
     const std::string root_;
@@ -73,3 +73,4 @@ private:
 };
 
 #endif  // R_MAP_DATASET_HPP
+

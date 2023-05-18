@@ -1,8 +1,5 @@
 // Used to create train and test loaders
 //TODO:
-// - implement transform function
-// - check into .npy file structure for transform function
-// - implement for ycb (check with prof if necessary) 
 // - test loaders
 
 
@@ -17,14 +14,11 @@
 #include <torch/utils.h>
 #include "RMapDataset.h"
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #include "options.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
-
-
-
-
 
 class RData : public RMapDataset {
 public:
@@ -36,7 +30,7 @@ public:
 		const int kpt_num
 	);
 
-	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform (const cv::Mat& img, const std::vector<double>& target);
+	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform (cv::Mat& img, cv::Mat& target);
 
 };
 

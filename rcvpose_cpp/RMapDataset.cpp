@@ -79,10 +79,12 @@ myExample RMapDataset::get(size_t index) {
 			// Read in image and radial distance map 
 			img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
 
-
 			// Check implemntation (What is fortran_order?)
 			std::string npy_path = radialpath_ + img_id + ".npy";
 			npy::LoadArrayFromNumpy(npy_path, shape, fortran_order, data);
+
+			//Reshape the data to match that of the image
+			target = cv::Mat(shape[0], shape[1], CV_64FC1, data.data());
 		}
 		catch (const std::exception& e) {
 			std::cout << "Error reading in image: " << imgpath_ + img_id + ".jpg" << std::endl;
@@ -96,7 +98,7 @@ myExample RMapDataset::get(size_t index) {
 	}
 
 	try {
-		img_data = transform(img, data);
+		img_data = transform(img, target);
 	}
 	catch (const std::exception& e) {
 		std::cout << "Error occurred during transform: " << e.what() << std::endl;	
@@ -108,4 +110,5 @@ myExample RMapDataset::get(size_t index) {
 c10::optional<size_t> RMapDataset::size() const {
 	return ids_.size();
 }
+
 

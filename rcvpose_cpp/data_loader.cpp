@@ -21,12 +21,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(const c
     cv::Mat targetFloat(target);
     targetFloat.convertTo(targetFloat, CV_64F);
 
+
     if (targetFloat.channels() == 2) {
         cv::Mat tempTarget;
         cv::cvtColor(targetFloat, tempTarget, cv::COLOR_BGR2GRAY);
         cv::threshold(tempTarget, targetFloat, 0, 255, cv::THRESH_BINARY);
     }
-
 
     cv::subtract(imgFloat, mean, imgFloat);
     cv::divide(imgFloat, std, imgFloat);

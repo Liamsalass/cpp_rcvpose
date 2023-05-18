@@ -95,11 +95,11 @@ myExample RMapDataset::get(size_t index) {
 		return myExample{ std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data) };
 	}
 
-	if (&transform) {
+	try {
 		img_data = transform(img, data);
 	}
-	else {
-		std::cout << "No transform function provided" << std::endl;
+	catch (const std::exception& e) {
+		std::cout << "Error occurred during transform: " << e.what() << std::endl;	
 	}
 
 	return myExample{ std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data) };

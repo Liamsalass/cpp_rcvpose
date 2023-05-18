@@ -10,3 +10,4 @@ embedded_testing/out
 embedded_testing/bin
 datasets/
 embedded_testing/
+dll/rcvpose/.vs/

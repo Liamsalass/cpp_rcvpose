@@ -55,6 +55,7 @@ extern "C" {
     {
     public:
         rcvpose(Options options);
+
         rcvpose(
             std::string mode,
             int gpu_id,
@@ -70,6 +71,7 @@ extern "C" {
             bool demo_mode,
             bool test_occ
         );
+
         rcvpose();
         ~rcvpose();
 
@@ -93,7 +95,7 @@ extern "C" {
         void train();
 
         // Evaluates the model on the test set
-        void evalutate();
+        void evaluate();
         
         // Saves the model to specified directory
         void saveModel(std::string path);

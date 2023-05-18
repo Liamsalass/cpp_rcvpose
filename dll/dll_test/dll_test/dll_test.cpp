@@ -6,8 +6,11 @@
 
 int main()
 {
-    rcvpose test();
+    Options opts;
 
-    std::cout << "Hello World!\n";
+    RCVpose test(opts);
+
+    test.summary();
+ 
 }
 

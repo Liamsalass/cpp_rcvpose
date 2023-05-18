@@ -1,4 +1,5 @@
 ﻿  dll_test.cpp
-C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\rcvpose\rcvpose.h(37): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\User\.cw\work\cpp_rcvpose\dll\dll_test\dll_test\dll_test.cpp(9,13): warning C4930: 'rcvpose test(void)': prototyped function not called (was a variable definition intended?)
+C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\rcvpose\rcvpose.h(52): warning C4305: 'initializing': truncation from 'double' to 'float'
   dll_test.vcxproj -> C:\Users\User\.cw\work\cpp_rcvpose\dll\dll_test\x64\Debug\dll_test.exe
+  ..\..\rcvpose\x64\Debug\rcvpose.dll
+  1 File(s) copied

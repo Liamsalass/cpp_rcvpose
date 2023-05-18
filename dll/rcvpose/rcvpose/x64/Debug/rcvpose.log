@@ -1,3 +1,4 @@
 ﻿  rcvpose.cpp
-C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\rcvpose\rcvpose.h(38): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\rcvpose\rcvpose.h(52): warning C4305: 'initializing': truncation from 'double' to 'float'
+     Creating library C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\x64\Debug\rcvpose.lib and object C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\x64\Debug\rcvpose.exp
   rcvpose.vcxproj -> C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\x64\Debug\rcvpose.dll

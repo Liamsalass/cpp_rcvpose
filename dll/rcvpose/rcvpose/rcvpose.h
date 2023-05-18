@@ -17,6 +17,20 @@ extern "C" {
 #endif
 
     // Parameters for rcvpose model
+    // Includes fields:
+    // mode: Mode of operation either "train" or "test"
+    // gpu_id: GPU ID to use
+    // dname: Dataset name ("lm" = LINEMOD, "ycbv", "tless")
+    // root_dataset: Root dataset directory
+    // resume_train: Resume training from a checkpoint
+    // optim: Optimizer to use
+    // batch_size: Batch size
+    // class_name: Class name
+    // initial_lr: Initial learning rate
+    // kpt_num: Number of keypoints
+    // model_dir: Directory to save model
+    // demo_mode: run in Demo mode
+    // test_occ: run in Test Occ mode
     struct Options {
         //Mode of operation either "train" or "test"
         std::string mode = "train";
@@ -55,8 +69,11 @@ extern "C" {
     class RCVPOSE_API RCVpose
     {
     public:
+        // Constructor with passing options
+        // Useful for storing a set of options and params
         RCVpose(Options options);
 
+        // Constructor
         RCVpose(
             std::string mode,
             int gpu_id,
@@ -73,7 +90,10 @@ extern "C" {
             bool test_occ
         );
 
+        // Default constructor
         RCVpose();
+
+        // Default destructor
         ~RCVpose();
 
         void setGpuId(const int gpu_id);

@@ -42,7 +42,9 @@ RCVpose::RCVpose() {
     cout << "Empty constructor called" << endl;
 }
 
-RCVpose::~RCVpose() {}
+RCVpose::~RCVpose() {
+
+}
 
 void RCVpose::setGpuId(const int gpu_id) {
     opts.gpu_id = gpu_id;
@@ -93,9 +95,30 @@ void RCVpose::setTestOcc(bool test_occ) {
 }
 
 
-
 void RCVpose::summary() {
-    // Implementation for printing model summary
+    //Prints a line of = With Summary in the middle
+    cout << endl;
+    cout << string(50, '=') << endl;
+    cout << string(17, ' ') << "Summary" << endl;
+    cout << string(50, '=') << endl;
+    //Prints the options
+    cout << "mode: " << opts.mode << endl;
+    cout << "gpu_id: " << opts.gpu_id << endl;
+    cout << "dname: " << opts.dname << endl;
+    cout << "root_dataset: " << opts.root_dataset << endl;
+    cout << "resume_train: " << opts.resume_train << endl;
+    cout << "optim: " << opts.optim << endl;
+    cout << "batch_size: " << opts.batch_size << endl;
+    cout << "class_name: " << opts.class_name << endl;
+    cout << "initial_lr: " << opts.initial_lr << endl;
+    cout << "kpt_num: " << opts.kpt_num << endl;
+    cout << "model_dir: " << opts.model_dir << endl;
+    cout << "demo_mode: " << opts.demo_mode << endl;
+    cout << "test_occ: " << opts.test_occ << endl;
+    cout << endl;
+    //Prints a line of = With Summary in the middle
+    cout << string(50, '=') << endl;
+    cout << endl;
 }
 
 void RCVpose::train() {

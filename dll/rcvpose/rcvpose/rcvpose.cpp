@@ -87,6 +87,8 @@ void rcvpose::setTestOcc(bool test_occ) {
     opts.test_occ = test_occ;
 }
 
+
+
 void rcvpose::summary() {
     // Implementation for printing model summary
 }
@@ -113,4 +115,8 @@ void rcvpose::demo() {
 
 void rcvpose::loadModel(std::string path) {
     // Implementation for loading a pretrained model
+}
+
+void rcvpose::test_loaders(const std::string& path)
+{
 }

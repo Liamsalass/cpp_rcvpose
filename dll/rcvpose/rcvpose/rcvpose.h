@@ -21,7 +21,7 @@ extern "C" {
         std::string mode = "train";
         // GPU ID to use
         int gpu_id = -1;
-        // Dataset name
+        // Dataset name ("lm" = LINEMOD, "ycbv", "tless")
         std::string dname = "lm";
         // Root dataset directory
         std::string root_dataset = "./datasets/LINEMOD";
@@ -103,6 +103,8 @@ extern "C" {
         // Tests on a single image and saves the output
         void test(std::string img_path, std::string output_path);
 
+        //Tests if specified data is loadable
+        void test_loaders(const std::string& path);
         
         void demo();
         

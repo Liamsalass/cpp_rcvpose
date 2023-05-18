@@ -11,4 +11,4 @@ embedded_testing/bin
 datasets/
 embedded_testing/
 dll/rcvpose/.vs/
-ddl/dll_test/.vs
+dll/dll_test/.vs

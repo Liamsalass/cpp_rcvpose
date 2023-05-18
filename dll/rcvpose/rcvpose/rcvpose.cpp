@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "rcvpose.h"
 
-#include "rcvpose.h"
+using namespace std;
 
-rcvpose::rcvpose(Options options) : opts(options) {}
+RCVpose::RCVpose(Options options) : opts(options) {
+    cout << "Constructor called" << endl;
+}
 
-rcvpose::rcvpose(
+RCVpose::RCVpose(
     std::string mode,
     int gpu_id,
     std::string dname,
@@ -33,90 +35,93 @@ rcvpose::rcvpose(
     opts.model_dir = model_dir;
     opts.demo_mode = demo_mode;
     opts.test_occ = test_occ;
+    cout << "Constructor called" << endl;
 }
 
-rcvpose::rcvpose() {}
+RCVpose::RCVpose() {
+    cout << "Empty constructor called" << endl;
+}
 
-rcvpose::~rcvpose() {}
+RCVpose::~RCVpose() {}
 
-void rcvpose::setGpuId(const int gpu_id) {
+void RCVpose::setGpuId(const int gpu_id) {
     opts.gpu_id = gpu_id;
 }
 
-void rcvpose::setDname(const std::string& dname) {
+void RCVpose::setDname(const std::string& dname) {
     opts.dname = dname;
 }
 
-void rcvpose::setRootDataset(const std::string& root_dataset) {
+void RCVpose::setRootDataset(const std::string& root_dataset) {
     opts.root_dataset = root_dataset;
 }
 
-void rcvpose::setResumeTrain(bool resume_train) {
+void RCVpose::setResumeTrain(bool resume_train) {
     opts.resume_train = resume_train;
 }
 
-void rcvpose::setOptim(const std::string& optim) {
+void RCVpose::setOptim(const std::string& optim) {
     opts.optim = optim;
 }
 
-void rcvpose::setBatchSize(const int batch_size) {
+void RCVpose::setBatchSize(const int batch_size) {
     opts.batch_size = batch_size;
 }
 
-void rcvpose::setClassName(const std::string& class_name) {
+void RCVpose::setClassName(const std::string& class_name) {
     opts.class_name = class_name;
 }
 
-void rcvpose::setInitialLR(const float initial_lr) {
+void RCVpose::setInitialLR(const float initial_lr) {
     opts.initial_lr = initial_lr;
 }
 
-void rcvpose::setKptNum(const int kpt_num) {
+void RCVpose::setKptNum(const int kpt_num) {
     opts.kpt_num = kpt_num;
 }
 
-void rcvpose::setModelDir(const std::string& model_dir) {
+void RCVpose::setModelDir(const std::string& model_dir) {
     opts.model_dir = model_dir;
 }
 
-void rcvpose::setDemoMode(bool demo_mode) {
+void RCVpose::setDemoMode(bool demo_mode) {
     opts.demo_mode = demo_mode;
 }
 
-void rcvpose::setTestOcc(bool test_occ) {
+void RCVpose::setTestOcc(bool test_occ) {
     opts.test_occ = test_occ;
 }
 
 
 
-void rcvpose::summary() {
+void RCVpose::summary() {
     // Implementation for printing model summary
 }
 
-void rcvpose::train() {
+void RCVpose::train() {
     // Implementation for training the model
 }
 
-void rcvpose::evaluate() {
+void RCVpose::evaluate() {
     // Implementation for evaluating the model
 }
 
-void rcvpose::saveModel(std::string path) {
+void RCVpose::saveModel(std::string path) {
     // Implementation for saving the model
 }
 
-void rcvpose::test(std::string img_path, std::string output_path) {
+void RCVpose::test(std::string img_path, std::string output_path) {
     // Implementation for testing the model on a single image and saving the output
 }
 
-void rcvpose::demo() {
+void RCVpose::demo() {
     // Implementation for running the model in demo mode
 }
 
-void rcvpose::loadModel(std::string path) {
+void RCVpose::loadModel(std::string path) {
     // Implementation for loading a pretrained model
 }
 
-void rcvpose::test_loaders(const std::string& path)
+void RCVpose::test_loaders(const std::string& path)
 {
 }

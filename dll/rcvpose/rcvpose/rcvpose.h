@@ -9,6 +9,7 @@
 
 #include <string>
 #include <map>
+#include <iostream>
 #include <vector>
 
 #ifdef __cplusplus
@@ -51,12 +52,12 @@ extern "C" {
     // Used to create and train rcvpose models. Allows for testing and demoing of rcvpose models.
     // Example usage:
     // rcvpose rcvpose_model;
-    class RCVPOSE_API rcvpose
+    class RCVPOSE_API RCVpose
     {
     public:
-        rcvpose(Options options);
+        RCVpose(Options options);
 
-        rcvpose(
+        RCVpose(
             std::string mode,
             int gpu_id,
             std::string dname,
@@ -72,8 +73,8 @@ extern "C" {
             bool test_occ
         );
 
-        rcvpose();
-        ~rcvpose();
+        RCVpose();
+        ~RCVpose();
 
         void setGpuId(const int gpu_id);
         void setDname(const std::string& dname);

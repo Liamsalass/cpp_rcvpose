@@ -18,8 +18,8 @@
 #include <warning.h>
 
 
-typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>> TrainLoader;
-typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>> TestLoader;
+//typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>> TrainLoader;
+//typedef std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>> TestLoader;
 
 #ifdef __cplusplus
 extern "C" {
@@ -148,8 +148,8 @@ extern "C" {
         bool can_init();
         torch::DeviceType device_type;
         std::string resume;
-        TrainLoader train_loader;
-        TestLoader test_loader;
+        //TrainLoader train_loader;
+        //TestLoader test_loader;
     };
 
 #ifdef __cplusplus

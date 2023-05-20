@@ -49,28 +49,28 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 
 // Returns validation and training dataloaders as pair of two unique pointers
 // pointers point to the dataloaders of type: torch::data::StatelessDataLoader<RData> and torch::data::StatefulDataLoader<RData>
-std::pair<std::unique_ptr<torch::data::StatelessDataLoader<RData,torch::data::samplers::RandomSampler>>,std::unique_ptr<torch::data::StatelessDataLoader<RData,torch::data::samplers::SequentialSampler>>> get_data_loaders(const Options& opts) {
-	
-	std::vector<std::string> modes = { "train", "test" };
-	
-    // Instantiate the dataset
-	auto train_dataset = RData(opts.root_dataset, opts.dname, modes[0], opts.class_name, opts.kpt_num);
-	auto val_dataset = RData(opts.root_dataset, opts.dname, modes[1], opts.class_name, opts.kpt_num);
-
-    // Instantiate the dataloaders 
-	auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
-		std::move(train_dataset), 
-		torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
-	);
-
-	auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
-		std::move(val_dataset),
-		torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
-	);
-
-    // Return the dataloaders as a pair
-    return std::make_pair(train_loader, val_loader);
-	
-}
+//std::pair<std::unique_ptr<torch::data::StatelessDataLoader<RData,torch::data::samplers::RandomSampler>>,std::unique_ptr<torch::data::StatelessDataLoader<RData,torch::data::samplers::SequentialSampler>>> get_data_loaders(const Options& opts) {
+//	
+//	std::vector<std::string> modes = { "train", "test" };
+//	
+//    // Instantiate the dataset
+//	auto train_dataset = RData(opts.root_dataset, opts.dname, modes[0], opts.class_name, opts.kpt_num);
+//	auto val_dataset = RData(opts.root_dataset, opts.dname, modes[1], opts.class_name, opts.kpt_num);
+//
+//    // Instantiate the dataloaders 
+//	auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
+//		std::move(train_dataset), 
+//		torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+//	);
+//
+//	auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
+//		std::move(val_dataset),
+//		torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+//	);
+//
+//    // Return the dataloaders as a pair
+//    return std::make_pair(train_loader, val_loader);
+//	
+//}
 
 

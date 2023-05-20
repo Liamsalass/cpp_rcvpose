@@ -3,9 +3,8 @@
 
 using namespace std;
 
-
-
-RCVpose::RCVpose(Options options) : opts(options) {
+RCVpose::RCVpose(Options options) {
+    opts = options;
     init();
 }
 
@@ -172,8 +171,6 @@ void RCVpose::init() {
     // check if opts has all passed parameters, if not return error message with what needs to be initialized
     bool can_run = can_init();
 
-    opts.cfg = get_config().at(1);
-
     //Set random seed
     resume = "";
     torch::manual_seed(0);
@@ -194,13 +191,13 @@ void RCVpose::init() {
         cout << "Test mode" << endl;
 
     //Set the loaders
-    std::pair<std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>>,
-        std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>>
-    > data_loaders =
-        get_data_loaders(opts);
+    //std::pair<std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>>,
+    //    std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>>
+    //> data_loaders =
+    //    get_data_loaders(opts);
 
-    TrainLoader train_loader = std::move(data_loaders.first);
-    TestLoader test_loader = std::move(data_loaders.second);
+    //TrainLoader train_loader = std::move(data_loaders.first);
+    //TestLoader test_loader = std::move(data_loaders.second);
 
 
 
@@ -249,4 +246,12 @@ bool RCVpose::can_init() {
         return false;
     }
     return true;
+}
+
+Options()
+{
+}
+
+~Options()
+{
 }

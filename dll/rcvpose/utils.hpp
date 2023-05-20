@@ -3,7 +3,7 @@
 #include <map>
 // Shape of config is {<int, <string, vector<float>>>} in a map
 // Betas has two values, so it is a vector, while the rest are single values
-std::map<int, std::map<std::string, std::vector<float>>> get_config() {
+inline std::map<int, std::map<std::string, std::vector<float>>> get_config() {
     return {
         {1,
          {
@@ -16,3 +16,5 @@ std::map<int, std::map<std::string, std::vector<float>>> get_config() {
          }}
     };
 }
+
+

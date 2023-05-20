@@ -34,7 +34,4 @@ public:
 
 };
 
-
-
-
 #endif // DATALOADER_H

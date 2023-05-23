@@ -22,6 +22,7 @@
 #include "data_loader.h"
 #include <warning.h>
 #include "options.hpp"
+#include "trainer.h"
 
 
 #ifdef __cplusplus

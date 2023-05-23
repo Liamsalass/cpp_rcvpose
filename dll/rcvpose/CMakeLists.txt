@@ -49,7 +49,9 @@ add_library(${TARGET_NAME} SHARED
     "models/denseFCNResNet152.cpp"
     "models/resFCNResNet152.h"
     "models/resFCNResNet152.cpp"
- "trainer.h" "trainer.cpp")
+    "trainer.h" 
+    "trainer.cpp"
+)
 
 
 target_link_libraries(${TARGET_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Boost_LIBS})

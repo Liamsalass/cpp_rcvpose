@@ -134,22 +134,9 @@ void RCVpose::summary() {
 
 void RCVpose::train()
 {
-    // Instantiate the dataset
-    auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, opts.kpt_num);
-    auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name, opts.kpt_num);
+    Trainer trainer(opts); 
 
-    // Instantiate the dataloaders 
-    auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
-        std::move(train_dataset),
-        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
-    );
-
-    auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
-        std::move(val_dataset),
-        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
-    );
-
-    // Instantiate the model
+    trainer.train();
 
 }
 

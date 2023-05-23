@@ -31,9 +31,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/debug)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/release)
 
 # Add source to this project's executable.
+add_definitions(-DRCVPOSE_EXPORTS)
+
 add_library(${TARGET_NAME} SHARED
     "rcvpose.h"
     "rcvpose.cpp"
+    "options.hpp"
     "utils.hpp"
     "RMapDataset.h"
     "RMapDataset.cpp"
@@ -46,8 +49,8 @@ add_library(${TARGET_NAME} SHARED
     "models/denseFCNResNet152.cpp"
     "models/resFCNResNet152.h"
     "models/resFCNResNet152.cpp"
-
 )
+
 
 target_link_libraries(${TARGET_NAME} "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} ${Boost_LIBS})
 

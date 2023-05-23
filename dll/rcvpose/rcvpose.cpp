@@ -3,13 +3,12 @@
 
 using namespace std;
 
-RCVpose::RCVpose(Options options) {
+RCVpose::RCVpose(Options options)
+{
     opts = options;
-    init();
 }
 
 RCVpose::RCVpose(
-    std::string mode,
     int gpu_id,
     std::string dname,
     std::string root_dataset,
@@ -23,7 +22,6 @@ RCVpose::RCVpose(
     bool demo_mode,
     bool test_occ
 ) {
-    opts.mode = mode;
     opts.gpu_id = gpu_id;
     opts.dname = dname;
     opts.root_dataset = root_dataset;
@@ -106,7 +104,6 @@ void RCVpose::summary() {
     cout << string(50, '=') << endl;
 
     // Print the options
-    cout << "mode: " << opts.mode << endl;
     cout << "gpu_id: " << opts.gpu_id << endl;
     cout << "dname: " << opts.dname << endl;
     cout << "root_dataset: " << opts.root_dataset << endl;
@@ -136,8 +133,29 @@ void RCVpose::summary() {
     cout << endl;
 }
 
-void RCVpose::start()
+void RCVpose::train()
 {
+    // Instantiate the dataset
+    auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, opts.kpt_num);
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name, opts.kpt_num);
+
+    // Instantiate the dataloaders 
+    auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
+        std::move(train_dataset),
+        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+    );
+
+    auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
+        std::move(val_dataset),
+        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+    );
+
+    // Instantiate the model
+
+}
+
+void RCVpose::test() {
+
 }
 
 
@@ -171,6 +189,12 @@ void RCVpose::init() {
     // check if opts has all passed parameters, if not return error message with what needs to be initialized
     bool can_run = can_init();
 
+    //If it cannot run, print error msg and exit
+    if (!can_run) {
+		cout << "Error: Cannot initialize the model with the given parameters" << endl;
+		exit(1);
+	}
+    
     //Set random seed
     resume = "";
     torch::manual_seed(0);
@@ -184,31 +208,26 @@ void RCVpose::init() {
     }
     torch::Device device(device_type);
 
-    if (opts.mode == "train") {
-        cout << "Train mode" << endl;
-    }
-    else
-        cout << "Test mode" << endl;
 
-    //Set the loaders
-    //std::pair<std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::RandomSampler>>,
-    //    std::unique_ptr<torch::data::StatelessDataLoader<RData, torch::data::samplers::SequentialSampler>>
-    //> data_loaders =
-    //    get_data_loaders(opts);
+    // Instantiate the dataset
+    auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, opts.kpt_num);
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name, opts.kpt_num);
 
-    //TrainLoader train_loader = std::move(data_loaders.first);
-    //TestLoader test_loader = std::move(data_loaders.second);
+    // Instantiate the dataloaders 
+    auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
+        std::move(train_dataset),
+        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+    );
 
-
+    auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
+        std::move(val_dataset),
+        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+    );
 
 
 }
 
 bool RCVpose::can_init() {
-    if (opts.mode.empty()) {
-        cout << "Error: mode not initialized" << endl;
-        return false;
-    }
     if (opts.gpu_id) {
         cout << "Error: gpu_id not initialized" << endl;
         return false;
@@ -248,10 +267,3 @@ bool RCVpose::can_init() {
     return true;
 }
 
-Options()
-{
-}
-
-~Options()
-{
-}

@@ -48,18 +48,18 @@ Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" p
 The CXX compiler identification is MSVC, found in "C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/3.25.1-msvc1/CompilerIdCXX/CMakeCXXCompilerId.exe"
 
 Detecting C compiler ABI info compiled with the following output:
-Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-3yuo4s
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-psm3yk
 
-Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_53d0c && [1/2] Building C object CMakeFiles\cmTC_53d0c.dir\CMakeCCompilerABI.c.obj
-[2/2] Linking C executable cmTC_53d0c.exe
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_9393a && [1/2] Building C object CMakeFiles\cmTC_9393a.dir\CMakeCCompilerABI.c.obj
+[2/2] Linking C executable cmTC_9393a.exe
 
 
 
 Detecting CXX compiler ABI info compiled with the following output:
-Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-5ndwtp
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-ffdz4h
 
-Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_81e2b && [1/2] Building CXX object CMakeFiles\cmTC_81e2b.dir\CMakeCXXCompilerABI.cpp.obj
-[2/2] Linking CXX executable cmTC_81e2b.exe
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_bc7c5 && [1/2] Building CXX object CMakeFiles\cmTC_bc7c5.dir\CMakeCXXCompilerABI.cpp.obj
+[2/2] Linking CXX executable cmTC_bc7c5.exe
 
 
 
@@ -399,6 +399,7 @@ C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.
 ALLUSERSPROFILE=C:\ProgramData
 APPDATA=C:\Users\User\AppData\Roaming
 BOOST_DIR=C:\boost_1_82_0\boost
+CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 CMAKE_BUILD_TYPE=Debug
 CMAKE_CXX_COMPILER=cl.exe
 CMAKE_C_COMPILER=cl.exe
@@ -414,9 +415,10 @@ CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
+CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\
 DriverData=C:\Windows\System32\Drivers\DriverData
-EFC_33548=1
+EFC_10108=1
 ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
 EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 ForceIdentityAuthenticationType=Embedded
@@ -462,7 +464,8 @@ ProgramW6432=C:\Program Files
 PROMPT=$P$G
 PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 PUBLIC=C:\Users\Public
-ServiceHubLogSessionKey=DF540A39
+RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe
+ServiceHubLogSessionKey=045FB60A
 SESSIONNAME=Console
 SignInWithHomeTenantOnly=False
 SystemDrive=C:
@@ -470,7 +473,7 @@ SystemRoot=C:\Windows
 TEMP=C:\Users\User\AppData\Local\Temp
 ThreadedWaitDialogDpiContext=-4
 TMP=C:\Users\User\AppData\Local\Temp
-TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch
+TORCH_DIR=C:\libtorch_debug\libtorch\libtorch
 UCRTVersion=10.0.22000.0
 UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10\
 USERDOMAIN=LIAMS-ZENBOOK
@@ -2989,6 +2992,7 @@ C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.
 ALLUSERSPROFILE=C:\ProgramData
 APPDATA=C:\Users\User\AppData\Roaming
 BOOST_DIR=C:\boost_1_82_0\boost
+CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 CMAKE_BUILD_TYPE=Debug
 CMAKE_CXX_COMPILER=cl.exe
 CMAKE_C_COMPILER=cl.exe
@@ -3004,9 +3008,10 @@ CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
+CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\
 DriverData=C:\Windows\System32\Drivers\DriverData
-EFC_33548=1
+EFC_10108=1
 ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
 EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 ForceIdentityAuthenticationType=Embedded
@@ -3053,7 +3058,8 @@ ProgramW6432=C:\Program Files
 PROMPT=$P$G
 PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 PUBLIC=C:\Users\Public
-ServiceHubLogSessionKey=DF540A39
+RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe
+ServiceHubLogSessionKey=045FB60A
 SESSIONNAME=Console
 SignInWithHomeTenantOnly=False
 SystemDrive=C:
@@ -3061,7 +3067,7 @@ SystemRoot=C:\Windows
 TEMP=C:\Users\User\AppData\Local\Temp
 ThreadedWaitDialogDpiContext=-4
 TMP=C:\Users\User\AppData\Local\Temp
-TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch
+TORCH_DIR=C:\libtorch_debug\libtorch\libtorch
 UCRTVersion=10.0.22000.0
 UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10\
 USERDOMAIN=LIAMS-ZENBOOK
@@ -3143,11 +3149,12 @@ C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.
 
 C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_SPECTRE= 
 
-C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00004478_00000000-2 
+C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00005218_00000000-2 
 #$ C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/HostX64/x64/../../../../../../../VC/Auxiliary/Build/vcvars64.bat
 #$ ALLUSERSPROFILE=C:\ProgramData
 #$ APPDATA=C:\Users\User\AppData\Roaming
 #$ BOOST_DIR=C:\boost_1_82_0\boost
+#$ CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 #$ CMAKE_BUILD_TYPE=Debug
 #$ CMAKE_CXX_COMPILER=cl.exe
 #$ CMAKE_C_COMPILER=cl.exe
@@ -3163,9 +3170,10 @@ C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.
 #$ CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8
 #$ CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1
 #$ CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
+#$ CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe
 #$ DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\
 #$ DriverData=C:\Windows\System32\Drivers\DriverData
-#$ EFC_33548=1
+#$ EFC_10108=1
 #$ ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
 #$ EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22000.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22000.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um
 #$ ForceIdentityAuthenticationType=Embedded
@@ -3212,13 +3220,14 @@ C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.
 #$ PROMPT=$P$G
 #$ PSModulePath=C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
 #$ PUBLIC=C:\Users\Public
-#$ ServiceHubLogSessionKey=DF540A39
+#$ RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe
+#$ ServiceHubLogSessionKey=045FB60A
 #$ SESSIONNAME=Console
 #$ SignInWithHomeTenantOnly=False
 #$ SystemDrive=C:
 #$ SystemRoot=C:\Windows
 #$ ThreadedWaitDialogDpiContext=-4
-#$ TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch
+#$ TORCH_DIR=C:\libtorch_debug\libtorch\libtorch
 #$ UCRTVersion=10.0.22000.0
 #$ UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10\
 #$ USERDOMAIN=LIAMS-ZENBOOK
@@ -3558,6 +3567,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
   considering line: [BOOST_DIR=C:\boost_1_82_0\boost]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -3573,8 +3583,9 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_33548=1]
+  considering line: [EFC_10108=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -3699,7 +3710,8 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=DF540A39]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=045FB60A]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -3707,7 +3719,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [TEMP=C:\Users\User\AppData\Local\Temp]
   considering line: [ThreadedWaitDialogDpiContext=-4]
   considering line: [TMP=C:\Users\User\AppData\Local\Temp]
-  considering line: [TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch]
+  considering line: [TORCH_DIR=C:\libtorch_debug\libtorch\libtorch]
   considering line: [UCRTVersion=10.0.22000.0]
   considering line: [UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10;USERDOMAIN=LIAMS-ZENBOOK]
   considering line: [USERDOMAIN_ROAMINGPROFILE=LIAMS-ZENBOOK]
@@ -6832,6 +6844,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
   considering line: [BOOST_DIR=C:\boost_1_82_0\boost]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -6847,8 +6860,9 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_33548=1]
+  considering line: [EFC_10108=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -7018,7 +7032,8 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=DF540A39]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=045FB60A]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -7026,7 +7041,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [TEMP=C:\Users\User\AppData\Local\Temp]
   considering line: [ThreadedWaitDialogDpiContext=-4]
   considering line: [TMP=C:\Users\User\AppData\Local\Temp]
-  considering line: [TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch]
+  considering line: [TORCH_DIR=C:\libtorch_debug\libtorch\libtorch]
   considering line: [UCRTVersion=10.0.22000.0]
   considering line: [UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10;USERDOMAIN=LIAMS-ZENBOOK]
   considering line: [USERDOMAIN_ROAMINGPROFILE=LIAMS-ZENBOOK]
@@ -7108,7 +7123,7 @@ Parsed CUDA nvcc implicit link information from above output:
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_HELP= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_VER= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_SPECTRE= ]
-  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00004478_00000000-2 ]
+  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00005218_00000000-2 ]
   considering line: [C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/HostX64/x64/../../../../../../../VC/Auxiliary/Build/vcvars64.bat]
   considering line: [erase tmp/a_dlink.reg.c]
   considering line: [CMakeCUDACompilerId.cu]
@@ -7405,6 +7420,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
   considering line: [BOOST_DIR=C:\boost_1_82_0\boost]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -7420,8 +7436,9 @@ Parsed CUDA nvcc include information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_33548=1]
+  considering line: [EFC_10108=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -7546,7 +7563,8 @@ Parsed CUDA nvcc include information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=DF540A39]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=045FB60A]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -7554,7 +7572,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [TEMP=C:\Users\User\AppData\Local\Temp]
   considering line: [ThreadedWaitDialogDpiContext=-4]
   considering line: [TMP=C:\Users\User\AppData\Local\Temp]
-  considering line: [TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch]
+  considering line: [TORCH_DIR=C:\libtorch_debug\libtorch\libtorch]
   considering line: [UCRTVersion=10.0.22000.0]
   considering line: [UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10;USERDOMAIN=LIAMS-ZENBOOK]
   considering line: [USERDOMAIN_ROAMINGPROFILE=LIAMS-ZENBOOK]
@@ -10679,6 +10697,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [ALLUSERSPROFILE=C:\ProgramData]
   considering line: [APPDATA=C:\Users\User\AppData\Roaming]
   considering line: [BOOST_DIR=C:\boost_1_82_0\boost]
+  considering line: [CC=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [CMAKE_BUILD_TYPE=Debug]
   considering line: [CMAKE_CXX_COMPILER=cl.exe]
   considering line: [CMAKE_C_COMPILER=cl.exe]
@@ -10694,8 +10713,9 @@ Parsed CUDA nvcc include information from above output:
   considering line: [CUDA_PATH_V11_8=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8]
   considering line: [CUDA_PATH_V12_1=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1]
   considering line: [CUDA_PATH_V8_0=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0]
+  considering line: [CXX=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe]
   considering line: [DevEnvDir=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE;DriverData=C:\Windows\System32\Drivers\DriverData]
-  considering line: [EFC_33548=1]
+  considering line: [EFC_10108=1]
   considering line: [ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs]
   considering line: [EXTERNAL_INCLUDE=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\include]
   considering line: [C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.35.32215\ATLMFC\include]
@@ -10865,7 +10885,8 @@ Parsed CUDA nvcc include information from above output:
   considering line: [PSModulePath=C:\Program Files\WindowsPowerShell\Modules]
   considering line: [C:\Windows\system32\WindowsPowerShell\v1.0\Modules]
   considering line: [PUBLIC=C:\Users\Public]
-  considering line: [ServiceHubLogSessionKey=DF540A39]
+  considering line: [RC=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64/rc.exe]
+  considering line: [ServiceHubLogSessionKey=045FB60A]
   considering line: [SESSIONNAME=Console]
   considering line: [SignInWithHomeTenantOnly=False]
   considering line: [SystemDrive=C:]
@@ -10873,7 +10894,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [TEMP=C:\Users\User\AppData\Local\Temp]
   considering line: [ThreadedWaitDialogDpiContext=-4]
   considering line: [TMP=C:\Users\User\AppData\Local\Temp]
-  considering line: [TORCH_DIR=C:\libtorch-win-shared-with-deps-debug-2.0.1+cu118\libtorch]
+  considering line: [TORCH_DIR=C:\libtorch_debug\libtorch\libtorch]
   considering line: [UCRTVersion=10.0.22000.0]
   considering line: [UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10;USERDOMAIN=LIAMS-ZENBOOK]
   considering line: [USERDOMAIN_ROAMINGPROFILE=LIAMS-ZENBOOK]
@@ -10955,7 +10976,7 @@ Parsed CUDA nvcc include information from above output:
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_HELP= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_VER= ]
   considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set __VCVARSALL_SPECTRE= ]
-  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00004478_00000000-2 ]
+  considering line: [C:\Users\User\.cw\work\cpp_rcvpose\dll\rcvpose\out\build\x64-debug\CMakeFiles\3.25.1-msvc1\CompilerIdCUDA>set  1>C:\Users\User\AppData\Local\Temp/tmpxft_00005218_00000000-2 ]
   considering line: [C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/HostX64/x64/../../../../../../../VC/Auxiliary/Build/vcvars64.bat]
   considering line: [erase tmp/a_dlink.reg.c]
   considering line: [CMakeCUDACompilerId.cu]
@@ -11002,16 +11023,16 @@ Parsed CUDA nvcc include information from above output:
 
 
 Detecting CUDA compiler ABI info compiled with the following output:
-Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-7wk9y2
+Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-y9a38s
 
-Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_a72bf && [1/2] Building CUDA object CMakeFiles\cmTC_a72bf.dir\CMakeCUDACompilerABI.cu.obj
+Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_4e444 && [1/2] Building CUDA object CMakeFiles\cmTC_4e444.dir\CMakeCUDACompilerABI.cu.obj
 cl : Command line warning D9002 : ignoring unknown option '-v'
 CMakeCUDACompilerABI.cu
 cl : Command line warning D9002 : ignoring unknown option '-v'
 CMakeCUDACompilerABI.cu
 CMakeCUDACompilerABI.cu
 cl : Command line warning D9002 : ignoring unknown option '-v'
-[2/2] Linking CUDA executable cmTC_a72bf.exe
+[2/2] Linking CUDA executable cmTC_4e444.exe
 
 
 
@@ -11021,16 +11042,16 @@ Parsed CUDA implicit include dir info from above output: rv=start
 
 Parsed CUDA implicit link information from above output:
   link line regex: [^( *|.*[/\])(link\.exe|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
-  ignore line: [Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-7wk9y2]
+  ignore line: [Change Dir: C:/Users/User/.cw/work/cpp_rcvpose/dll/rcvpose/out/build/x64-debug/CMakeFiles/CMakeScratch/TryCompile-y9a38s]
   ignore line: []
-  ignore line: [Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_a72bf && [1/2] Building CUDA object CMakeFiles\cmTC_a72bf.dir\CMakeCUDACompilerABI.cu.obj]
+  ignore line: [Run Build Command(s):C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_4e444 && [1/2] Building CUDA object CMakeFiles\cmTC_4e444.dir\CMakeCUDACompilerABI.cu.obj]
   ignore line: [cl : Command line warning D9002 : ignoring unknown option '-v']
   ignore line: [CMakeCUDACompilerABI.cu]
   ignore line: [cl : Command line warning D9002 : ignoring unknown option '-v']
   ignore line: [CMakeCUDACompilerABI.cu]
   ignore line: [CMakeCUDACompilerABI.cu]
   ignore line: [cl : Command line warning D9002 : ignoring unknown option '-v']
-  ignore line: [[2/2] Linking CUDA executable cmTC_a72bf.exe]
+  ignore line: [[2/2] Linking CUDA executable cmTC_4e444.exe]
   ignore line: []
   ignore line: []
   implicit libs: []

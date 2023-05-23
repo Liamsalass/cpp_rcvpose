@@ -32,7 +32,7 @@ private:
     Options options_;
     torch::Device device_;
     DenseFCNResNet152 model_;
-    torch::optim::Optimizer optim_;
+    //torch::optim::Optimizer optim_;
     RData train_loader_;
     RData val_loader_;
     std::vector<torch::optim::LRScheduler> schedulers_;

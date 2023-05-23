@@ -9,7 +9,7 @@ endif()
 set (TARGET_NAME "rcvpose")
 project (${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "C:/libtorch-win-shared-with-deps-debug-2.0.1+cu118/libtorch")
+set(CMAKE_PREFIX_PATH "C:/libtorch_debug/libtorch")
 set(BOOST_ROOT "C:/boost_1_82_0")
 
 # Find and include OpenCV, boost, open3d,

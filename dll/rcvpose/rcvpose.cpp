@@ -1,4 +1,3 @@
-
 #include "rcvpose.h"
 
 using namespace std;

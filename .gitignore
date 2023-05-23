@@ -8,3 +8,8 @@ embedded_testing/libs
 embedded_testing/.vs
 embedded_testing/out
 embedded_testing/bin
+datasets/
+embedded_testing/
+dll/rcvpose/.vs/
+dll/dll_test/.vs
+dll/rcvpose/out/

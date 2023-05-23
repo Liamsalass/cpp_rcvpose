@@ -33,7 +33,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 find_package(pybind11 CONFIG REQUIRED)
 
 # Add source to this project's executable.
-add_executable (${TARGET_NAME} "test.cpp")
+add_executable (${TARGET_NAME} "test.cpp" "models/bottleneck.h" "models/bottleneck.cpp" "models/denseFCNResNet152.h" "models/denseFCNResNet152.cpp" "models/resFCNResNet152.h" "models/resFCNResNet152.cpp")
 target_link_libraries(${TARGET_NAME} PRIVATE "${TORCH_LIBRARIES}" ${OpenCV_LIBS} ${Open3D_LIBRARIES} pybind11::lto pybind11::embed pybind11::module pybind11::headers)
 
 

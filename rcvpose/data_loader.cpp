@@ -1,0 +1,121 @@
+#include "data_loader.h"
+
+RData::RData(
+	const std::string& root = "../datasets/",
+	const std::string& dname = "lm",
+	const std::string& set = "train",
+	const std::string& obj_name = "ape",
+	const int kpt_num = 1
+) :
+	RMapDataset(root, dname, set, obj_name, kpt_num) { }
+
+
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& target) {
+
+	const std::vector<double> mean = { 0.485, 0.456, 0.406 };
+	const std::vector<double> std = { 0.229, 0.224, 0.225 };
+	
+	//Should be type CV_64F
+	img.convertTo(img, CV_64F);
+	img /= 255.0;
+	target.convertTo(target, CV_64F);
+
+
+	if (target.channels() == 2)
+	{
+		// If lbl has two channels, create a new 3-channel BGR image
+		cv::Mat expandedLbl(target.rows, target.cols, CV_64FC3);
+		cv::Mat channels[2];
+		cv::split(target, channels); // Split the two channels of lbl
+		cv::merge(channels, 2, expandedLbl); // Merge the two channels into the first two channels of expandedLbl
+		target = expandedLbl.reshape(1, 1); // Reshape expandedLbl to have 1 row and 1 channel
+	}
+
+
+	for (int i = 0; i < 3; i++) {
+		img -= mean[i];
+		img /= std[i];
+	}
+
+	if (img.rows % 2 != 0)
+		img = img.rowRange(0, img.rows - 1);
+	if (img.cols % 2 != 0)
+		img = img.colRange(0, img.cols - 1);
+
+
+	img = img.t();
+	target = target.t();
+
+	torch::Tensor img_tensor = torch::from_blob(img.data, { img.rows, img.cols, img.channels() }, torch::kFloat);
+	torch::Tensor lbl_tensor = torch::from_blob(target.data, { target.rows, target.cols, target.channels() }, torch::kFloat);
+
+	torch::Tensor sem_lbl_tensor = torch::where(lbl_tensor > 0, torch::ones_like(lbl_tensor), -torch::ones_like(lbl_tensor));
+
+	return std::make_tuple(img_tensor, lbl_tensor, sem_lbl_tensor);
+}
+
+
+
+cv::Mat RData::get_img(const int idx)
+{
+	if (ids_.empty()) {
+		std::cout << "No Images in ids_" << std::endl;
+		return cv::Mat::zeros(1, 1, CV_8UC3); // return black image
+	}
+
+	const std::string img = imgpath_ + ids_[idx] + ".jpg";
+	std::cout << "Image Path: " << img << std::endl;
+
+	cv::Mat img_mat = cv::imread(img, cv::IMREAD_COLOR);
+	return img_mat;
+}
+
+
+cv::Mat RData::get_target(const int idx)
+{
+	// Check if ids_ is empty
+	if (ids_.empty()) {
+		std::cout << "No Images in ids_" << std::endl;
+		return cv::Mat::zeros(1, 1, CV_8UC3); // Return a black image if ids_ is empty
+	}
+
+	std::vector<double> data;
+	std::vector<unsigned long> shape;
+	bool fortran_order;
+
+	const std::string img = radialpath_ + ids_[idx] + ".npy";
+	std::cout << "Radial Path: " << img << std::endl;
+
+	try {
+		std::string npy_path = img;
+		npy::LoadArrayFromNumpy(npy_path, shape, fortran_order, data);
+	}
+	catch (const std::runtime_error& error) {
+		std::cout << "ERROR: Failed to load radial data" << std::endl;
+		std::cout << error.what() << std::endl;
+		throw error; // Throw an error if loading the data fails
+	}
+
+	// Convert the loaded data to a cv::Mat object
+	int rows = static_cast<int>(shape[0]);
+	int cols = static_cast<int>(shape[1]);
+	cv::Mat target(rows, cols, CV_64F);
+
+	// Assign the data to the cv::Mat object based on the fortran_order
+	if (fortran_order) {
+		for (int i = 0; i < rows; ++i) {
+			for (int j = 0; j < cols; ++j) {
+				target.at<double>(i, j) = data[i + j * rows];
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < rows; ++i) {
+			for (int j = 0; j < cols; ++j) {
+				target.at<double>(i, j) = data[i * cols + j];
+			}
+		}
+	}
+
+	return target; // Return the converted cv::Mat object
+}

@@ -22,7 +22,7 @@ Options training_options() {
 	opts.model_dir = "test_models";
 	opts.resume_train = false;
 	opts.optim = "adam";
-	opts.batch_size = 1;
+    opts.batch_size = 2;
 	opts.class_name = "ape";
 	opts.initial_lr = 0.0001;
 	opts.kpt_num = 3;

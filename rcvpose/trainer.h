@@ -11,6 +11,7 @@
 #include <torch/torch.h>
 #include "models/denseFCNResNet152.h"
 
+
 class Trainer {
 public:
 	Trainer(Options& options);

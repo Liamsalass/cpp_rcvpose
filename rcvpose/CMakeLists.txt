@@ -70,23 +70,6 @@ include_directories(${TORCH_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-# Add source files to this project's target.
-set(SOURCE_FILES
-    "rcvpose.cpp"
-    "rcvpose.h"
-    "data_loader.cpp"
-    "data_loader.h"
-    "RMapDataset.cpp"
-    "RMapDataset.h"
-    "trainer.h"
-    "trainer.cpp"
-    "models/bottleneck.h"
-    "models/bottleneck.cpp"
-    "models/denseFCNResNet152.h"
-    "models/denseFCNResNet152.cpp"
-    "models/resFCNResNet152.h"
-    "models/resFCNResNet152.cpp"
-)
 
 option(BUILD_DLL "Build DLL" OFF)
 # Conditionally include the test.cpp file based on BUILD_DLL variable.

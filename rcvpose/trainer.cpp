@@ -195,7 +195,7 @@ void Trainer::train()
         }
 
 
-        if (epoch % 70 == 0 and epoch != 0) {
+        if (epoch % 70 == 0 && epoch != 0) {
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
             for (auto& g : optim->param_groups()) {
                 if (g.has_options()) {

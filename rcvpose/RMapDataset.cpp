@@ -57,7 +57,6 @@ RMapDataset::RMapDataset(
 }
 
 
-
 //Overriden get method, if transform is not null, apply transform to img and lbl to return img, lbl, sem_lbl
 CustomExample RMapDataset::get(size_t index) {
 	std::string img_id = ids_[index];

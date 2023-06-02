@@ -300,6 +300,24 @@ void RCVpose::init() {
     }
     torch::Device device(device_type);
 
+    if (device_type == torch::kCUDA) {
+        cudaError_t cuda_status = cudaSuccess;
+
+        // Initialize CUDA
+        cuda_status = cudaFree(0);
+
+        if (cuda_status == cudaSuccess) {
+            // GPU is properly initialized
+            std::cout << "GPU is properly initialized." << std::endl;
+        }
+        else {
+            // Failed to initialize GPU
+            std::cout << "Failed to initialize GPU. Error: " << cudaGetErrorString(cuda_status) << std::endl;
+            cout << "Switching device back to CPU" << endl;
+            device_type = torch::kCPU;
+        }
+    }
+    
     //If it cannot run, print error msg and exit
     if (!can_run) {
         cout << "Error: Cannot initialize the model with the given parameters" << endl;
@@ -310,6 +328,7 @@ void RCVpose::init() {
         summary();
     }
 }
+
 
 bool RCVpose::can_init() {
     bool can_run = true;
@@ -355,7 +374,6 @@ bool RCVpose::can_init() {
 		cout << "Warning: batch_size is not an even number or equal to one" << endl;
 		can_run = false;
 	}
-
 
     return can_run;
 }

@@ -31,12 +31,15 @@ public:
 	);
 
 	//RData transform function inherited from RMapDataset
-	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(cv::Mat& img, cv::Mat& target);
+	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(cv::Mat& img, cv::Mat& target) override;
 
 	// Gets an image for testing if loader works
 	// If failed, returns black img
 	cv::Mat get_img(const int idx);
 	cv::Mat get_target(const int idx);
 };
+
+
+
 
 #endif // DATALOADER_H

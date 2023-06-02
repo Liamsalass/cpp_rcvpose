@@ -27,16 +27,20 @@
 //Do I need?
 // #include <glob.h>
 
-// get return structure
-struct myExample {
-    torch::Tensor img;
-    torch::Tensor lbl;
-    torch::Tensor sem_lbl;
+class CustomExample : public torch::data::Example<> {
+public:
+    CustomExample(torch::Tensor data, torch::Tensor target, torch::Tensor sem_target)
+        : data_(data), target_(target), sem_target_(sem_target) {}
+
+    torch::Tensor data() const  { return data_; }
+    torch::Tensor target() const  { return target_; }
+    torch::Tensor sem_target() const { return sem_target_; }
+
+private:
+    torch::Tensor data_, target_, sem_target_;
 };
 
-
-
-class RMapDataset : public torch::data::datasets::Dataset<RMapDataset, myExample> {
+class RMapDataset : public torch::data::datasets::Dataset<RMapDataset, CustomExample> {
 public:
     RMapDataset(
         const std::string& root,
@@ -48,7 +52,7 @@ public:
 
 
     // Override get() function to return three tensors at index, the lbl, sem_lbl, and img
-    myExample get(size_t index) override;
+    CustomExample get(size_t index) override;
 
     c10::optional<size_t> size() const override final;
 
@@ -66,13 +70,9 @@ private:
     const std::string obj_name_;
     const std::string dname_;
     const int kpt_num_;
-
-
-
-
-
     //h5::File h5f_;
 };
+
 
 #endif  // R_MAP_DATASET_HPP
 

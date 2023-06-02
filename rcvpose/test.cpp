@@ -84,6 +84,7 @@ int main(int argc, char* args[])
         opts.dname = "lm";
         opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
         opts.model_dir = "models";
+        opts.batch_size = 4;
         RCVpose loader_check(opts);
 
         int test = loader_check.test_loaders();

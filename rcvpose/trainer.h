@@ -24,7 +24,8 @@ private:
 	// Have to nest train_epoch function within train function due to instantiation of dataloaders
 	// This means resume training isn't currently functioning
 	//void train_epoch();
-	void validate();
+	//void validate();
+
 
 	torch::Tensor compute_r_loss(torch::Tensor pred, torch::Tensor gt);
 	Options& opts;
@@ -38,6 +39,7 @@ private:
 	int iteration;
 	int iteration_val;
 	int max_iteration;
+	int max_epoch;
 	double best_acc_mean;
 	std::string out;
 };

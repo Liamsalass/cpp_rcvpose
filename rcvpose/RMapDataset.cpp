@@ -59,11 +59,11 @@ RMapDataset::RMapDataset(
 
 
 //Overriden get method, if transform is not null, apply transform to img and lbl to return img, lbl, sem_lbl
-myExample RMapDataset::get(size_t index) {
+CustomExample RMapDataset::get(size_t index) {
 	std::string img_id = ids_[index];
 
 	// TODO:
-	//Check type of data and shape stored in radial .npy (may not be float)
+	// Check type of data and shape stored in radial .npy (may not be float)
 	std::vector<double> data;
 	std::vector<unsigned long> shape;
 	bool fortran_order;
@@ -73,16 +73,15 @@ myExample RMapDataset::get(size_t index) {
 	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> img_data;
 
 	if (dname_ == "lm") {
-
 		try {
 			// Read in image and radial distance map 
 			img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
 
-			// Check implemntation (What is fortran_order?)
+			// Check implementation (What is fortran_order?)
 			std::string npy_path = radialpath_ + img_id + ".npy";
 			npy::LoadArrayFromNumpy(npy_path, shape, fortran_order, data);
 
-			//Reshape the data to match that of the image
+			// Reshape the data to match that of the image
 			target = cv::Mat(shape[0], shape[1], CV_64FC1, data.data());
 		}
 		catch (const std::exception& e) {
@@ -93,7 +92,7 @@ myExample RMapDataset::get(size_t index) {
 	}
 	else {
 		std::cout << "couldn't find dataset named: " << dname_ << std::endl;
-		return myExample{ std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data) };
+		return CustomExample(torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})));
 	}
 
 	try {
@@ -101,10 +100,11 @@ myExample RMapDataset::get(size_t index) {
 	}
 	catch (const std::exception& e) {
 		std::cout << "Error occurred during transform: " << e.what() << std::endl;
+		return CustomExample (torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})));
 	}
-
-	return myExample{ std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data) };
+	return CustomExample(std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data));
 }
+
 
 c10::optional<size_t> RMapDataset::size() const {
 	return ids_.size();

@@ -231,8 +231,43 @@ int RCVpose::test_loaders()
         std::cerr << e.what() << '\n';
         ret = -1;
     }
+
+    try {
+        auto test_data = RData(opts.root_dataset, opts.dname, "trainall", opts.class_name , opts.kpt_num);
+        auto test_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(test_data), torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1));
+        
+        int count = 0;
+
+        for (auto& batch : *test_loader) {
+            cout << "Iteration: " << count++ << endl;
+            auto batch_size = batch.size();
+            cout << "Batch Size: " << batch_size << endl;
+            for (auto data : batch) {
+                auto img = data.data();
+                auto target = data.target();
+                auto sem_target = data.sem_target();
+           
+                cout << "Image Tensor" << endl;
+                cout << "Image size: " << img.sizes() << endl;
+
+                cout << "Sem Tensor" << endl;
+                cout << "Sem size: " << target.sizes() << endl;
+
+                cout << "Sem lbl Tensor" << endl;
+                cout << "Sem lbl size: " << sem_target.sizes() << endl;
+
+            }
+            if (count > 2)
+                break;
+        }
+    }
+    catch (const std::exception& e) {
+		std::cerr << e.what() << '\n';
+		ret = -1;
+	}
     return ret;
 }
+
 
 void RCVpose::init() {
     // Initialization of the model
@@ -314,6 +349,13 @@ bool RCVpose::can_init() {
         cout << "Error: Cannot instantiate the dataset\n" << e.what() << endl;
         can_run = false;
     }
+
+    // Ensure opts.batch_size is an even number or equal to one, and is greater than 0
+    if (opts.batch_size % 2 != 0 && opts.batch_size != 1) {
+		cout << "Warning: batch_size is not an even number or equal to one" << endl;
+		can_run = false;
+	}
+
 
     return can_run;
 }

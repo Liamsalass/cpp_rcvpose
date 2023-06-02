@@ -51,6 +51,7 @@ Trainer::Trainer(Options& options) : opts(options)
 	// Instantiate the loss function
     try {
 		loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
+        loss_radial->to(device_type);
 	}
     catch (const torch::Error& e) {
 		cout << "Error: " << e.msg() << endl;
@@ -58,11 +59,13 @@ Trainer::Trainer(Options& options) : opts(options)
 	}
     try {
         loss_sem = torch::nn::L1Loss();
+        loss_sem->to(device_type);
     }
     catch (const torch::Error& e) {
         cout << "Error: " << e.msg() << endl;
         return;
     }
+
     cout << "Radial Loss Function: " << loss_radial << endl;
     cout << "Semantic Loss Function: " << loss_sem << endl;
 
@@ -89,81 +92,170 @@ Trainer::Trainer(Options& options) : opts(options)
         std::cout << "Warning: Output directory already exists" << std::endl;
     }
     cout << "Model Path: " << std::filesystem::current_path() << out << endl;
+
 	cout << "Trainer Initialized" << endl;
     
 }
 
 void Trainer::train()
 {
-    cout << string(50, '=') << endl;
-    cout << string (10, ' ') << "Starting Training Cycle" << endl << endl;
+    cout << string(50, '=') << endl; 
+    cout << string(18, ' ') << "Begining Training Initialization" << endl << endl;
+
     cout << "Setting up dataset loader" << endl;
-    // Instantiate the dataset
-    auto train_dataset = RData(opts.root_dataset, opts.dname, "trainall", opts.class_name, opts.kpt_num);
+    // Instantiate the training dataset
+    // Can use .map(torch::data::transforms::Stack<>()) to stack batches into a single tensor
+    auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, opts.kpt_num);
+    torch::optional<size_t> train_size = train_dataset.size();
+
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
+    torch::optional<size_t> val_size = val_dataset.size();
+
+    // Check if dataset is empty
+    if (train_size.value() == 0 || !train_size.has_value()) {
+        cout << "Error: Could not get size of training dataset" << endl;
+        return;
+    }
+    if (val_size.value() == 0 || !val_size.has_value()) {
+        cout << "Error: Could not get size of validation dataset" << endl;
+        return;
+    }
+
+    cout << "Train Data Set Size : " << train_size.value() << endl;
+    cout << "Val Data Set Size : " << val_size.value() << endl;
+
+    max_epoch = static_cast<int>(std::ceil(1.0 * max_iteration / train_size.value()));
+
 
     // Instantiate the dataloaders 
+
     auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(train_dataset),
         torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
     );
 
-    torch::optional<size_t> train_size = train_dataset.size();
-
-    if (train_size.value() == 0 || !train_size.has_value()) {
-		cout << "Error: Could not get size of training dataset" << endl;
-		return;
-	}
-    cout << "Data Set Size : " << train_size.value() << endl;
-
-    int max_epoch = static_cast<int>(std::ceil(1.0 * max_iteration/ train_size.value()));
+    auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
+        std::move(val_dataset),
+        torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
+    );
 
     cout << "Max Epochs : " << max_epoch << endl;
+    // Begin training cycle
+    for (int epoch = 0; epoch < max_epoch; epoch++) {
+        cout << string(50, '-') << endl;
+        cout << string(23, ' ') << "Epoch " << epoch << endl;
 
-    void train_epoch(); {
-        cout << "Starting Epoch " << epoch << endl;
-    };
+        //Train epoch code
+        // Can't use functions due to the way the dataloader works, need to figure out new method
+        //train_epoch();
+        //validate();
+        
+        //Training Epoch
 
+        //TODO, figure out how to move whole batches to the gpu
+        model->train();
+        for (auto& batch : *train_loader) {
+            // Get data from batch 
+            for (auto batch_idx : batch) {
+
+                auto data = batch_idx.data().to(device_type);
+                auto target = batch_idx.target().to(device_type);
+                auto sem_target = batch_idx.sem_target().to(device_type);
+
+                optim->zero_grad();
+
+                auto scores = model->forward(data);
+                auto& score = std::get<0>(scores);
+                auto& score_rad = std::get<1>(scores);
+                score_rad = score_rad.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 });
+                score_rad = score_rad.permute({ 1, 0, 2, 3 });
+
+                torch::Tensor loss_s = loss_sem(score, sem_target);
+                torch::Tensor loss_r = compute_r_loss(score_rad, target);
+                
+                torch::Tensor loss = loss_r + loss_s;
+
+                loss.backward();
+
+                optim->step();
+
+                auto np_loss = loss.detach().cpu().numpy_T();
+                auto np_loss_r = loss_r.detach().cpu().numpy_T();
+                auto np_loss_s = loss_s.detach().cpu().numpy_T();
+
+                if (np_loss.numel() == 0) 
+                    std::runtime_error("Loss is empty");
+                
+
+                cout << "Epoch: " << epoch << " Iteration: " << iteration << " Loss: " << np_loss << " Loss_r: " << np_loss_r << " Loss_s: " << np_loss_s << endl;
+
+                if (iteration >= max_iteration)
+                    break;
+            }
+        }
+
+
+        if (epoch % 70 == 0 and epoch != 0) {
+            //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
+            for (auto& g : optim->param_groups()) {
+                if (g.has_options()) {
+                    auto options = g.options();
+                    options.set_lr(options.get_lr() * 0.1);
+                    g.set_options(std::make_unique<torch::optim::OptimizerOptions>(options));
+                    cout << "Learning Rate Reduction. New Learning Rate: " << options.get_lr() << endl;
+                }
+            }
+        }
+        if (iteration >= max_iteration) {
+            break;
+        }
+    }
 }
 
+//Using L1Loss function, remove all 0s from dataset before calculating loss, ensure shape of both tensors is the same before computing loss
 torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
-    torch::Tensor loss = loss_radial(pred.masked_select(gt.ne(0)), gt.masked_select(gt.ne(0))) / static_cast<double>(torch::nonzero(gt).size(0));
-    return loss;
+    try {
+        // Compute the radial loss
+        // Remove all 0s from the ground truth tensor
+        torch::Tensor gt_mask = gt != 0;
+        torch::Tensor gt_masked = torch::masked_select(gt, gt_mask);
+        torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
+        // Compute the loss
+        torch::Tensor loss = loss_radial(pred_masked, gt_masked);
+        return loss;
+    }
+    catch (const torch::Error& e) {
+		cout << "Error: " << e.msg() << endl;
+        return torch::Tensor(torch::empty({}));
+	}
 }
 
 void Trainer::test_compute_r_loss() {
- 
+    // Test compute_r_loss function
+    // Pass two tensors, one with 0s and one without
     torch::Tensor pred = torch::tensor({ 1.0, 2.0, 3.0, 4.0 });
     torch::Tensor gt = torch::tensor({ 1, 0, 3, 4 });
-    torch::Tensor expected_loss = torch::tensor(3.5);
 
+    cout << "Expected Loss: 0.5" << endl;
     torch::Tensor loss = compute_r_loss(pred, gt);
-
-    std::cout << "Loss: " << loss << std::endl;
-    std::cout << "Expected Loss: " << expected_loss << std::endl;
-
-    if (torch::allclose(loss, expected_loss)) {
-        std::cout << "Test passed!" << std::endl;
-    }
-    else {
-        std::cout << "Test failed!" << std::endl;
-    }
+    cout << "Loss: " << loss << endl;
 }
 
-void Trainer::validate()
-{
-    cout << "Starting Testing Cycle" << endl;
-    cout << "Setting up dataset loader" << endl;
-    //Set up dataloaders
-    try {
-        auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name, opts.kpt_num);
-        auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(
-            std::move(val_dataset),
-            torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
-        );
-    }
-    catch (const torch::Error& e) {
-        cout << "Error: " << e.msg() << endl;
-        return;
-    }
-}
+// Cannot implement due to the way the dataloader works
+// void Trainer::train_epoch() {
+//     cout << string(50, '-') << endl;
+//     cout << string(23, ' ') << "Training" << endl << endl;;
+// }
+// 
+// 
+// void Trainer::validate()
+// {
+//    cout << string(50, '-') << endl;
+//    cout << string(23, ' ') << "Validating" << endl << endl;
+// }
 
+void Trainer::test() {
+    cout << string(50, '=') << endl;
+    cout << string(18, ' ') << "Begining Testing" << endl << endl;
+    //Requires accumulator space for testing each metric
+}

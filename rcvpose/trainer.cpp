@@ -10,12 +10,15 @@ Trainer::Trainer(Options& options) : opts(options)
 
     bool use_cuda = torch::cuda::is_available();
     device_type = use_cuda ? torch::kCUDA : torch::kCPU;
+    torch::Device device(device_type);
     cout << "Using " << (use_cuda ? "CUDA" : "CPU") << endl;
     cout << "Setting up model" << endl;
     // Instantiate the model
     try {
         model = DenseFCNResNet152(3, 2);
-        model->to(device_type);
+        //model->to(device);
+        model->to(torch::kCPU);
+        cout << "Model initialized " << model->name() << endl;
         // Data parallelization not working
         //if (torch::cuda::device_count() > 1) {
         //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
@@ -51,7 +54,9 @@ Trainer::Trainer(Options& options) : opts(options)
 	// Instantiate the loss function
     try {
 		loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
-        loss_radial->to(device_type);
+        loss_radial->to(torch::kCPU);
+
+        //loss_radial->to(device);
 	}
     catch (const torch::Error& e) {
 		cout << "Error: " << e.msg() << endl;
@@ -59,7 +64,8 @@ Trainer::Trainer(Options& options) : opts(options)
 	}
     try {
         loss_sem = torch::nn::L1Loss();
-        loss_sem->to(device_type);
+        loss_sem->to(torch::kCPU);
+        //loss_sem->to(device);
     }
     catch (const torch::Error& e) {
         cout << "Error: " << e.msg() << endl;
@@ -101,7 +107,7 @@ void Trainer::train()
 {
     cout << string(50, '=') << endl; 
     cout << string(18, ' ') << "Begining Training Initialization" << endl << endl;
-
+    torch::Device device(device_type);
     cout << "Setting up dataset loader" << endl;
     // Instantiate the training dataset
     // Can use .map(torch::data::transforms::Stack<>()) to stack batches into a single tensor
@@ -152,48 +158,142 @@ void Trainer::train()
         
         //Training Epoch
 
+
+        // ========================================================================================== \\
         //TODO, figure out how to move whole batches to the gpu
         model->train();
-        for (auto& batch : *train_loader) {
-            // Get data from batch 
-            for (auto batch_idx : batch) {
+        for (const auto& batch : *train_loader) {
 
-                auto data = batch_idx.data().to(device_type);
-                auto target = batch_idx.target().to(device_type);
-                auto sem_target = batch_idx.sem_target().to(device_type);
+            std::vector<torch::Tensor> batch_data;
+            std::vector<torch::Tensor> batch_target;
+            std::vector<torch::Tensor> batch_sem_target;
 
-                optim->zero_grad();
-
-                auto scores = model->forward(data);
-                auto& score = std::get<0>(scores);
-                auto& score_rad = std::get<1>(scores);
-                score_rad = score_rad.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 });
-                score_rad = score_rad.permute({ 1, 0, 2, 3 });
-
-                torch::Tensor loss_s = loss_sem(score, sem_target);
-                torch::Tensor loss_r = compute_r_loss(score_rad, target);
-                
-                torch::Tensor loss = loss_r + loss_s;
-
-                loss.backward();
-
-                optim->step();
-
-                auto np_loss = loss.detach().cpu().numpy_T();
-                auto np_loss_r = loss_r.detach().cpu().numpy_T();
-                auto np_loss_s = loss_s.detach().cpu().numpy_T();
-
-                if (np_loss.numel() == 0) 
-                    std::runtime_error("Loss is empty");
-                
-
-                cout << "Epoch: " << epoch << " Iteration: " << iteration << " Loss: " << np_loss << " Loss_r: " << np_loss_r << " Loss_s: " << np_loss_s << endl;
-
-                if (iteration >= max_iteration)
-                    break;
+            for (const auto& example : batch) {
+                batch_data.push_back(example.data());
+                batch_target.push_back(example.target());
+                batch_sem_target.push_back(example.sem_target());
             }
+            //Print info about the tensors
+            std::cout << "Batch Data Shape: " << batch_data[0].sizes() << std::endl;
+            std::cout << "Batch Target Shape: " << batch_target[0].sizes() << std::endl;
+            std::cout << "Batch Semantic Target Shape: " << batch_sem_target[0].sizes() << std::endl;
+
+            //Print out the data
+            //std::cout << "Batch Data: " << batch_data[0] << std::endl;
+            //std::cout << "Batch Target: " << batch_target[0] << std::endl;
+            //std::cout << "Batch Semantic Target: " << batch_sem_target[0] << std::endl;
+
+            // Create batch tensors by stacking individual tensors
+            auto data = torch::stack(batch_data, 0); 
+            auto target = torch::stack(batch_target, 0);  
+            auto sem_target = torch::stack(batch_sem_target, 0);  
+
+            // Print info on data's shape
+            std::cout << "Data Shape: " << data.sizes() << std::endl;
+
+            optim->zero_grad();
+
+            auto scores = model->forward(data);
+            auto& score = std::get<0>(scores);
+            auto& score_rad = std::get<1>(scores);
+            score_rad = score_rad.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 });
+            score_rad = score_rad.permute({ 1, 0, 2, 3 });
+
+            torch::Tensor loss_s = loss_sem(score, sem_target);
+            torch::Tensor loss_r = compute_r_loss(score_rad, target);
+
+            torch::Tensor loss = loss_r + loss_s;
+
+            loss.backward();
+
+            optim->step();
+
+            auto np_loss = loss.detach().cpu().numpy_T();
+            auto np_loss_r = loss_r.detach().cpu().numpy_T();
+            auto np_loss_s = loss_s.detach().cpu().numpy_T();
+
+            if (np_loss.numel() == 0)
+                std::runtime_error("Loss is empty");
+
+            cout << "Epoch: " << epoch << " Iteration: " << iteration << " Loss: " << np_loss << " Loss_r: " << np_loss_r << " Loss_s: " << np_loss_s << endl;
+
+            if (iteration >= max_iteration)
+                break;
         }
 
+
+
+
+        // ========================================================================================== \\
+        //Validation Epoch
+        model->eval();
+        float val_loss = 0;
+        torch::NoGradGuard no_grad;
+        for (const auto& batch : *val_loader) {
+            // Extract data, target, and sem_target from batch
+            std::vector<torch::Tensor> batch_data;
+            std::vector<torch::Tensor> batch_target;
+            std::vector<torch::Tensor> batch_sem_target;
+
+            for (const auto& example : batch) {
+                batch_data.push_back(example.data());
+                batch_target.push_back(example.target());
+                batch_sem_target.push_back(example.sem_target());
+            }
+
+            // Create batch tensors by stacking individual tensors
+            auto img = torch::stack(batch_data, 0);  
+            auto target = torch::stack(batch_target, 0);
+            auto sem_target = torch::stack(batch_sem_target, 0);  
+
+            // Pass the batch tensors to the GPU if needed
+            // auto img = data.to(device);
+            // auto target = target.to(device);
+            // auto sem_target = sem_target.to(device);
+
+            auto output = model->forward(img);
+            auto score = std::get<0>(output);
+            auto score_rad = std::get<1>(output);
+
+            auto loss_s = loss_sem(score, sem_target);
+            auto loss_r = compute_r_loss(score_rad, target);
+            auto loss = loss_r + loss_s;
+
+            if (loss.numel() == 0)
+                std::runtime_error("Loss is empty");
+
+            val_loss += loss.item<float>();
+
+            iteration_val++;
+        }
+
+
+        val_loss /= val_size.value();
+        float mean_acc = val_loss;
+        bool is_best = mean_acc < best_acc_mean;
+        if (is_best) {
+            best_acc_mean = mean_acc;
+        }
+
+        std::string save_name = "ckpt.pth.tar";
+
+        //Figuere out save functions
+        //torch::serialize::OutputArchive output_archive;
+        //output_archive.write("epoch", epoch);
+        //output_archive.write("iteration", iteration);
+        //output_archive.write("arch", model->name());
+        //optim->save(output_archive);
+        //model->save(output_archive);
+        //output_archive.write("best_acc_mean", best_acc_mean);
+        //output_archive.write("loss", val_loss);
+        //
+        //torch::save(output_archive, out + "/" + save_name);
+        //
+        //if (is_best) {
+        //    std::string model_best_path = out + "/model_best.pth.tar";
+        //    std::string save_path = out + "/" + save_name;
+        //    std::filesystem::copy_file(save_path, model_best_path, std::filesystem::copy_options::overwrite_existing);
+        //}
 
         if (epoch % 70 == 0 && epoch != 0) {
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);

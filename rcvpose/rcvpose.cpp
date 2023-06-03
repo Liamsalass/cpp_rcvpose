@@ -132,104 +132,11 @@ int RCVpose::test_loaders()
         torch::optional dataset_size = test.size();
         cout << "Dataset size: " << dataset_size.value() << endl;
         cv::Mat img = test.get_img(0);
-
-        cout << string(50, '=') << endl;
-        cout << "Image Data" << endl;
-        cout << "Image size: " << img.size() << endl;
-        cout << "Image type: " << img.type() << endl;
-        cout << "Image channels: " << img.channels() << endl;
-        cout << "Image depth: " << img.depth() << endl;
-        cout << "Image dims: " << img.dims << endl;
-        cout << "Image total: " << img.total() << endl;
-
-        // Add additional print statements for image information
-        cout << "Image width: " << img.cols << endl;
-        cout << "Image height: " << img.rows << endl;
-        cout << "Image element size in bytes: " << img.elemSize() << endl;
-        cout << "Image total number of elements: " << img.total() << endl;
-        cout << "Image step size (in bytes): " << img.step << endl;
-        cout << "Image step size (in pixels): " << img.step1() << endl;
-
-        cv::Mat target = test.get_target(0);
-        cout << string(50, '=') << endl;
-        cout << "Target Data" << endl;
-        cout << "Target size: " << target.size() << endl;
-        cout << "Target type: " << target.type() << endl;
-        cout << "Target channels: " << target.channels() << endl;
-        cout << "Target depth: " << target.depth() << endl;
-        cout << "Target dims: " << target.dims << endl;
-        cout << "Target total: " << target.total() << endl;
-
-        // Add additional print statements for target information
-        cout << "Target width: " << target.cols << endl;
-        cout << "Target height: " << target.rows << endl;
-        cout << "Target element size in bytes: " << target.elemSize() << endl;
-        cout << "Target total number of elements: " << target.total() << endl;
-        cout << "Target step size (in bytes): " << target.step << endl;
-        cout << "Target step size (in pixels): " << target.step1() << endl;
-
-
-
-        // Apply Transform
-        cout << string(50, '=') << endl;
-        cout << "Testing Transform Function" << endl;
-        std::tuple < torch::Tensor, torch::Tensor, torch::Tensor> transform = test.transform(img, target);
-        torch::Tensor img_tensor = std::get<0>(transform);
-        torch::Tensor lbl_tensor = std::get<1>(transform);
-        torch::Tensor sem_lbl_tensor = std::get<2>(transform);
-
-        //Print info about tensors:
-        cout << "Image Tensor" << endl;
-        cout << "Image size: " << img_tensor.sizes() << endl;
-        cout << "Image type: " << img_tensor.dtype() << endl;
-        cout << "Image device: " << img_tensor.device() << endl;
-        cout << "Image layout: " << img_tensor.layout() << endl;
-        cout << "Image requires grad: " << img_tensor.requires_grad() << endl;
-        cout << "Image grad: " << img_tensor.grad() << endl;
-        cout << "Image grad_fn: " << img_tensor.grad_fn() << endl;
-        cout << "Image is_leaf: " << img_tensor.is_leaf() << endl;
-        cout << "Image is_cuda: " << img_tensor.is_cuda() << endl;
-        cout << "Image is_sparse: " << img_tensor.is_sparse() << endl;
-        cout << "Image is_contiguous: " << img_tensor.is_contiguous() << endl;
-        cout << "Image numel: " << img_tensor.numel() << endl;
-        cout << "Image ndimension: " << img_tensor.ndimension() << endl;
-        cout << "Image element_size: " << img_tensor.element_size() << endl << endl;
-
-        cout << "lbl tensor" << endl;
-        cout << "lbl size: " << lbl_tensor.sizes() << endl;
-        cout << "lbl type: " << lbl_tensor.dtype() << endl;
-        cout << "lbl device: " << lbl_tensor.device() << endl;
-        cout << "lbl layout: " << lbl_tensor.layout() << endl;
-        cout << "lbl requires grad: " << lbl_tensor.requires_grad() << endl;
-        cout << "lbl grad: " << lbl_tensor.grad() << endl;
-        cout << "lbl grad_fn: " << lbl_tensor.grad_fn() << endl;
-        cout << "lbl is_leaf: " << lbl_tensor.is_leaf() << endl;
-        cout << "lbl is_cuda: " << lbl_tensor.is_cuda() << endl;
-        cout << "lbl is_sparse: " << lbl_tensor.is_sparse() << endl;
-        cout << "lbl is_contiguous: " << lbl_tensor.is_contiguous() << endl;
-        cout << "lbl numel: " << lbl_tensor.numel() << endl;
-        cout << "lbl ndimension: " << lbl_tensor.ndimension() << endl;
-        cout << "lbl element_size: " << lbl_tensor.element_size() << endl << endl;
-
-        cout << "sem lbl tensor" << endl;
-        cout << "sem lbl size: " << sem_lbl_tensor.sizes() << endl;
-        cout << "sem lbl type: " << sem_lbl_tensor.dtype() << endl;
-        cout << "sem lbl device: " << sem_lbl_tensor.device() << endl;
-        cout << "sem lbl layout: " << sem_lbl_tensor.layout() << endl;
-        cout << "sem lbl requires grad: " << sem_lbl_tensor.requires_grad() << endl;
-        cout << "sem lbl grad: " << sem_lbl_tensor.grad() << endl;
-        cout << "sem lbl grad_fn: " << sem_lbl_tensor.grad_fn() << endl;
-        cout << "sem lbl is_leaf: " << sem_lbl_tensor.is_leaf() << endl;
-        cout << "sem lbl is_cuda: " << sem_lbl_tensor.is_cuda() << endl;
-        cout << "sem lbl is_sparse: " << sem_lbl_tensor.is_sparse() << endl;
-        cout << "sem lbl is_contiguous: " << sem_lbl_tensor.is_contiguous() << endl;
-        cout << "sem lbl numel: " << sem_lbl_tensor.numel() << endl;
-        cout << "sem lbl ndimension: " << sem_lbl_tensor.ndimension() << endl;
-        cout << "sem lbl element_size: " << sem_lbl_tensor.element_size() << endl << endl;
+        cv::imshow("test", img);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
-        ret = -1;
+		ret = -1;
     }
 
     try {

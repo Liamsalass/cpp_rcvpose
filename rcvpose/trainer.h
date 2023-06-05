@@ -8,7 +8,10 @@
 #include <iostream>
 #include <filesystem>
 #include <torch/nn.h>
+#include <torch/optim.h>
 #include <torch/torch.h>
+#include <torch/script.h>
+#include <torch/serialize.h>
 #include "models/denseFCNResNet152.h"
 #include <iostream>
 #include <iomanip>

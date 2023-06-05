@@ -42,6 +42,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 		img = img.colRange(0, img.cols - 1);
 
 	// Transpose the matrices
+	//std::cout << img.size() << std::endl;
+	//std::cout << target.size() << std::endl;
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
 

@@ -13,58 +13,95 @@ Trainer::Trainer(Options& options) : opts(options)
     torch::Device device(device_type);
     cout << "Using " << (use_cuda ? "CUDA" : "CPU") << endl;
     cout << "Setting up model" << endl;
-    // Instantiate the model
-    try {
-        model = DenseFCNResNet152(3, 2);
-        model->to(device);
-        //model->to(torch::kCPU);
-        cout << "Model initialized " << model->name() << endl;
+
+    if (!opts.resume_train) {
+        // Instantiate the model
+        try {
+            model = DenseFCNResNet152(3, 2);
+            model->to(device);
+            //model->to(torch::kCPU);
+            cout << "Model initialized " << model->name() << endl;
+
+            // Data parallelization not working
+            //if (torch::cuda::device_count() > 1) {
+            //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
+            //    model = torch::nn::DataParallel(model, { 0, 1 });
+            //
+            //}
+        }
+        catch (const torch::Error& e) {
+            cout << "Error: " << e.msg() << endl;
+            return;
+        }
+        cout << "Setting up optimizer" << endl;
+        // Instantiate the optimizer
+        try {
+            if (opts.optim == "adam") {
+                optim  = new torch::optim::Adam(model->parameters(), torch::optim::AdamOptions(opts.initial_lr));
+
+            }
+            else if (opts.optim == "sgd") {
+                optim = new torch::optim::SGD(model->parameters(), torch::optim::SGDOptions(opts.initial_lr));
+            }
+            else {
+                cout << "Error: Invalid optimizer" << endl;
+                return;
+            }
+        }
+        catch (const torch::Error& e) {
+            cout << "Error: " << e.msg() << endl;
+            return;
+        }
+
+        epoch = 0;
         
-        // Data parallelization not working
-        //if (torch::cuda::device_count() > 1) {
-        //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
-        //    model = torch::nn::DataParallel(model, { 0, 1 });
-        //
-        //}
+    } 
+    else {
+        // Load model from checkpoint
+        cout << "Loading model from checkpoint" << endl;
+        CheckpointLoader loader(opts.model_dir);
+        epoch = loader.getEpoch();
+        cout << "Epoch: " << epoch << endl;
+        model = loader.getModel();
+        model->to(device);
+        cout << "Model loaded" << endl;
+        optim = loader.getOptimizer(); 
+        //std::vector<double> lr_list = loader.getLrList();
+        //torch::autograd::variable_list lr_list_var;
+        //for (int i = 0; i < lr_list.size(); i++) {
+		//	lr_list_var.push_back(torch::autograd::make_variable(torch::tensor(lr_list[i])));
+		//}
+        optim->parameters() = model->parameters();
+
+        //Set the lrs
+        //optim->add_param_group(torch::optim::OptimizerParamGroup(lr_list_var));
+
+        cout << "Optimizer loaded" << endl;
+
+        //Print out optimizer state:
+        for (auto& group : optim->param_groups()) {
+            cout << "Group: " << endl;
+			for (auto& p : group.params()) {
+				cout << "Param: " << p << endl;
+			}
+		}
+
     }
-    catch (const torch::Error& e) {
-		cout << "Error: " << e.msg() << endl;
-		return;
-	}
-    cout << "Setting up optimizer" << endl;
-	// Instantiate the optimizer
+
+
+    cout << "Setting up loss function" << endl;
+
+    // Instantiate the loss function
     try {
-        if (opts.optim == "adam") {
-			optim = new torch::optim::Adam(model->parameters(), torch::optim::AdamOptions(opts.initial_lr));
-            
-		}
-        else if (opts.optim == "sgd") {
-			optim = new torch::optim::SGD(model->parameters(), torch::optim::SGDOptions(opts.initial_lr));
-		}
-        else {
-			cout << "Error: Invalid optimizer" << endl;
-			return;
-		}
-	}
-    catch (const torch::Error& e) {
-		cout << "Error: " << e.msg() << endl;
-		return;
-	}
-
-
-	cout << "Setting up loss function" << endl;
-
-	// Instantiate the loss function
-    try {
-		loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
+        loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
         //loss_radial->to(torch::kCPU);
 
         loss_radial->to(device);
-	}
+    }
     catch (const torch::Error& e) {
-		cout << "Error: " << e.msg() << endl;
-		return;
-	}
+        cout << "Error: " << e.msg() << endl;
+        return;
+    }
     try {
         loss_sem = torch::nn::L1Loss();
         //loss_sem->to(torch::kCPU);
@@ -75,15 +112,8 @@ Trainer::Trainer(Options& options) : opts(options)
         return;
     }
 
-    cout << "Radial Loss Function: " << loss_radial << endl;
-    cout << "Semantic Loss Function: " << loss_sem << endl;
-
-	cout << "Setting up training parameters" << endl;
-
-	// Set up training parameters
-	epoch = 0;
-	iteration = 0;
-	iteration_val = 0;
+    iteration = 0;
+    iteration_val = 0;
     max_iteration = opts.cfg.at("max_iteration")[0];
     best_acc_mean = std::numeric_limits<double>::infinity();
 
@@ -103,7 +133,8 @@ Trainer::Trainer(Options& options) : opts(options)
     }
     cout << "Model Path: " << std::filesystem::current_path() << out << endl;
 
-	cout << "Trainer Initialized" << endl;
+    cout << "Trainer Initialized" << endl;
+
     
 }
 
@@ -218,11 +249,10 @@ void Trainer::train()
                 std::runtime_error("Loss is empty");
 
         }
-        cout << "\r" << string(100, ' ') << endl;
+        cout << "\r" << string(100, ' ');
         auto train_end = std::chrono::steady_clock::now();
         auto train_duration = std::chrono::duration_cast<std::chrono::milliseconds>(train_end - train_start);
         cout << "\rTraining Time: " << train_duration.count()/1000 << " s" << endl;
-        cout.flush();
 
         // ========================================================================================== \\
         //Validation Epoch
@@ -272,7 +302,7 @@ void Trainer::train()
             val_loss += loss.item<float>();
 
         }
-        cout << "\r" << string(100, ' ') << endl;
+        cout << "\r" << string(100, ' ');
         auto val_end = std::chrono::steady_clock::now();
         auto val_duration = std::chrono::duration_cast<std::chrono::milliseconds>(val_end - val_start);
         cout << "\rValidation Time: " << val_duration.count()/1000 << " s" << endl;
@@ -286,27 +316,49 @@ void Trainer::train()
             best_acc_mean = mean_acc;
         
 
-        std::string save_name = "ckpt.pth.tar";
+
 
         cout << "Iterations: " << iteration << endl;
 
-        //Figuere out save functions
-        //torch::serialize::OutputArchive output_archive;
-        //output_archive.write("epoch", epoch);
-        //output_archive.write("iteration", iteration);
-        //output_archive.write("arch", model->name());
-        //optim->save(output_archive);
-        //model->save(output_archive);
-        //output_archive.write("best_acc_mean", best_acc_mean);
-        //output_archive.write("loss", val_loss);
-        //
-        //torch::save(output_archive, out + "/" + save_name);
-        //
-        //if (is_best) {
-        //    std::string model_best_path = out + "/model_best.pth.tar";
-        //    std::string save_path = out + "/" + save_name;
-        //    std::filesystem::copy_file(save_path, model_best_path, std::filesystem::copy_options::overwrite_existing);
+        //Save epoch number, iteration number, model name, best accuracy, and loss
+        torch::serialize::OutputArchive output_model_info;
+        output_model_info.write("epoch", epoch);
+        output_model_info.write("iteration", iteration);
+        output_model_info.write("arch", model->name());
+        output_model_info.write("best_acc_mean", best_acc_mean);
+        output_model_info.write("loss", val_loss);
+        output_model_info.write("optimizer", opts.optim);
+        
+        std::vector<double> lr_list;
+        //Save optimizer learning rates
+        //for (auto& optim_pg : optim->param_groups()) {
+        //    auto options = optim_pg.options();
+        //    auto lr = options.get_lr();
+        //    lr_list.push_back(lr);
         //}
+        //output_model_info.write("lr_list", lr_list);
+        std::string epoch_str = std::to_string(epoch);
+        std::string save_location = out + "/" + epoch_str + "/info";
+        output_model_info.save_to(save_location);
+        
+       
+        //Save model
+        torch::serialize::OutputArchive output_model_archive;
+        model->to(torch::kCPU);
+        model->save(output_model_archive);
+        model->to(device);
+        output_model_archive.save_to(out + "/" + epoch_str + "/model");
+        //Save optimizer
+        torch::serialize::OutputArchive output_optim_archive;
+        optim->save(output_optim_archive);
+        output_optim_archive.save_to(out + "/optim");
+
+       
+        if (is_best) {
+            std::string model_best_path = out + "/model_best";
+            std::string save_path = out + "/" + epoch_str;
+            std::filesystem::copy_file(save_path, model_best_path, std::filesystem::copy_options::overwrite_existing);
+        }
 
         if (epoch % 70 == 0 && epoch != 0) {
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);

@@ -16,9 +16,10 @@ Trainer::Trainer(Options& options) : opts(options)
     // Instantiate the model
     try {
         model = DenseFCNResNet152(3, 2);
-        //model->to(device);
-        model->to(torch::kCPU);
+        model->to(device);
+        //model->to(torch::kCPU);
         cout << "Model initialized " << model->name() << endl;
+        
         // Data parallelization not working
         //if (torch::cuda::device_count() > 1) {
         //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
@@ -35,6 +36,7 @@ Trainer::Trainer(Options& options) : opts(options)
     try {
         if (opts.optim == "adam") {
 			optim = new torch::optim::Adam(model->parameters(), torch::optim::AdamOptions(opts.initial_lr));
+            
 		}
         else if (opts.optim == "sgd") {
 			optim = new torch::optim::SGD(model->parameters(), torch::optim::SGDOptions(opts.initial_lr));
@@ -51,12 +53,13 @@ Trainer::Trainer(Options& options) : opts(options)
 
 
 	cout << "Setting up loss function" << endl;
+
 	// Instantiate the loss function
     try {
 		loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
-        loss_radial->to(torch::kCPU);
+        //loss_radial->to(torch::kCPU);
 
-        //loss_radial->to(device);
+        loss_radial->to(device);
 	}
     catch (const torch::Error& e) {
 		cout << "Error: " << e.msg() << endl;
@@ -64,8 +67,8 @@ Trainer::Trainer(Options& options) : opts(options)
 	}
     try {
         loss_sem = torch::nn::L1Loss();
-        loss_sem->to(torch::kCPU);
-        //loss_sem->to(device);
+        //loss_sem->to(torch::kCPU);
+        loss_sem->to(device);
     }
     catch (const torch::Error& e) {
         cout << "Error: " << e.msg() << endl;
@@ -76,6 +79,7 @@ Trainer::Trainer(Options& options) : opts(options)
     cout << "Semantic Loss Function: " << loss_sem << endl;
 
 	cout << "Setting up training parameters" << endl;
+
 	// Set up training parameters
 	epoch = 0;
 	iteration = 0;
@@ -107,6 +111,7 @@ void Trainer::train()
 {
     cout << string(50, '=') << endl; 
     cout << string(18, ' ') << "Begining Training Initialization" << endl << endl;
+
     torch::Device device(device_type);
     cout << "Setting up dataset loader" << endl;
     // Instantiate the training dataset
@@ -184,9 +189,9 @@ void Trainer::train()
             //std::cout << "Batch Semantic Target: " << batch_sem_target[0] << std::endl;
 
             // Create batch tensors by stacking individual tensors
-            auto data = torch::stack(batch_data, 0); 
-            auto target = torch::stack(batch_target, 0);  
-            auto sem_target = torch::stack(batch_sem_target, 0);  
+            auto data = torch::stack(batch_data, 0).to(device); 
+            auto target = torch::stack(batch_target, 0).to(device);
+            auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
             // Print info on data's shape
             std::cout << "Data Shape: " << data.sizes() << std::endl;
@@ -242,9 +247,9 @@ void Trainer::train()
             }
 
             // Create batch tensors by stacking individual tensors
-            auto img = torch::stack(batch_data, 0);  
-            auto target = torch::stack(batch_target, 0);
-            auto sem_target = torch::stack(batch_sem_target, 0);  
+            auto img = torch::stack(batch_data, 0).to(device);
+            auto target = torch::stack(batch_target, 0).to(device);
+            auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
             // Pass the batch tensors to the GPU if needed
             // auto img = data.to(device);
@@ -271,9 +276,9 @@ void Trainer::train()
         val_loss /= val_size.value();
         float mean_acc = val_loss;
         bool is_best = mean_acc < best_acc_mean;
-        if (is_best) {
+        if (is_best) 
             best_acc_mean = mean_acc;
-        }
+        
 
         std::string save_name = "ckpt.pth.tar";
 

@@ -27,9 +27,6 @@ private:
 	//void train_epoch();
 	//void validate();
 
-
-
-
 	torch::Tensor compute_r_loss(torch::Tensor pred, torch::Tensor gt);
 	Options& opts;
 	DenseFCNResNet152 model;

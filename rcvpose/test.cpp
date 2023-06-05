@@ -36,16 +36,19 @@ int main(int argc, char* args[])
     if (lib_check) {
         std::cout << std::string(50, '=') << std::endl;
         std::cout << "Testing Torch Lib:" << std::endl;
-        torch::Tensor tensor = torch::rand({ 500, 600 });
+        torch::Tensor tensor1 = torch::rand({ 500, 600 });
+        torch::Tensor tensor2 = torch::rand({ 500, 600 });
 
         // Convert tensor to cv::Mat
-        int rows = tensor.size(0);
-        int cols = tensor.size(1);
-        cv::Mat mat(rows, cols, CV_32FC1, tensor.data_ptr<float>());
+        int rows = tensor1.size(0);
+        int cols = tensor1.size(1);
+        cv::Mat mat(rows, cols, CV_32FC1, tensor1.data_ptr<float>());
         // Display the matrix as an image
         cv::imshow("mat", mat);
         cv::waitKey(0);
 
+        torch::Tensor stacked = torch::stack({ tensor1, tensor2 }, 0);
+        cout << stacked.sizes() << endl;
         std::cout << std::string(50, '=') << std::endl;
     }
     if (dev_check) {

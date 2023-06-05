@@ -34,7 +34,7 @@ Options training_options() {
 int main(int argc, char* args[])
 {
     if (lib_check) {
-        std::cout << std::string(50, '=') << std::endl;
+        std::cout << std::string(100, '=') << std::endl;
         std::cout << "Testing Torch Lib:" << std::endl;
         torch::Tensor tensor1 = torch::rand({ 500, 600 });
         torch::Tensor tensor2 = torch::rand({ 500, 600 });
@@ -52,7 +52,7 @@ int main(int argc, char* args[])
         std::cout << std::string(50, '=') << std::endl;
     }
     if (dev_check) {
-        cout << string(50, '=') << endl;
+        cout << string(100, '=') << endl;
         cout << "Testing if torch can access cuda device" << endl;
         torch::Device device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
         cout << "Current device: " << device << endl;
@@ -62,7 +62,7 @@ int main(int argc, char* args[])
         RCVpose rcv;
         rcv.summary();
 
-        cout << string(50, '=') << endl;
+        cout << string(100, '=') << endl;
         Options opts;
         opts.gpu_id = 0;
         opts.dname = "lm";
@@ -79,7 +79,7 @@ int main(int argc, char* args[])
         RCVpose rcv2(opts);
     }
     if (ldr_check) {
-        cout << string(50, '=') << endl;
+        cout << string(100, '=') << endl;
         cout << "Testing Loaders" << endl;
 
         Options opts;
@@ -99,8 +99,8 @@ int main(int argc, char* args[])
 
     }
     if (trn_check) {
-        cout << string(50, '=') << endl;
-        cout << string(17, ' ') << "Testing Training" << endl;
+        cout << string(100, '=') << endl;
+        cout << string(40, ' ') << "Testing Training" << endl;
         RCVpose rcv(training_options());
         rcv.train();
     }

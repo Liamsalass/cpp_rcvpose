@@ -4,8 +4,8 @@ using namespace std;
 
 Trainer::Trainer(Options& options) : opts(options)
 {
-    cout << string(50, '=') << endl;
-    cout << string (12, ' ') << "Initializing Trainer" << endl << endl;
+    cout << string(100, '=') << endl;
+    cout << string (34, ' ') << "Initializing Trainer" << endl << endl;
  
 
     bool use_cuda = torch::cuda::is_available();
@@ -109,8 +109,8 @@ Trainer::Trainer(Options& options) : opts(options)
 
 void Trainer::train()
 {
-    cout << string(50, '=') << endl; 
-    cout << string(18, ' ') << "Begining Training Initialization" << endl << endl;
+    cout << string(100, '=') << endl; 
+    cout << string(24, ' ') << "Begining Training Initialization" << endl << endl;
 
     torch::Device device(device_type);
     cout << "Setting up dataset loader" << endl;
@@ -137,7 +137,6 @@ void Trainer::train()
 
     max_epoch = static_cast<int>(std::ceil(1.0 * max_iteration / train_size.value()));
 
-
     // Instantiate the dataloaders 
 
     auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
@@ -153,8 +152,8 @@ void Trainer::train()
     cout << "Max Epochs : " << max_epoch << endl;
     // Begin training cycle
     for (int epoch = 0; epoch < max_epoch; epoch++) {
-        cout << string(50, '=') << endl;
-        cout << string(23, ' ') << "Epoch " << epoch << endl;
+        cout << string(100, '-') << endl;
+        cout << string(43, ' ') << "Epoch " << epoch << endl;
 
         //Train epoch code
         // Can't use functions due to the way the dataloader works, need to figure out new method
@@ -165,7 +164,7 @@ void Trainer::train()
 
         // ========================================================================================== \\
         //TODO, figure out how to move whole batches to the gpu
-        cout << string(35, ' ') << "Training Epoch" << endl;
+        cout << "Training Epoch" << endl;
         int count = 0;
         model->train();
         auto train_start = std::chrono::steady_clock::now();
@@ -173,7 +172,7 @@ void Trainer::train()
             count = batch.size() + count;
             iteration = batch.size() + iteration;
 
-            printProgressBar(count, train_size.value(), 50);
+            printProgressBar(count, train_size.value(), 80);
 
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
@@ -219,15 +218,15 @@ void Trainer::train()
                 std::runtime_error("Loss is empty");
 
         }
-        cout << "\r" << string(60, ' ') << endl;
+        cout << "\r" << string(100, ' ') << endl;
         auto train_end = std::chrono::steady_clock::now();
         auto train_duration = std::chrono::duration_cast<std::chrono::milliseconds>(train_end - train_start);
-        cout << "Training Time: " << train_duration.count() << " ms" << endl << endl;
-
+        cout << "\rTraining Time: " << train_duration.count()/1000 << " s" << endl;
+        cout.flush();
 
         // ========================================================================================== \\
         //Validation Epoch
-        cout << string (35, ' ') << "Validation Epoch" << endl;
+        cout << "Validation Epoch" << endl;
         model->eval();
         float val_loss = 0;
         count = 0;
@@ -237,7 +236,7 @@ void Trainer::train()
         for (const auto& batch : *val_loader) {
             count = batch.size() + count;
             iteration_val = batch.size() + iteration_val;
-            printProgressBar(count, val_size.value(), 50);
+            printProgressBar(count, val_size.value(), 80);
             // Extract data, target, and sem_target from batch
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
@@ -273,10 +272,11 @@ void Trainer::train()
             val_loss += loss.item<float>();
 
         }
-        cout << "\r" << string(60, ' ') << endl;
+        cout << "\r" << string(100, ' ') << endl;
         auto val_end = std::chrono::steady_clock::now();
         auto val_duration = std::chrono::duration_cast<std::chrono::milliseconds>(val_end - val_start);
-        cout << "Validation Time: " << val_duration.count() << " ms" << endl << endl;
+        cout << "\rValidation Time: " << val_duration.count()/1000 << " s" << endl;
+        cout.flush();
 
         val_loss /= val_size.value();
         float mean_acc = val_loss;
@@ -287,6 +287,8 @@ void Trainer::train()
         
 
         std::string save_name = "ckpt.pth.tar";
+
+        cout << "Iterations: " << iteration << endl;
 
         //Figuere out save functions
         //torch::serialize::OutputArchive output_archive;

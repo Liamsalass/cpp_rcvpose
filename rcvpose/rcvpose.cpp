@@ -51,8 +51,8 @@ void RCVpose::summary() {
     torch::Device device(device_type);
     // Print a line of '=' with "Summary" in the middle
     cout << endl;
-    cout << string(50, '=') << endl;
-    cout << string(17, ' ') << "Summary" << endl << endl;
+    cout << string(100, '=') << endl;
+    cout << string(45, ' ') << "Summary" << endl << endl;
 
     // Print the options
     cout << "Name: " << typeid(*this).name() << endl;
@@ -88,7 +88,7 @@ void RCVpose::train()
     try {
         Trainer trainer(opts);
 
-        trainer.test_compute_r_loss();
+        //trainer.test_compute_r_loss();
 
         trainer.train();
     }

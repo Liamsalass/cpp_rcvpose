@@ -18,7 +18,8 @@ Options training_options() {
 	Options opts;
 	opts.gpu_id = 0;
 	opts.dname = "lm";
-	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
+	opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113";
+    //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
 	opts.model_dir = "test_models";
 	opts.resume_train = false;
 	opts.optim = "adam";

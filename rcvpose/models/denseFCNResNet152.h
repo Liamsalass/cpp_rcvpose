@@ -3,6 +3,7 @@
 
 #include <torch/torch.h>
 #include <torch/serialize/tensor.h>
+#include <torch/nn/functional.h>
 #include "bottleneck.h"
 
 class DenseFCNResNet152Impl : public torch::nn::Module {

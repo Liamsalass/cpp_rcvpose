@@ -10,6 +10,9 @@
 #include <torch/nn.h>
 #include <torch/torch.h>
 #include "models/denseFCNResNet152.h"
+#include <iostream>
+#include <iomanip>
+#include <chrono>
 
 
 class Trainer {
@@ -34,6 +37,8 @@ private:
 	torch::nn::L1Loss loss_radial;
 	torch::nn::L1Loss loss_sem;
 	torch::DeviceType device_type;
+
+	void printProgressBar(int current, int total, int width);
 
 	int epoch;
 	int iteration;

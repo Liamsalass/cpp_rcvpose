@@ -153,7 +153,7 @@ void Trainer::train()
     cout << "Max Epochs : " << max_epoch << endl;
     // Begin training cycle
     for (int epoch = 0; epoch < max_epoch; epoch++) {
-        cout << string(50, '-') << endl;
+        cout << string(50, '=') << endl;
         cout << string(23, ' ') << "Epoch " << epoch << endl;
 
         //Train epoch code
@@ -163,11 +163,17 @@ void Trainer::train()
         
         //Training Epoch
 
-
         // ========================================================================================== \\
         //TODO, figure out how to move whole batches to the gpu
+        cout << string(35, ' ') << "Training Epoch" << endl;
+        int count = 0;
         model->train();
+        auto train_start = std::chrono::steady_clock::now();
         for (const auto& batch : *train_loader) {
+            count = batch.size() + count;
+            iteration = batch.size() + iteration;
+
+            printProgressBar(count, train_size.value(), 50);
 
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
@@ -185,15 +191,11 @@ void Trainer::train()
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
             // Print info on data's shape
-            std::cout << "Input Data Shape: " << data.sizes() << std::endl;
+            //std::cout << "Input Data Shape: " << data.sizes() << std::endl;
 
             optim->zero_grad();
             // std::tuple<torch::Tensor> scores;
             auto scores = model->forward(data);
-            
-        
-
-
 
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
@@ -210,27 +212,32 @@ void Trainer::train()
             optim->step();
 
             auto np_loss = loss.detach().cpu().numpy_T();
-            auto np_loss_r = loss_r.detach().cpu().numpy_T();
-            auto np_loss_s = loss_s.detach().cpu().numpy_T();
+            //auto np_loss_r = loss_r.detach().cpu().numpy_T();
+            //auto np_loss_s = loss_s.detach().cpu().numpy_T();
 
             if (np_loss.numel() == 0)
                 std::runtime_error("Loss is empty");
 
-            cout << "Epoch: " << epoch << " Iteration: " << iteration << " Loss: " << np_loss << " Loss_r: " << np_loss_r << " Loss_s: " << np_loss_s << endl;
-
-            if (iteration >= max_iteration)
-                break;
         }
-
-
+        cout << "\r" << string(60, ' ') << endl;
+        auto train_end = std::chrono::steady_clock::now();
+        auto train_duration = std::chrono::duration_cast<std::chrono::milliseconds>(train_end - train_start);
+        cout << "Training Time: " << train_duration.count() << " ms" << endl << endl;
 
 
         // ========================================================================================== \\
         //Validation Epoch
+        cout << string (35, ' ') << "Validation Epoch" << endl;
         model->eval();
         float val_loss = 0;
+        count = 0;
         torch::NoGradGuard no_grad;
+        auto val_start = std::chrono::steady_clock::now();
+
         for (const auto& batch : *val_loader) {
+            count = batch.size() + count;
+            iteration_val = batch.size() + iteration_val;
+            printProgressBar(count, val_size.value(), 50);
             // Extract data, target, and sem_target from batch
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
@@ -251,8 +258,8 @@ void Trainer::train()
             // auto img = data.to(device);
             // auto target = target.to(device);
             // auto sem_target = sem_target.to(device);
-
             auto output = model->forward(img);
+
             auto score = std::get<0>(output);
             auto score_rad = std::get<1>(output);
 
@@ -265,12 +272,15 @@ void Trainer::train()
 
             val_loss += loss.item<float>();
 
-            iteration_val++;
         }
-
+        cout << "\r" << string(60, ' ') << endl;
+        auto val_end = std::chrono::steady_clock::now();
+        auto val_duration = std::chrono::duration_cast<std::chrono::milliseconds>(val_end - val_start);
+        cout << "Validation Time: " << val_duration.count() << " ms" << endl << endl;
 
         val_loss /= val_size.value();
         float mean_acc = val_loss;
+        cout << "Mean Loss: " << mean_acc << endl;
         bool is_best = mean_acc < best_acc_mean;
         if (is_best) 
             best_acc_mean = mean_acc;
@@ -329,6 +339,21 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
 		cout << "Error: " << e.msg() << endl;
         return torch::Tensor(torch::empty({}));
 	}
+}
+
+void Trainer::printProgressBar(int current, int total, int width)
+{
+    float progress = float(current) / float(total);
+	int barWidth = width - 7;
+	cout << "[";
+	int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+		if (i < pos) cout << "=";
+		else if (i == pos) cout << ">";
+		else cout << " ";
+	}
+	cout << "] " << int(progress * 100.0) << " %\r";
+	cout.flush();
 }
 
 void Trainer::test_compute_r_loss() {

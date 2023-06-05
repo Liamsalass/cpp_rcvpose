@@ -134,11 +134,12 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 {
 	x = conv1->forward(x);
 	x = bn1->forward(x);
+
 	auto x2s = relu(x);
 	x2s = maxpool(x2s);
 
-	x2s = block1up->forward(x);
-	x2s = block1->forward(x);
+	x2s = block1up->forward(x2s);
+	x2s = block1->forward(x2s);
 
 	auto x4s = block2up->forward(x2s);
 	x4s = block2->forward(x4s);
@@ -152,9 +153,13 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 	auto x32s = conv6->forward(x16s);
 	x32s = bn6->forward(x32s);
 	x32s = relu(x32s);
-
-	auto up = conv_up5->forward(torch::cat({ x32s, x16s }, 1));
+	std::cout << "x32s shape: " << x32s.sizes() << std::endl;
+	
+	auto cat_input = torch::cat({ x32s, x16s }, 1);
+	std::cout << "cat_input shape: " << cat_input.sizes() << std::endl;
+	auto up = conv_up5->forward(cat_input);
 	up = up5->forward(up);
+
 
 	up = conv_up4->forward(torch::cat({ up, x8s }, 1));
 	up = up4->forward(up);
@@ -178,3 +183,4 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 	return std::make_tuple(seg_pred, radial_pred);
 
 }
+

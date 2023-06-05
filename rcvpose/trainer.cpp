@@ -178,15 +178,6 @@ void Trainer::train()
                 batch_target.push_back(example.target());
                 batch_sem_target.push_back(example.sem_target());
             }
-            //Print info about the tensors
-            std::cout << "Batch Data Shape: " << batch_data[0].sizes() << std::endl;
-            std::cout << "Batch Target Shape: " << batch_target[0].sizes() << std::endl;
-            std::cout << "Batch Semantic Target Shape: " << batch_sem_target[0].sizes() << std::endl;
-
-            //Print out the data
-            //std::cout << "Batch Data: " << batch_data[0] << std::endl;
-            //std::cout << "Batch Target: " << batch_target[0] << std::endl;
-            //std::cout << "Batch Semantic Target: " << batch_sem_target[0] << std::endl;
 
             // Create batch tensors by stacking individual tensors
             auto data = torch::stack(batch_data, 0).to(device); 
@@ -194,11 +185,16 @@ void Trainer::train()
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
             // Print info on data's shape
-            std::cout << "Data Shape: " << data.sizes() << std::endl;
+            std::cout << "Input Data Shape: " << data.sizes() << std::endl;
 
             optim->zero_grad();
-
+            // std::tuple<torch::Tensor> scores;
             auto scores = model->forward(data);
+            
+        
+
+
+
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
             score_rad = score_rad.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 });

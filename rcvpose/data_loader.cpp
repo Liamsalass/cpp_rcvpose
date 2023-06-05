@@ -46,8 +46,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	cv::Mat targetTransposed = target.t();
 
 	// Create tensors from the transposed matrices
-	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
-	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.rows, targetTransposed.cols, targetTransposed.channels() }, torch::kFloat32).clone();
+	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.channels(), imgTransposed.rows, imgTransposed.cols }, torch::kFloat32).clone();
+	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.channels(), targetTransposed.rows, targetTransposed.cols }, torch::kFloat32).clone();
 
 	// Create semantic label tensor
 	torch::Tensor semLblTensor = torch::where(targetTensor > 0, torch::ones_like(targetTensor), -torch::ones_like(targetTensor));

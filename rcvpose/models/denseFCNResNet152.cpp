@@ -153,13 +153,11 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 	auto x32s = conv6->forward(x16s);
 	x32s = bn6->forward(x32s);
 	x32s = relu(x32s);
-	std::cout << "x32s shape: " << x32s.sizes() << std::endl;
 	
 	auto cat_input = torch::cat({ x32s, x16s }, 1);
-	std::cout << "cat_input shape: " << cat_input.sizes() << std::endl;
 	auto up = conv_up5->forward(cat_input);
 	up = up5->forward(up);
-
+	std::cout << "Upsize after up5: " << up.sizes() << std::endl;
 
 	up = conv_up4->forward(torch::cat({ up, x8s }, 1));
 	up = up4->forward(up);

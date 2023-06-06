@@ -338,7 +338,7 @@ void Trainer::train()
         //}
         //output_model_info.write("lr_list", lr_list);
         std::string epoch_str = std::to_string(epoch);
-        std::string save_location = out + "/" + epoch_str + "/info";
+        std::string save_location = out + + "/info";
         output_model_info.save_to(save_location);
         
        
@@ -347,7 +347,7 @@ void Trainer::train()
         model->to(torch::kCPU);
         model->save(output_model_archive);
         model->to(device);
-        output_model_archive.save_to(out + "/" + epoch_str + "/model");
+        output_model_archive.save_to(out  + "/model");
         //Save optimizer
         torch::serialize::OutputArchive output_optim_archive;
         optim->save(output_optim_archive);

@@ -44,6 +44,7 @@ private:
 	void printProgressBar(int current, int total, int width);
 
 	int epoch;
+	int starting_epoch;
 	int iteration;
 	int iteration_val;
 	int max_iteration;

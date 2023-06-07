@@ -62,6 +62,7 @@ Trainer::Trainer(Options& options) : opts(options)
         current_lr.push_back(opts.initial_lr);
 
         epoch = 0;
+        starting_epoch = 0;
         
     } 
     else {
@@ -70,6 +71,7 @@ Trainer::Trainer(Options& options) : opts(options)
             cout << "Loading model from checkpoint" << endl;
             CheckpointLoader loader(opts.model_dir + "/current");
             epoch = loader.getEpoch();
+            starting_epoch = epoch;
             cout << "Epoch: " << epoch << endl;
             model = loader.getModel();
             model->to(device);
@@ -426,7 +428,7 @@ void Trainer::train()
         cout << "Epoch Training Time: " << epoch_total_time.count() << " s" << endl;
 
         auto total_train_duration = std::chrono::duration_cast<std::chrono::seconds>(epoch_train_end - total_train_start);
-        float average_epoch_time = total_train_duration.count() / (epoch + 1);
+        float average_epoch_time = total_train_duration.count() / (epoch + 1 - starting_epoch);
         cout << "Average Time per Epoch: " << average_epoch_time << " s" << endl;
 
         epoch++;

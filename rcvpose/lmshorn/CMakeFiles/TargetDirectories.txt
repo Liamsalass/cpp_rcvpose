@@ -1,3 +1,0 @@
-/media/veracrypt1/Hatch/Project_3/dev/lmshorn/t1/CMakeFiles/rebuild_cache.dir
-/media/veracrypt1/Hatch/Project_3/dev/lmshorn/t1/CMakeFiles/edit_cache.dir
-/media/veracrypt1/Hatch/Project_3/dev/lmshorn/t1/CMakeFiles/lmshorn.dir

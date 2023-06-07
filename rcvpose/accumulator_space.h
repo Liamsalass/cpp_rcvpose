@@ -1,2 +1,16 @@
 #pragma once
-#include <open3d/geometry/PointCloud.h>
+#include <chrono>
+#include <string>
+#include "options.hpp"
+#include <unordered_map>
+#include <vector>
+#include <cmath>
+#include <iostream>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Open3D/Geometry/PointCloud.h>
+#include <open3d/io/PointCloudIO.h>
+
+
+
+void estimate_6d_pose_lm(const Options opts);

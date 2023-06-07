@@ -30,15 +30,10 @@ private:
     torch::nn::BatchNorm2d bn6;
     // Decoders
     torch::nn::Sequential conv_up5;
-    torch::nn::Upsample up5;
     torch::nn::Sequential conv_up4;
-    torch::nn::Upsample up4;
     torch::nn::Sequential conv_up3;
-    torch::nn::Upsample up3;
     torch::nn::Sequential conv_up2;
-    torch::nn::Upsample up2;
     torch::nn::Sequential conv_up1;
-    torch::nn::Upsample up1;
     torch::nn::Sequential conv7;
     torch::nn::Conv2d conv8;
 };

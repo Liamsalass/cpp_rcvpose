@@ -8,7 +8,10 @@
 #include <iostream>
 #include <filesystem>
 #include <torch/nn.h>
+#include <torch/optim.h>
 #include <torch/torch.h>
+#include <torch/script.h>
+#include <torch/serialize.h>
 #include "models/denseFCNResNet152.h"
 #include <iostream>
 #include <iomanip>
@@ -46,6 +49,7 @@ private:
 	int max_iteration;
 	int max_epoch;
 	double best_acc_mean;
+	std::vector<double> current_lr;
 	std::string out;
 };
 

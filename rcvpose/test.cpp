@@ -13,6 +13,7 @@ using namespace std;
 #define rcv_check false
 #define ldr_check false
 #define trn_check true
+#define rsm_check true
 
 Options training_options() {
 	Options opts;
@@ -20,7 +21,7 @@ Options training_options() {
 	opts.dname = "lm";
 	opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-	opts.model_dir = "test_models";
+	opts.model_dir = "t1";
 	opts.resume_train = false;
 	opts.optim = "adam";
     opts.batch_size = 2;
@@ -99,7 +100,7 @@ int main(int argc, char* args[])
             cout << "Failure in testing loader" << endl;
 
     }
-    if (trn_check) {
+    if (trn_check || rsm_check) {
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Training" << endl;
         RCVpose rcv(training_options());

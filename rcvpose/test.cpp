@@ -22,7 +22,7 @@ Options training_options() {
 	opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
 	opts.model_dir = "t1";
-	opts.resume_train = false;
+	opts.resume_train = rsm_train;
 	opts.optim = "adam";
     opts.batch_size = 2;
 	opts.class_name = "ape";

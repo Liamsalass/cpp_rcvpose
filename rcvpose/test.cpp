@@ -21,13 +21,13 @@ Options training_options() {
 	opts.dname = "lm";
 	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-	opts.model_dir = "optim_test";
+	opts.model_dir = "train_kpt1";
 	opts.resume_train = rsm_check;
 	opts.optim = "adam";
     opts.batch_size = 2;
 	opts.class_name = "ape";
 	opts.initial_lr = 0.0001;
-	opts.kpt_num = 3;
+	opts.kpt_num = 1;
 	opts.demo_mode = false;
 	opts.test_occ = false;
 	return opts;

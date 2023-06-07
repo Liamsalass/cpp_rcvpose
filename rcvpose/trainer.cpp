@@ -54,52 +54,56 @@ Trainer::Trainer(Options& options) : opts(options)
         }
         int count = 0;
         for (auto& params : optim->param_groups()) {
-            cout << "Param Group " << count << " with new LR value: " << params.options().get_lr() << endl;
+            cout << "Param Group " << count << " with LR value: " << params.options().get_lr() << endl;
             count++;
         }
 
         current_lr.clear();
         current_lr.push_back(opts.initial_lr);
 
-        cout << "Initial Learning Rate: " << current_lr << endl;
         epoch = 0;
         
     } 
     else {
-        // Load model from checkpoint
-        cout << "Loading model from checkpoint" << endl;
-        CheckpointLoader loader(opts.model_dir + "/current");
-        epoch = loader.getEpoch();
-        cout << "Epoch: " << epoch << endl;
-        model = loader.getModel();
-        model->to(device);
-        cout << "Model loaded" << endl;
-        optim = loader.getOptimizer(); 
-        optim->parameters() = model->parameters();
-        current_lr = loader.getLrList();
-        cout << "Optimizer loaded" << endl;
+        try {
+            // Load model from checkpoint
+            cout << "Loading model from checkpoint" << endl;
+            CheckpointLoader loader(opts.model_dir + "/current");
+            epoch = loader.getEpoch();
+            cout << "Epoch: " << epoch << endl;
+            model = loader.getModel();
+            model->to(device);
+            cout << "Model loaded" << endl;
+            optim = loader.getOptimizer();
+            optim->parameters() = model->parameters();
+            current_lr = loader.getLrList();
+            cout << "Optimizer loaded" << endl;
 
-        int count = 0;
-        for (auto& params : optim->param_groups()) {
-            cout << "Param Group " << count << " with new LR value: " << params.options().get_lr() << endl;
-            count++;
-        }
-        current_lr.clear();
-        current_lr.push_back(opts.initial_lr);
-        //for (auto& param_group : optim->param_groups()) {
-        //    if (param_group.has_options()) {
-        //        if (opts.optim == "adam")
-        //            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr[0]);
-        //        if (opts.optim == "sgd")
-        //            static_cast<torch::optim::SGDOptions&>(param_group.options()).lr(current_lr[0]);
-        //        current_lr.pop_back();
-        //    }
-        //    else {
-        //        cout << "Error: param_group has no options" << endl;
-        //    }
-        //}
-
-      
+            int count = 0;
+            for (auto& params : optim->param_groups()) {
+                cout << "Param Group " << count << " with LR value: " << params.options().get_lr() << endl;
+                count++;
+            }
+            current_lr.clear();
+            current_lr.push_back(opts.initial_lr);
+            //for (auto& param_group : optim->param_groups()) {
+            //    if (param_group.has_options()) {
+            //        if (opts.optim == "adam")
+            //            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr[0]);
+            //        if (opts.optim == "sgd")
+            //            static_cast<torch::optim::SGDOptions&>(param_group.options()).lr(current_lr[0]);
+            //        current_lr.pop_back();
+            //    }
+            //    else {
+            //        cout << "Error: param_group has no options" << endl;
+            //    }
+            //}
+        } 
+        catch (const torch::Error& e) {
+            cout << "Cannot Resume Training" << endl;
+			cout << "Error: " << e.msg() << endl;
+            return;
+		}
     }
 
 
@@ -391,10 +395,10 @@ void Trainer::train()
 		}
         
 
-        current_lr.clear();
         
-        if (epoch % 2 == 0 && epoch != 0) {
+        if (epoch % 70 == 0 && epoch != 0) {
             cout << "Learning rate reduction" << endl;
+            current_lr.clear();
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {
@@ -422,7 +426,7 @@ void Trainer::train()
         cout << "Epoch Training Time: " << epoch_total_time.count() << " s" << endl;
 
         auto total_train_duration = std::chrono::duration_cast<std::chrono::seconds>(epoch_train_end - total_train_start);
-        double average_epoch_time = total_train_duration.count()/ epoch;
+        float average_epoch_time = total_train_duration.count() / (epoch + 1);
         cout << "Average Time per Epoch: " << average_epoch_time << " s" << endl;
 
         epoch++;

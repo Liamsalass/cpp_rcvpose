@@ -49,6 +49,7 @@ private:
 	int max_iteration;
 	int max_epoch;
 	double best_acc_mean;
+	std::vector<double> current_lr;
 	std::string out;
 };
 

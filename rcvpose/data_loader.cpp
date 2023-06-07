@@ -44,6 +44,15 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	// Transpose the matrices
 	//std::cout << img.size() << std::endl;
 	//std::cout << target.size() << std::endl;
+
+	//Print if matrix has no dimensions
+	if (img.size().height == 0 || img.size().width == 0) {
+		std::cout << "img has no dimensions" << std::endl;
+	}
+	if (target.size().height == 0 || target.size().width == 0) {
+		std::cout << "target has no dimensions" << std::endl;
+	}
+
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
 

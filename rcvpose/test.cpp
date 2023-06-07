@@ -13,6 +13,7 @@ using namespace std;
 #define rcv_check false
 #define ldr_check false
 #define trn_check true
+#define rsm_check true
 
 Options training_options() {
 	Options opts;
@@ -20,7 +21,7 @@ Options training_options() {
 	opts.dname = "lm";
 	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
 	opts.model_dir = "test_models";
-	opts.resume_train = false;
+	opts.resume_train = rsm_check;
 	opts.optim = "adam";
     opts.batch_size = 2;
 	opts.class_name = "ape";
@@ -98,7 +99,7 @@ int main(int argc, char* args[])
             cout << "Failure in testing loader" << endl;
 
     }
-    if (trn_check) {
+    if (trn_check || rsm_check) {
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Training" << endl;
         RCVpose rcv(training_options());

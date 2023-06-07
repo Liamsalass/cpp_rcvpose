@@ -1,0 +1,1 @@
+/usr/bin/cc -fPIC   -shared -Wl,-soname,liblmshorn.so -o liblmshorn.so CMakeFiles/lmshorn.dir/JACOBI.c.o CMakeFiles/lmshorn.dir/lmshorn.c.o 

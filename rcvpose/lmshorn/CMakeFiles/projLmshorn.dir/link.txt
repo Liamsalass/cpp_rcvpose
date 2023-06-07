@@ -1,0 +1,1 @@
+/usr/bin/cc -fPIC   -shared -Wl,-soname,libprojLmshorn.so -o libprojLmshorn.so CMakeFiles/projLmshorn.dir/lmshorn.c.o 

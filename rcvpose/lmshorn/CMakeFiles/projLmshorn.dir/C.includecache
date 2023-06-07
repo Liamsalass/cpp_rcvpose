@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/media/veracrypt1/Hatch/Project_3/dev/lmshorn/t1/JACOBI.h
+
+/media/veracrypt1/Hatch/Project_3/dev/lmshorn/t1/lmshorn.c
+stdio.h
+-
+stdlib.h
+-
+math.h
+-
+JACOBI.h
+/media/veracrypt1/Hatch/Project_3/dev/lmshorn/t1/JACOBI.h
+

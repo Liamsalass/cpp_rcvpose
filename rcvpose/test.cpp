@@ -20,7 +20,7 @@ Options training_options() {
 	opts.gpu_id = 0;
 	opts.dname = "lm";
 	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
-	opts.model_dir = "test_models";
+	opts.model_dir = "t1";
 	opts.resume_train = rsm_check;
 	opts.optim = "adam";
     opts.batch_size = 2;

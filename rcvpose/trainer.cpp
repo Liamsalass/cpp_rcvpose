@@ -52,7 +52,16 @@ Trainer::Trainer(Options& options) : opts(options)
             cout << "Error: " << e.msg() << endl;
             return;
         }
+        int count = 0;
+        for (auto& params : optim->param_groups()) {
+            cout << "Param Group " << count << " with new LR value: " << params.options().get_lr() << endl;
+            count++;
+        }
+
         current_lr.clear();
+        current_lr.push_back(opts.initial_lr);
+
+        cout << "Initial Learning Rate: " << current_lr << endl;
         epoch = 0;
         
     } 
@@ -69,11 +78,14 @@ Trainer::Trainer(Options& options) : opts(options)
         optim->parameters() = model->parameters();
         current_lr = loader.getLrList();
         cout << "Optimizer loaded" << endl;
+
         int count = 0;
-        for (auto lr : current_lr) {
-            cout << "LR " << count << ": " << lr << endl;
+        for (auto& params : optim->param_groups()) {
+            cout << "Param Group " << count << " with new LR value: " << params.options().get_lr() << endl;
             count++;
         }
+        current_lr.clear();
+        current_lr.push_back(opts.initial_lr);
         //for (auto& param_group : optim->param_groups()) {
         //    if (param_group.has_options()) {
         //        if (opts.optim == "adam")
@@ -90,7 +102,6 @@ Trainer::Trainer(Options& options) : opts(options)
       
     }
 
-    cout << "Initial Learning Rate: " << current_lr << endl;
 
     cout << "Setting up loss function" << endl;
 
@@ -183,9 +194,15 @@ void Trainer::train()
         torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
     );
 
+
+
     cout << "Max Epochs : " << max_epoch << endl;
+
+
+    auto total_train_start = std::chrono::steady_clock::now();
     // Begin training cycle
     while (epoch < max_epoch) {
+        auto epoch_start_time = std::chrono::steady_clock::now();
         cout << string(100, '-') << endl;
         cout << string(43, ' ') << "Epoch " << epoch << endl;
 
@@ -203,6 +220,8 @@ void Trainer::train()
         model->train();
         auto train_start = std::chrono::steady_clock::now();
         for (const auto& batch : *train_loader) {
+          
+
             count = batch.size() + count;
             iteration = batch.size() + iteration;
 
@@ -255,8 +274,8 @@ void Trainer::train()
 
         cout << "\r" << string(100, ' ');
         auto train_end = std::chrono::steady_clock::now();
-        auto train_duration = std::chrono::duration_cast<std::chrono::milliseconds>(train_end - train_start);
-        cout << "\rTraining Time: " << train_duration.count()/1000 << " s" << endl;
+        auto train_duration = std::chrono::duration_cast<std::chrono::seconds>(train_end - train_start);
+        cout << "\rTraining Time: " << train_duration.count() << " s" << endl;
 
         // ========================================================================================== \\
         //Validation Epoch
@@ -308,8 +327,8 @@ void Trainer::train()
         }
         cout << "\r" << string(100, ' ');
         auto val_end = std::chrono::steady_clock::now();
-        auto val_duration = std::chrono::duration_cast<std::chrono::milliseconds>(val_end - val_start);
-        cout << "\rValidation Time: " << val_duration.count()/1000 << " s" << endl;
+        auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
+        cout << "\rValidation Time: " << val_duration.count()<< " s" << endl;
         cout.flush();
 
         val_loss /= val_size.value();
@@ -379,7 +398,9 @@ void Trainer::train()
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {
-                    int new_lr = param_group.options().get_lr() * 0.1;
+                    double lr = param_group.options().get_lr();
+                    cout << "Current LR: " << lr << endl;
+                    double new_lr = lr * 0.1;
                     if (opts.optim == "adam") 
                         static_cast<torch::optim::AdamOptions &>(param_group.options()).lr(new_lr);
                     if (opts.optim == "sgd")
@@ -395,6 +416,14 @@ void Trainer::train()
         if (iteration >= max_iteration) {
             break;
         }
+
+        auto epoch_train_end = std::chrono::steady_clock::now(); 
+        auto epoch_total_time = std::chrono::duration_cast<std::chrono::seconds>(epoch_train_end - epoch_start_time);
+        cout << "Epoch Training Time: " << epoch_total_time.count() << " s" << endl;
+
+        auto total_train_duration = std::chrono::duration_cast<std::chrono::seconds>(epoch_train_end - total_train_start);
+        double average_epoch_time = total_train_duration.count()/ epoch;
+        cout << "Average Time per Epoch: " << average_epoch_time << " s" << endl;
 
         epoch++;
     }

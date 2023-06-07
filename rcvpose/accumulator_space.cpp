@@ -30,6 +30,7 @@ std::tuple<Eigen::Matrix3d, Eigen::Matrix4d> project(
     const Eigen::Matrix4d& RT
 ) 
 {
+    //Figure out the .block function
     Eigen::MatrixXd actual_xyz = (xyz * RT.block(0, 0, 3, 3).transpose()).colwise() + RT.block(0, 3, 3, 1).transpose();
     Eigen::MatrixXd xy = (actual_xyz * K.transpose()).colwise() / actual_xyz.col(2);
     return std::make_tuple(xy, actual_xyz);
@@ -79,13 +80,16 @@ Eigen::MatrixXf rgbd_to_color_point_cloud(
 
     Eigen::MatrixXf pts(vs.size(), 6);
     for (int i = 0; i < vs.size(); i++) {
+        // Static casting to avoid casting errors in Eigen data types (datatype errors)
         float x = static_cast<float>((us[i] - K(0, 2)) * depth(vs[i], us[i]) / K(0, 0));
         float y = static_cast<float>((vs[i] - K(1, 2)) * depth(vs[i], us[i]) / K(1, 1));
         float z = static_cast<float>(depth(vs[i], us[i]));
-        float r = static_cast<float>(rgb(vs[i], us[i], 0));
-        float g = static_cast<float>(rgb(vs[i], us[i], 1));
-        float b = static_cast<float>(rgb(vs[i], us[i], 2));
-        pts.row(i) << x, y, z, r, g, b;
+
+        //Look at rgb function params
+        //float r = static_cast<float>(rgb(vs[i], us[i], 0));
+        //float g = static_cast<float>(rgb(vs[i], us[i], 1));
+        //float b = static_cast<float>(rgb(vs[i], us[i], 2));
+        //pts.row(i) << x, y, z, r, g, b;
     }
 
     return pts;
@@ -116,7 +120,7 @@ int main() {
     // Fill depth image with values
 
     Eigen::MatrixXd rgb(480, 640, 3);  // Example RGB image
-    // Fill RGB image with values
+
 
     // Perform point cloud operations
     auto [xy, actual_xyz] = project(xyz, K, RT);

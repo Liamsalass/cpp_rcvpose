@@ -369,7 +369,7 @@ void Trainer::train()
 
         current_lr.clear();
         
-        if (epoch % 70 == 0 && epoch != 0) {
+        if (epoch % 2 == 0 && epoch != 0) {
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {

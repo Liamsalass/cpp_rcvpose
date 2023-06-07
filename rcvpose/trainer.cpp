@@ -52,7 +52,7 @@ Trainer::Trainer(Options& options) : opts(options)
             cout << "Error: " << e.msg() << endl;
             return;
         }
-
+        current_lr.clear();
         epoch = 0;
         
     } 
@@ -67,26 +67,30 @@ Trainer::Trainer(Options& options) : opts(options)
         cout << "Model loaded" << endl;
         optim = loader.getOptimizer(); 
         optim->parameters() = model->parameters();
-        //std::vector<double> lr_list = loader.getLrList();
-        //torch::autograd::variable_list lr_list_var;
-        //for (int i = 0; i < lr_list.size(); i++) {
-		//	lr_list_var.push_back(torch::autograd::make_variable(torch::tensor(lr_list[i])));
-		//}
-
-        //Set the lrs
-        //optim->add_param_group(torch::optim::OptimizerParamGroup(lr_list_var));
-
+        current_lr = loader.getLrList();
         cout << "Optimizer loaded" << endl;
+        int count = 0;
+        for (auto lr : current_lr) {
+            cout << "LR " << count << ": " << lr << endl;
+            count++;
+        }
+        //for (auto& param_group : optim->param_groups()) {
+        //    if (param_group.has_options()) {
+        //        if (opts.optim == "adam")
+        //            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr[0]);
+        //        if (opts.optim == "sgd")
+        //            static_cast<torch::optim::SGDOptions&>(param_group.options()).lr(current_lr[0]);
+        //        current_lr.pop_back();
+        //    }
+        //    else {
+        //        cout << "Error: param_group has no options" << endl;
+        //    }
+        //}
 
-        //Print out optimizer state:
-        //for (auto& group : optim->param_groups()) {
-        //    cout << "Group: " << endl;
-		//	for (auto& p : group.params()) {
-		//		cout << "Param: " << p << endl;
-		//	}
-		//}
+      
     }
 
+    cout << "Initial Learning Rate: " << current_lr << endl;
 
     cout << "Setting up loss function" << endl;
 
@@ -330,6 +334,7 @@ void Trainer::train()
             output_model_info.write("best_acc_mean", best_acc_mean);
             output_model_info.write("loss", val_loss);
             output_model_info.write("optimizer", opts.optim);
+            output_model_info.write("lr", current_lr);
 
             //std::vector<double> lr_list;
             //Save optimizer learning rates
@@ -370,6 +375,7 @@ void Trainer::train()
         current_lr.clear();
         
         if (epoch % 2 == 0 && epoch != 0) {
+            cout << "Learning rate reduction" << endl;
             //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {
@@ -378,8 +384,11 @@ void Trainer::train()
                         static_cast<torch::optim::AdamOptions &>(param_group.options()).lr(new_lr);
                     if (opts.optim == "sgd")
                         static_cast<torch::optim::SGDOptions &>(param_group.options()).lr(new_lr);
-                    cout << "Learning rate reduction, new LR: " << new_lr << endl;
+                    cout << "New LR: " << new_lr << endl;
                     current_lr.push_back(new_lr);
+                }
+                else {
+                    cout << "Error: param_group has no options" << endl;
                 }
             }
         }
@@ -424,16 +433,16 @@ void Trainer::printProgressBar(int current, int total, int width)
 	cout.flush();
 }
 
-void Trainer::test_compute_r_loss() {
-    // Test compute_r_loss function
-    // Pass two tensors, one with 0s and one without
-    torch::Tensor pred = torch::tensor({ 1.0, 2.0, 3.0, 4.0 });
-    torch::Tensor gt = torch::tensor({ 1, 0, 3, 4 });
-
-    cout << "Expected Loss: 0.5" << endl;
-    torch::Tensor loss = compute_r_loss(pred, gt);
-    cout << "Loss: " << loss << endl;
-}
+//void Trainer::test_compute_r_loss() {
+//    // Test compute_r_loss function
+//    // Pass two tensors, one with 0s and one without
+//    torch::Tensor pred = torch::tensor({ 1.0, 2.0, 3.0, 4.0 });
+//    torch::Tensor gt = torch::tensor({ 1, 0, 3, 4 });
+//
+//    cout << "Expected Loss: 0.5" << endl;
+//    torch::Tensor loss = compute_r_loss(pred, gt);
+//    cout << "Loss: " << loss << endl;
+//}
 
 // Cannot implement due to the way the dataloader works
 // void Trainer::train_epoch() {

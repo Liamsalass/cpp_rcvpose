@@ -37,7 +37,7 @@ public:
         modelInfoArchive.read("best_acc_mean", bestAccuracy_);
         modelInfoArchive.read("loss", loss_);
         modelInfoArchive.read("optimizer", optimizerName_);
-        //modelInfoArchive.read("lr_list", lr_list_);
+        modelInfoArchive.read("lr", lr_);
         // Load model
         torch::serialize::InputArchive modelArchive;
         modelArchive.load_from(checkpointPath + "/model.pt");
@@ -84,12 +84,12 @@ public:
 		return optimizerName_.toStringRef();
 	}
 
-    //std::vector<double> getLrList() const {
-    //    return lr_list_.toDoubleVector();
-	//}
+    std::vector<double> getLrList() const {
+        return lr_.toDoubleVector();
+	}
 
 private:
-    c10::IValue epoch_, iteration_, modelName_, bestAccuracy_, loss_, optimizerName_, lr_list_;
+    c10::IValue epoch_, iteration_, modelName_, bestAccuracy_, loss_, optimizerName_, lr_;
     DenseFCNResNet152 model_;
     torch::optim::Optimizer* optim_;
 };

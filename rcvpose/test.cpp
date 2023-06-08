@@ -26,7 +26,7 @@ Options training_options() {
 	opts.optim = "adam";
     opts.batch_size = 2;
 	opts.class_name = "ape";
-	opts.initial_lr = 0.0001;
+	opts.initial_lr = 0.0001; 
 	opts.kpt_num = 1;
 	opts.demo_mode = false;
 	opts.test_occ = false;

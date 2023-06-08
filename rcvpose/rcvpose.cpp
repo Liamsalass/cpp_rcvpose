@@ -108,7 +108,14 @@ void RCVpose::compare_models(string model1, string model2) {
 }
 
 void RCVpose::saveModel(std::string path) {
-    // Implementation for saving the model
+    try {
+        Trainer trainer(opts);
+
+        trainer.store_model(path);
+    }
+    catch (const std::exception& e) {
+		std::cout << e.what() << std::endl;
+	}
 }
 
 void RCVpose::test_img(std::string img_path, std::string output_path)

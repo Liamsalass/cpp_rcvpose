@@ -8,12 +8,26 @@
 
 using namespace std;
 
-#define lib_check false
-#define dev_check false
-#define rcv_check false
-#define ldr_check false
-#define trn_check true
+//Set true to load in a model and resume
 #define rsm_check true
+
+//Check library functionality
+#define lib_check false
+
+//Check devices available and GPU compatibility
+#define dev_check false
+
+//Check RCVpose class functionality
+#define rcv_check false
+
+//Check loader functionality
+#define ldr_check false
+
+// Check training functionality
+#define trn_check true
+
+// Check saving and loading model
+#define stw_model false
 
 Options training_options() {
 	Options opts;
@@ -21,13 +35,13 @@ Options training_options() {
 	opts.dname = "lm";
 	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-	opts.model_dir = "train_kpt1";
+	opts.model_dir = "train_kpt2";
 	opts.resume_train = rsm_check;
 	opts.optim = "adam";
     opts.batch_size = 2;
 	opts.class_name = "ape";
 	opts.initial_lr = 0.0001; 
-	opts.kpt_num = 1;
+	opts.kpt_num = 2;
 	opts.demo_mode = false;
 	opts.test_occ = false;
 	return opts;
@@ -100,11 +114,17 @@ int main(int argc, char* args[])
             cout << "Failure in testing loader" << endl;
 
     }
-    if (trn_check || rsm_check) {
+    if (trn_check) {
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Training" << endl;
         RCVpose rcv(training_options());
         rcv.train();
+    }
+    if (stw_model) {
+        cout << string(100, '=') << endl;
+        cout << string(40, ' ') << "Testing Saving and Loading Model" << endl;
+        RCVpose rcv(training_options());
+        rcv.saveModel("test_store1");
     }
 
     return 0;

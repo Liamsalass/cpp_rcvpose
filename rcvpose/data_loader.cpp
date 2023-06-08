@@ -41,18 +41,15 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	if (img.cols % 2 != 0)
 		img = img.colRange(0, img.cols - 1);
 
-	// Transpose the matrices
-	//std::cout << img.size() << std::endl;
-	//std::cout << target.size() << std::endl;
-
-	//Print if matrix has no dimensions
-	if (img.size().height == 0 || img.size().width == 0) {
-		std::cout << "img has no dimensions" << std::endl;
+	// Print matrix sizes if dim = 0
+if (img.dims == 0 || target.dims == 0) {
+		std::cout << "img.dims: " << img.dims << std::endl;
+		std::cout << "target.dims: " << target.dims << std::endl;
+		std::cout << "img.size: " << img.size << std::endl;
+		std::cout << "target.size: " << target.size << std::endl;
+		std::cin.get();
 	}
-	if (target.size().height == 0 || target.size().width == 0) {
-		std::cout << "target has no dimensions" << std::endl;
-	}
-
+	
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
 
@@ -62,6 +59,19 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 
 	// Create semantic label tensor
 	torch::Tensor semLblTensor = torch::where(targetTensor > 0, torch::ones_like(targetTensor), -torch::ones_like(targetTensor));
+
+	//Print if tensor has no dimensions or missing data, wait for key input and print the tensor idx
+	if (imgTensor.ndimension() == 0 || targetTensor.ndimension() == 0) {
+		std::cout << "Tensor has no dimensions" << std::endl;
+		std::cout << "imgTensor: " << imgTensor.ndimension() << std::endl;
+		std::cout << "targetTensor: " << targetTensor.ndimension() << std::endl;
+		std::cout << "semLblTensor: " << semLblTensor.ndimension() << std::endl;
+		std::cout << "imgTensor: " << imgTensor << std::endl;
+		std::cout << "targetTensor: " << targetTensor << std::endl;
+		std::cout << "semLblTensor: " << semLblTensor << std::endl;
+		std::cin.get();
+	}
+		
 
 	return std::make_tuple(imgTensor, targetTensor, semLblTensor);
 }

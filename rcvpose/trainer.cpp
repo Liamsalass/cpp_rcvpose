@@ -253,7 +253,24 @@ void Trainer::train()
 
             optim->zero_grad();
             // std::tuple<torch::Tensor> scores;
+            //Print input data shape if it has 0D tensor and pause program until key input
+            //if (data.dim() == 0) {
+            //    std::cout << "Input Data Shape: " << data.sizes() << std::endl;
+			//	std::cout << "Input Target Shape: " << target.sizes() << std::endl;
+			//	std::cout << "Input Sem Target Shape: " << sem_target.sizes() << std::endl;
+			//	std::cout << "Press any key to continue" << std::endl;
+			//	std::cin.get();
+			//}
+
             auto scores = model->forward(data);
+
+            //if (data.dim() == 0) {
+            //    std::cout << "Output Data Shape: " << data.sizes() << std::endl;
+            //    std::cout << "Output Target Shape: " << target.sizes() << std::endl;
+            //    std::cout << "Output Sem Target Shape: " << sem_target.sizes() << std::endl;
+            //    std::cout << "Press any key to continue" << std::endl;
+            //    std::cin.get();
+            //}
 
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
@@ -496,4 +513,9 @@ void Trainer::test() {
     cout << string(50, '=') << endl;
     cout << string(18, ' ') << "Begining Testing" << endl << endl;
     //Requires accumulator space for testing each metric
+}
+
+void Trainer::store_model(std::string path)
+{
+
 }

@@ -4,3 +4,4 @@ dll_test/out
 dll_test/.vs
 rcvpose/lmshorn/
 rcvpose/python
+rcvpose/build/

@@ -36,8 +36,10 @@ Options training_options() {
 	opts.dname = "lm";
 	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
+
 	opts.model_dir = "train_kpt2";
 	opts.resume_train = rsm_check;
+
 	opts.optim = "adam";
     opts.batch_size = 2;
 	opts.class_name = "ape";

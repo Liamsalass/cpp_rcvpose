@@ -1,0 +1,6 @@
+name: cpp_rcvpose
+dependencies:
+  - cmake
+  - opencv
+  - open3d
+  - libtorch

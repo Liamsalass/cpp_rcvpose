@@ -11,14 +11,14 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "C:/libtorch_debug/libtorch")
+set(CMAKE_PREFIX_PATH "~/libs/libtorch/")
 
 # Find and include OpenCV, boost, open3d,
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+# find_package(OpenCV REQUIRED)
+# include_directories(${OpenCV_INCLUDE_DIRS})
 
-find_package(Open3D REQUIRED)
-include_directories(${Open3D_INCLUDE_DIRS})
+# find_package(Open3D REQUIRED)
+# include_directories(${Open3D_INCLUDE_DIRS})
 
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
@@ -98,6 +98,5 @@ endif(MSVC)
 if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 20)
 endif()
-
 
 # TODO: Add tests and install targets if needed.

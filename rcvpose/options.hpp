@@ -24,6 +24,9 @@ struct Options {
     double initial_lr = 0.0001;
     // Number of keypoints
     int kpt_num = 3;
+    // Use reduce on plateau
+    // If false, will reduce lr every 70 epoch
+    bool reduce_on_plateau = false;
     // Directory to save model
     std::string model_dir;
     // Run in Demo mode

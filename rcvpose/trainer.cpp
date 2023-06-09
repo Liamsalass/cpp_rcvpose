@@ -480,15 +480,15 @@ void Trainer::test() {
 
 void Trainer::store_model(std::string path)
 {
-    torch::jit::script::Module jit_module;
-    try {
-        jit_module = torch::jit::load(path + "/model.pt");
-    }
-    catch (const c10::Error& e) {
-        std::cerr << "Error loading model: " << e.what() << std::endl;
-        exit(0);
-    }
-    torch::jit::trace
+    //torch::jit::script::Module jit_module;
+    //try {
+    //    jit_module = torch::jit::load(path + "/model.pt");
+    //}
+    //catch (const c10::Error& e) {
+    //    std::cerr << "Error loading model: " << e.what() << std::endl;
+    //    exit(0);
+    //}
+    //torch::jit::trace
 
     
 }

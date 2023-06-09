@@ -24,30 +24,70 @@ using namespace std;
 #define ldr_check false
 
 // Check training functionality
-#define trn_check true
+#define trn_check false
 
 // Check saving and loading model
 #define stw_model false
 
+// Train checkpoint
+#define trn_ckpt true
+#define trn_gpu false
 
-Options training_options() {
+Options testing_options() {
+    Options opts;
+    opts.gpu_id = 0;
+    opts.dname = "lm";
+    opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
+    //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
+    opts.model_dir = "test";
+    opts.resume_train = rsm_check;
+    opts.optim = "adam";
+    opts.batch_size = 2;
+    opts.class_name = "ape";
+    opts.initial_lr = 0.0001;
+    opts.reduce_on_plateau = false;
+    opts.kpt_num = 3;
+    opts.demo_mode = false;
+    opts.test_occ = false;
+    return opts;
+}
+
+Options training_options(int kpt, bool rsm, int batch_size = 2) {
 	Options opts;
 	opts.gpu_id = 0;
 	opts.dname = "lm";
 	opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-	opts.model_dir = "train_kpt2";
-	opts.resume_train = rsm_check;
+	opts.model_dir = "train_kpt" + to_string(kpt);
+	opts.resume_train = rsm;
 	opts.optim = "adam";
-    opts.batch_size = 2;
+    opts.batch_size = batch_size;
 	opts.class_name = "ape";
 	opts.initial_lr = 0.0001; 
-	opts.kpt_num = 2;
+    opts.reduce_on_plateau = false;
+	opts.kpt_num = kpt;
 	opts.demo_mode = false;
 	opts.test_occ = false;
 	return opts;
 }
 
+Options gpu_train_opts(int kpt, bool rsm, int batch_size) {
+    Options opts;
+	opts.gpu_id = 0;
+	opts.dname = "lm";
+	opts.root_dataset = "/dataset/public/RCVLab/Bluewrist/16yw11";
+	opts.model_dir = "kpt" + to_string(kpt);
+	opts.resume_train = rsm;
+	opts.optim = "adam";
+	opts.batch_size = batch_size;
+	opts.class_name = "ape";
+	opts.initial_lr = 0.0001;
+	opts.reduce_on_plateau = false;
+	opts.kpt_num = kpt;
+	opts.demo_mode = false;
+	opts.test_occ = false;
+	return opts;
+}
 
 int main(int argc, char* args[])
 {
@@ -120,16 +160,62 @@ int main(int argc, char* args[])
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Training" << endl;
 
-        RCVpose rcv(training_options());
+        RCVpose rcv(testing_options());
 
         rcv.train();
     }
     if (stw_model) {
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Saving and Loading Model" << endl;
-        RCVpose rcv(training_options());
+        RCVpose rcv(testing_options());
         rcv.saveModel("test_store1");
     }
 
+    if (trn_ckpt) {
+        // Train checkpoint
+        cout << string(100, '=') << endl;
+        cout << string(40, ' ') << "Training Checkpoint" << endl;
+        //Enter number of keypoints, if not int make them re-enter
+        cout << "Enter number of keypoints: ";
+        int kpts = cin.get();
+        while (!(cin >> kpts)) {
+            // user didn't input a number
+			cout << "Enter number of keypoints: ";
+			cin.clear();
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+        //Enter batch size, if not int make them re-enter
+        cout << "Enter batch size: ";
+        int batch_size = cin.get();
+        while (!(cin >> batch_size)) {
+			// user didn't input a number
+            cout << "Enter batch size: ";
+			cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		}
+        //Enter y or n for resume training bool
+        cout << "Resume training? (y/n): ";
+		char resume = cin.get();
+        while (resume != 'y' && resume != 'n') {
+            // user didn't input a number
+			cout << "Resume training? (y/n): ";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		}
+
+        bool rsm = false;
+        if (resume == 'y') 
+            rsm = true;
+
+        Options opts = training_options(kpts, rsm, batch_size);
+        RCVpose rcv(opts);
+
+        rcv.train();
+    }
+    if (trn_gpu) {
+        Options opts = gpu_train_opts(1, false, 20);
+        RCVpose rcv(opts);
+        rcv.train();
+    }
     return 0;
 }

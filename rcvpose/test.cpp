@@ -8,8 +8,8 @@
 
 using namespace std;
 
-//Set true to load in a model and resume
-#define rsm_check true
+//Set true to load in a model and resume, doens't start any programs
+#define rsm_check false
 
 //Check library functionality
 #define lib_check false
@@ -29,6 +29,7 @@ using namespace std;
 // Check saving and loading model
 #define stw_model false
 
+
 Options training_options() {
 	Options opts;
 	opts.gpu_id = 0;
@@ -46,6 +47,7 @@ Options training_options() {
 	opts.test_occ = false;
 	return opts;
 }
+
 
 int main(int argc, char* args[])
 {
@@ -117,7 +119,9 @@ int main(int argc, char* args[])
     if (trn_check) {
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Training" << endl;
+
         RCVpose rcv(training_options());
+
         rcv.train();
     }
     if (stw_model) {

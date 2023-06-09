@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 #include <vector>
 #include <torch/serialize.h>
 #include <torch/torch.h>
@@ -27,10 +28,19 @@ inline std::map<int, std::map<std::string, std::vector<float>>> get_config() {
 
 class CheckpointLoader {
 public:
-    CheckpointLoader(const std::string& checkpointPath) {
+    CheckpointLoader(const std::string& checkpointPath, bool get_best_ckpt = false) {
+        std::string path;
+        if (get_best_ckpt) {
+            path = checkpointPath + "/model_best";
+            std::cout << "Resuming from best checkpoint" << std::endl;
+        }
+        else {
+            path = checkpointPath + "/current";
+            std::cout << "Resuming from current checkpoint" << std::endl;
+        }
         // Load model info
         torch::serialize::InputArchive modelInfoArchive;
-        modelInfoArchive.load_from(checkpointPath + "/info.pt");
+        modelInfoArchive.load_from(path + "/info.pt");
         modelInfoArchive.read("epoch", epoch_);
         modelInfoArchive.read("iteration", iteration_);
         modelInfoArchive.read("arch", modelName_);
@@ -40,12 +50,12 @@ public:
         modelInfoArchive.read("lr", lr_);
         // Load model
         torch::serialize::InputArchive modelArchive;
-        modelArchive.load_from(checkpointPath + "/model.pt");
+        modelArchive.load_from(path + "/model.pt");
         model_->load(modelArchive);
 
         // Load optimizer
         torch::serialize::InputArchive optimArchive;
-        optimArchive.load_from(checkpointPath + "/optim.pt");
+        optimArchive.load_from(path + "/optim.pt");
         //TODO, load current LR values and store them
         optim_ = new torch::optim::Adam(model_->parameters(), torch::optim::AdamOptions(0.0001));
         optim_->load(optimArchive);

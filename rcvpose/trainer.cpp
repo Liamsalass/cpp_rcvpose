@@ -69,7 +69,7 @@ Trainer::Trainer(Options& options) : opts(options)
         try {
             // Load model from checkpoint
             cout << "Loading model from checkpoint" << endl;
-            CheckpointLoader loader(opts.model_dir + "/current");
+            CheckpointLoader loader(opts.model_dir, true);
             epoch = loader.getEpoch();
             starting_epoch = epoch;
             cout << "Epoch: " << epoch << endl;
@@ -88,18 +88,13 @@ Trainer::Trainer(Options& options) : opts(options)
             }
             current_lr.clear();
             current_lr.push_back(opts.initial_lr);
-            //for (auto& param_group : optim->param_groups()) {
-            //    if (param_group.has_options()) {
-            //        if (opts.optim == "adam")
-            //            static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(current_lr[0]);
-            //        if (opts.optim == "sgd")
-            //            static_cast<torch::optim::SGDOptions&>(param_group.options()).lr(current_lr[0]);
-            //        current_lr.pop_back();
-            //    }
-            //    else {
-            //        cout << "Error: param_group has no options" << endl;
-            //    }
-            //}
+
+            best_acc_mean = loader.getBestAccuracy();
+            cout << "Best Accuracy: " << best_acc_mean << endl;
+
+            float prev_loss = loader.getLoss();
+            cout << "Previous Loss: " << prev_loss << endl;
+
         } 
         catch (const torch::Error& e) {
             cout << "Cannot Resume Training" << endl;
@@ -206,21 +201,16 @@ void Trainer::train()
 
 
     auto total_train_start = std::chrono::steady_clock::now();
-    // Begin training cycle
     while (epoch < max_epoch) {
         auto epoch_start_time = std::chrono::steady_clock::now();
         cout << string(100, '-') << endl;
         cout << string(43, ' ') << "Epoch " << epoch << endl;
 
-        //Train epoch code
-        // Can't use functions due to the way the dataloader works, need to figure out new method
-        //train_epoch();
-        //validate();
-        
-        //Training Epoch
+
 
         // ========================================================================================== \\
-        //TODO, figure out how to move whole batches to the gpu
+        // ====================================== Training ========================================== \\
+
         cout << "Training Epoch" << endl;
         int count = 0;
         model->train();
@@ -243,34 +233,14 @@ void Trainer::train()
                 batch_sem_target.push_back(example.sem_target());
             }
 
-            // Create batch tensors by stacking individual tensors
+         
             auto data = torch::stack(batch_data, 0).to(device); 
             auto target = torch::stack(batch_target, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
-
-            // Print info on data's shape
-            //std::cout << "Input Data Shape: " << data.sizes() << std::endl;
-
-            optim->zero_grad();
-            // std::tuple<torch::Tensor> scores;
-            //Print input data shape if it has 0D tensor and pause program until key input
-            //if (data.dim() == 0) {
-            //    std::cout << "Input Data Shape: " << data.sizes() << std::endl;
-			//	std::cout << "Input Target Shape: " << target.sizes() << std::endl;
-			//	std::cout << "Input Sem Target Shape: " << sem_target.sizes() << std::endl;
-			//	std::cout << "Press any key to continue" << std::endl;
-			//	std::cin.get();
-			//}
+;
+          
 
             auto scores = model->forward(data);
-
-            //if (data.dim() == 0) {
-            //    std::cout << "Output Data Shape: " << data.sizes() << std::endl;
-            //    std::cout << "Output Target Shape: " << target.sizes() << std::endl;
-            //    std::cout << "Output Sem Target Shape: " << sem_target.sizes() << std::endl;
-            //    std::cout << "Press any key to continue" << std::endl;
-            //    std::cin.get();
-            //}
 
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
@@ -287,8 +257,6 @@ void Trainer::train()
             optim->step();
 
             auto np_loss = loss.detach().cpu().numpy_T();
-            //auto np_loss_r = loss_r.detach().cpu().numpy_T();
-            //auto np_loss_s = loss_s.detach().cpu().numpy_T();
 
             if (np_loss.numel() == 0)
                 std::runtime_error("Loss is empty");
@@ -301,7 +269,8 @@ void Trainer::train()
         cout << "\rTraining Time: " << train_duration.count() << " s" << endl;
 
         // ========================================================================================== \\
-        //Validation Epoch
+        //                                  Validation Epoch 									       \\
+
         cout << "Validation Epoch" << endl;
         model->eval();
         float val_loss = 0;
@@ -313,7 +282,8 @@ void Trainer::train()
             count = batch.size() + count;
             iteration_val = batch.size() + iteration_val;
             printProgressBar(count, val_size.value(), 80);
-            // Extract data, target, and sem_target from batch
+
+
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
             std::vector<torch::Tensor> batch_sem_target;
@@ -324,15 +294,10 @@ void Trainer::train()
                 batch_sem_target.push_back(example.sem_target());
             }
 
-            // Create batch tensors by stacking individual tensors
             auto img = torch::stack(batch_data, 0).to(device);
             auto target = torch::stack(batch_target, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
-            // Pass the batch tensors to the GPU if needed
-            // auto img = data.to(device);
-            // auto target = target.to(device);
-            // auto sem_target = sem_target.to(device);
             auto output = model->forward(img);
 
             auto score = std::get<0>(output);
@@ -348,6 +313,7 @@ void Trainer::train()
             val_loss += loss.item<float>();
 
         }
+
         cout << "\r" << string(100, ' ');
         auto val_end = std::chrono::steady_clock::now();
         auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
@@ -363,12 +329,16 @@ void Trainer::train()
         
         cout << "Iterations: " << iteration << endl;
 
+
+        //================================================================\\
+        //                  Save Model and Optimizer                      \\
+
         try {
 
             std::string save_location = out + "/current";
             if (!std::filesystem::is_directory(save_location))
                 std::filesystem::create_directory(save_location);
-            //Save epoch number, iteration number, model name, best accuracy, and loss
+
             torch::serialize::OutputArchive output_model_info;
             output_model_info.write("epoch", epoch);
             output_model_info.write("iteration", iteration);
@@ -378,23 +348,17 @@ void Trainer::train()
             output_model_info.write("optimizer", opts.optim);
             output_model_info.write("lr", current_lr);
 
-            //std::vector<double> lr_list;
-            //Save optimizer learning rates
-            //for (auto& optim_pg : optim->param_groups()) {
-            //    auto options = optim_pg.options();
-            //    auto lr = options.get_lr();
-            //    lr_list.push_back(lr);
-            //}
-            //output_model_info.write("lr_list", lr_list);
+
             output_model_info.save_to(save_location + "/info.pt");
 
-            //Save model
+  
             torch::serialize::OutputArchive output_model_archive;
             model->to(torch::kCPU);
             model->save(output_model_archive);
             model->to(device);
             output_model_archive.save_to(save_location + "/model.pt");
-            //Save optimizer
+   
+
             torch::serialize::OutputArchive output_optim_archive;
             optim->save(output_optim_archive);
             output_optim_archive.save_to(save_location + "/optim.pt");
@@ -414,11 +378,10 @@ void Trainer::train()
 		}
         
 
-        
+        // Reduce learning rate every 70 epoch
         if (epoch % 70 == 0 && epoch != 0) {
             cout << "Learning rate reduction" << endl;
             current_lr.clear();
-            //optim->options.learning_rate(optim->options.learning_rate() * 0.1);
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {
                     double lr = param_group.options().get_lr();
@@ -517,5 +480,15 @@ void Trainer::test() {
 
 void Trainer::store_model(std::string path)
 {
+    torch::jit::script::Module jit_module;
+    try {
+        jit_module = torch::jit::load(path + "/model.pt");
+    }
+    catch (const c10::Error& e) {
+        std::cerr << "Error loading model: " << e.what() << std::endl;
+        exit(0);
+    }
+    torch::jit::trace
 
+    
 }

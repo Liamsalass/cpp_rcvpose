@@ -6,7 +6,6 @@ Trainer::Trainer(Options& options) : opts(options)
 {
     cout << string(100, '=') << endl;
     cout << string (34, ' ') << "Initializing Trainer" << endl << endl;
- 
 
     bool use_cuda = torch::cuda::is_available();
     device_type = use_cuda ? torch::kCUDA : torch::kCPU;
@@ -480,15 +479,9 @@ void Trainer::test() {
 
 void Trainer::store_model(std::string path)
 {
-    //torch::jit::script::Module jit_module;
-    //try {
-    //    jit_module = torch::jit::load(path + "/model.pt");
-    //}
-    //catch (const c10::Error& e) {
-    //    std::cerr << "Error loading model: " << e.what() << std::endl;
-    //    exit(0);
-    //}
-    //torch::jit::trace
+    torch::serialize::OutputArchive model_out;
 
-    
+    model->save(model_out);
+
+    model_out.save_to(path + "/model.pt");
 }

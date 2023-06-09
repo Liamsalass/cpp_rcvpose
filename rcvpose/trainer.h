@@ -27,6 +27,8 @@ public:
 
 	void test_compute_r_loss();
 	
+	void store_model(std::string path);
+
 private:
 	// Have to nest train_epoch function within train function due to instantiation of dataloaders
 	// This means resume training isn't currently functioning
@@ -44,6 +46,7 @@ private:
 	void printProgressBar(int current, int total, int width);
 
 	int epoch;
+	int starting_epoch;
 	int iteration;
 	int iteration_val;
 	int max_iteration;

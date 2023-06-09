@@ -42,7 +42,8 @@ set(SOURCE_FILES
     "models/resFCNResNet152.h"
     "models/resFCNResNet152.cpp"
 )
-
+#  "accumulator_space.h"
+#    "accumulator_space.cpp"
 # CMakeLists.txt: CMake project for simple_dll, include source and define
 # project specific logic here.
 cmake_minimum_required(VERSION 3.8)

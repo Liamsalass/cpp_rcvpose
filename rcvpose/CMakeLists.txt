@@ -11,13 +11,13 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "~/libs/libtorch/")
+set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv")
 
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0/bin")
 
 # Find and include OpenCV, boost, open3d,
-# find_package(OpenCV REQUIRED)
-# include_directories(${OpenCV_INCLUDE_DIRS})
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # find_package(Open3D REQUIRED)
 # include_directories(${Open3D_INCLUDE_DIRS})
@@ -58,7 +58,7 @@ else()
 endif()
 
 
-target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS} ${Open3D_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS})
 
 if(MSVC)
     file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")

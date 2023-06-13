@@ -28,7 +28,7 @@ CMAKE_BUILD_TYPE:STRING=
 CMAKE_COLOR_MAKEFILE:BOOL=ON
 
 //CUDA compiler
-CMAKE_CUDA_COMPILER:STRING=/usr/bin/nvcc
+CMAKE_CUDA_COMPILER:FILEPATH=/usr/bin/nvcc
 
 //Flags used by the CUDA compiler during all build types.
 CMAKE_CUDA_FLAGS:STRING=
@@ -291,9 +291,6 @@ CUDA_SEPARABLE_COMPILATION:BOOL=OFF
 //Path to a file.
 CUDA_TOOLKIT_INCLUDE:PATH=/usr/include
 
-//Toolkit location.
-CUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-12.0
-
 //Print out the commands run while compiling the CUDA source file.
 //  With the Makefile generator this defaults to VERBOSE variable
 // specified on the command line, but can be forced on with this
@@ -334,34 +331,34 @@ CUDA_cusparse_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libcusparse.so
 CUDA_nppc_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppc.so
 
 //"nppial" library
-CUDA_nppial_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppial.so
+CUDA_nppial_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppial.so
 
 //"nppicc" library
-CUDA_nppicc_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppicc.so
+CUDA_nppicc_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppicc.so
 
 //"nppicom" library
 CUDA_nppicom_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppicom.so
 
 //"nppidei" library
-CUDA_nppidei_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppidei.so
+CUDA_nppidei_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppidei.so
 
 //"nppif" library
-CUDA_nppif_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppif.so
+CUDA_nppif_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppif.so
 
 //"nppig" library
-CUDA_nppig_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppig.so
+CUDA_nppig_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppig.so
 
 //"nppim" library
-CUDA_nppim_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppim.so
+CUDA_nppim_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppim.so
 
 //"nppist" library
-CUDA_nppist_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppist.so
+CUDA_nppist_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppist.so
 
 //"nppisu" library
-CUDA_nppisu_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppisu.so
+CUDA_nppisu_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppisu.so
 
 //"nppitc" library
-CUDA_nppitc_LIBRARY:FILEPATH=/usr/local/cuda-12.0/lib64/libnppitc.so
+CUDA_nppitc_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnppitc.so
 
 //"npps" library
 CUDA_npps_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnpps.so
@@ -453,7 +450,7 @@ CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_DLLTOOL
 CMAKE_DLLTOOL-ADVANCED:INTERNAL=1
 //Path to cache edit program executable.
-CMAKE_EDIT_COMMAND:INTERNAL=/home/19lhs4/anaconda3/bin/ccmake
+CMAKE_EDIT_COMMAND:INTERNAL=/home/19lhs4/anaconda3/envs/cpp_rcvpose/bin/ccmake
 //Executable file format
 CMAKE_EXECUTABLE_FORMAT:INTERNAL=ELF
 //ADVANCED property for variable: CMAKE_EXE_LINKER_FLAGS

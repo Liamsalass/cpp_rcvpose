@@ -13,6 +13,8 @@ project(${TARGET_NAME})
 
 set(CMAKE_PREFIX_PATH "~/libs/libtorch/")
 
+set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0/bin")
+
 # Find and include OpenCV, boost, open3d,
 # find_package(OpenCV REQUIRED)
 # include_directories(${OpenCV_INCLUDE_DIRS})

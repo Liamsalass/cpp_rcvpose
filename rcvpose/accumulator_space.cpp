@@ -40,7 +40,9 @@ Eigen::MatrixXd rgbd_to_point_cloud(
     const Eigen::Matrix3d& K, 
     const Eigen::MatrixXd& depth
 ) 
-{
+{   // Depth is a 2d n-array w shape (h,w)
+    // K is a h,w,3 matrix
+    // Returns a pointcloud with h,w,d, values
     std::vector<int> vs, us;
     for (int i = 0; i < depth.rows(); i++) {
         for (int j = 0; j < depth.cols(); j++) {
@@ -50,15 +52,14 @@ Eigen::MatrixXd rgbd_to_point_cloud(
             }
         }
     }
-
     Eigen::MatrixXd pts(vs.size(), 3);
     for (int i = 0; i < vs.size(); i++) {
-        double x = ((us[i] - K(0, 2)) * depth(vs[i], us[i])) / K(0, 0);
-        double y = ((vs[i] - K(1, 2)) * depth(vs[i], us[i])) / K(1, 1);
+        // Static casting to avoid casting errors in Eigen data types (datatype errors)
+        double x = (us[i] - K(0, 2)) * depth(vs[i], us[i]) / K(0, 0);
+        double y = (vs[i] - K(1, 2)) * depth(vs[i], us[i]) / K(1, 1);
         double z = depth(vs[i], us[i]);
         pts.row(i) << x, y, z;
     }
-
     return pts;
 }
 

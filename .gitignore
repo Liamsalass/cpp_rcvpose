@@ -4,3 +4,7 @@ dll_test/out
 dll_test/.vs
 rcvpose/lmshorn/
 rcvpose/python
+acc_space/out
+acc_space/.vs
+acc_space/dlls
+acc_space/images

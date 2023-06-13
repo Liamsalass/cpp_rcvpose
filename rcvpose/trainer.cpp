@@ -68,7 +68,7 @@ Trainer::Trainer(Options& options) : opts(options)
         try {
             // Load model from checkpoint
             cout << "Loading model from checkpoint" << endl;
-            CheckpointLoader loader(opts.model_dir, true);
+            CheckpointLoader loader(opts.model_dir, false);
             epoch = loader.getEpoch();
             starting_epoch = epoch;
             cout << "Epoch: " << epoch << endl;
@@ -79,12 +79,14 @@ Trainer::Trainer(Options& options) : opts(options)
             optim->parameters() = model->parameters();
             current_lr = loader.getLrList();
             cout << "Optimizer loaded" << endl;
-
             int count = 0;
             for (auto& params : optim->param_groups()) {
+                params.options().set_lr(current_lr[0]);
                 cout << "Param Group " << count << " with LR value: " << params.options().get_lr() << endl;
                 count++;
             }
+
+
             current_lr.clear();
             current_lr.push_back(opts.initial_lr);
 

@@ -5,3 +5,7 @@ dll_test/.vs
 rcvpose/lmshorn/
 rcvpose/python
 rcvpose/build/
+rcvpose/build/CMakeCache.txt
+rcvpose/build/CMakeCache.txt
+rcvpose/build/CMakeFiles/CMakeOutput.log
+rcvpose/build/CMakeFiles/3.22.1/CMakeSystem.cmake

@@ -179,14 +179,22 @@ void estimate_6d_pose_lm(const Options opts)
 
         pc_ptr pcv(new geometry::PointCloud);
 
-        if (!io::ReadPointCloud(pcv_load_path, *pcv, io::ReadPointCloudOption("auto", false, false, true))) {
-            if (!io::ReadPointCloud(pcv_load_path, *pcv, io::ReadPointCloudOption(".p1y", false, false, true))) {
+        //try {
+        //    cout << "File format " << open3d::utility::filesystem::GetFileExtensionInLowerCase(pcv_load_path) << endl;
+        //}
+        //catch (const std::exception& e) {
+		//	cout << "Error: " << e.what() << endl;
+		//}
+
+
+        if (!io::ReadPointCloud(pcv_load_path, *pcv, io::ReadPointCloudOption("auto", false, false, false))) {
+            if (!io::ReadPointCloud(pcv_load_path, *pcv, io::ReadPointCloudOption("auto", false, false, false))) {
                 cout << "Error: cannot load point cloud" << endl;
             }
         }
-
-        pcv = io::CreatePointCloudFromFile("C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/ape.ply", "ply");
-        pcv = io::CreatePointCloudFromFile("ape", ".ply");
+        // "C:\Users\User\.cw\work\datasets\test\LINEMOD\ape\ape.ply"
+        pcv = io::CreatePointCloudFromFile("C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/ape.ply", "auto");
+        pcv = io::CreatePointCloudFromFile("C:\Users\User\.cw\work\datasets\test\LINEMOD\ape\ape.ply", "auto");
 
 
         cout << "Number of points " << pcv->points_.size() << endl;

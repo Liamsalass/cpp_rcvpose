@@ -3,12 +3,6 @@
 
 #pragma once
 
-#ifdef RCVPOSE_DLL_EXPORTS
-#define RCVPOSE_DLL_API __declspec(dllexport)
-#else
-#define RCVPOSE_DLL_API __declspec(dllimport)
-#endif
-
 #include <string>
 #include <map>
 #include <iostream>
@@ -17,14 +11,14 @@
 #include <torch/torch.h>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
-#include <warning.h>
+//#include <warning.h>
 #include "options.hpp"
 #include <exception>
 #include "trainer.h"
 #include "data_loader.h"
 #include <cuda_runtime.h>
 
-class RCVPOSE_DLL_API RCVpose {
+class RCVpose {
 public:
     RCVpose(Options options);
 

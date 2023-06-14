@@ -551,3 +551,61 @@ void Trainer::output_pred(const int& idx, const string& path)
     score_out << out_score << endl;
     score_rad_out << out_score_rad << endl;
 }
+
+void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {
+    /*
+    =================================================================================================
+    Write a tensor to a file in binary format. The file format is as follows:
+    1. The size of the tensor (number of dimensions and size of each dimension)
+    2. The number of elements in the tensor
+    3. The tensor data
+    =================================================================================================
+    How to read in data in python:
+    import torch
+    import struct
+
+    def fileToTensor(filename):
+        with open(filename, "rb") as file:
+            # Read the number of dimensions from the file
+            num_dimensions = struct.unpack("Q", file.read(8))[0]
+
+            # Read the shape of the tensor from the file
+            shape = struct.unpack(f"{num_dimensions}q", file.read(8 * num_dimensions))
+
+            # Read the number of elements from the file
+            num_elements = struct.unpack("Q", file.read(8))[0]
+
+            # Read the tensor data from the file
+            tensor_data = struct.unpack(f"{num_elements}f", file.read(4 * num_elements))
+
+            # Create a torch.Tensor with the retrieved shape and data
+            tensor = torch.tensor(tensor_data).reshape(shape)
+
+        return tensor
+    =================================================================================================    
+    */
+    std::ofstream outputFile(filename, std::ios::binary);
+    if (!outputFile) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
+    }
+
+    // Get the size and data pointer of the tensor
+    torch::IntArrayRef size = tensor.sizes();
+    const float* data = tensor.data_ptr<float>();
+
+    // Write the size of the tensor to the file
+    size_t numDimensions = size.size();
+    outputFile.write(reinterpret_cast<const char*>(&numDimensions), sizeof(size_t));
+    outputFile.write(reinterpret_cast<const char*>(size.data()), numDimensions * sizeof(int64_t));
+
+    // Write the tensor data to the file
+    size_t numElements = tensor.numel();
+    outputFile.write(reinterpret_cast<const char*>(&numElements), sizeof(size_t));
+    outputFile.write(reinterpret_cast<const char*>(data), numElements * sizeof(float));
+
+    outputFile.close();
+
+    // Print location of file
+    std::cout << "Tensor data written to file: " << filename << std::endl;
+}

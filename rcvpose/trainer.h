@@ -28,6 +28,7 @@ public:
 	void test_compute_r_loss();
 	
 	void store_model(std::string path);
+
 	void output_pred(const int& idx, const std::string& path);
 
 
@@ -46,6 +47,7 @@ private:
 	torch::DeviceType device_type;
 
 	void printProgressBar(int current, int total, int width);
+	void tensorToFile(const torch::Tensor& tensor, const std::string& filename)
 
 	int epoch;
 	int starting_epoch;

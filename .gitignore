@@ -8,3 +8,8 @@ acc_space/out
 acc_space/.vs
 acc_space/dlls
 acc_space/images
+rcvpose/build/
+rcvpose/build/CMakeCache.txt
+rcvpose/build/CMakeCache.txt
+rcvpose/build/CMakeFiles/CMakeOutput.log
+rcvpose/build/CMakeFiles/3.22.1/CMakeSystem.cmake

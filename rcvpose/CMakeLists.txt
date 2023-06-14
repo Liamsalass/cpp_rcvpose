@@ -11,6 +11,7 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
+
 set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv")
 
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0")
@@ -25,8 +26,8 @@ set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.0/bin/nvcc")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-# find_package(Open3D REQUIRED)
-# include_directories(${Open3D_INCLUDE_DIRS})
+find_package(Open3D REQUIRED)
+include_directories(${Open3D_INCLUDE_DIRS})
 
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
@@ -52,6 +53,7 @@ set(SOURCE_FILES
 )
 #  "accumulator_space.h"
 #    "accumulator_space.cpp"
+
 
 option(BUILD_DLL "Build DLL" OFF)
 # Conditionally include the test.cpp file based on BUILD_DLL variable.

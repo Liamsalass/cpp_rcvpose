@@ -6,7 +6,6 @@ Trainer::Trainer(Options& options) : opts(options)
 {
     cout << string(100, '=') << endl;
     cout << string (34, ' ') << "Initializing Trainer" << endl << endl;
- 
 
     bool use_cuda = torch::cuda::is_available();
     device_type = use_cuda ? torch::kCUDA : torch::kCPU;
@@ -69,7 +68,7 @@ Trainer::Trainer(Options& options) : opts(options)
         try {
             // Load model from checkpoint
             cout << "Loading model from checkpoint" << endl;
-            CheckpointLoader loader(opts.model_dir, true);
+            CheckpointLoader loader(opts.model_dir, false);
             epoch = loader.getEpoch();
             starting_epoch = epoch;
             cout << "Epoch: " << epoch << endl;
@@ -80,12 +79,14 @@ Trainer::Trainer(Options& options) : opts(options)
             optim->parameters() = model->parameters();
             current_lr = loader.getLrList();
             cout << "Optimizer loaded" << endl;
-
             int count = 0;
             for (auto& params : optim->param_groups()) {
+                params.options().set_lr(current_lr[0]);
                 cout << "Param Group " << count << " with LR value: " << params.options().get_lr() << endl;
                 count++;
             }
+
+
             current_lr.clear();
             current_lr.push_back(opts.initial_lr);
 
@@ -480,15 +481,9 @@ void Trainer::test() {
 
 void Trainer::store_model(std::string path)
 {
-    //torch::jit::script::Module jit_module;
-    //try {
-    //    jit_module = torch::jit::load(path + "/model.pt");
-    //}
-    //catch (const c10::Error& e) {
-    //    std::cerr << "Error loading model: " << e.what() << std::endl;
-    //    exit(0);
-    //}
-    //torch::jit::trace
+    torch::serialize::OutputArchive model_out;
 
-    
+    model->save(model_out);
+
+    model_out.save_to(path + "/model.pt");
 }

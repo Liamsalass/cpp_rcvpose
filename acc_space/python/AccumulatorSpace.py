@@ -71,7 +71,6 @@ def project(xyz, K, RT):
     return xy,actual_xyz
 
 def rgbd_to_point_cloud(K, depth):
-    # depth is a 2-d ndarray with shape (h, w)
     vs, us = depth.nonzero()
     zs = depth[vs, us]
     #print(zs.min())

@@ -11,6 +11,15 @@ int main()
 	torch::Tensor tensor = torch::rand({ 2, 3 });
 	cout << tensor << endl;
 	//store the tensor data to specified path
-	torch::save(tensor, "../../../../tensor.pt");
+	torch::save(tensor, "../../../tensor.pt");
 
+	//Check if file was saved correctly
+	torch::Tensor loaded_tensor;
+	try {
+		torch::load(loaded_tensor, "../../../tensor.pt");
+	}
+	catch (const c10::Error& e) {
+		cout << "error loading the file\n";
+	}
+	cout << "Loaded tensor\n " << loaded_tensor << endl;
 }

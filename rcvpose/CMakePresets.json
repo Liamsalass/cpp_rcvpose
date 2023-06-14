@@ -58,14 +58,6 @@
             }
         },
         {
-            "name": "/home/19lhs4/cpp_rcvpose/rcvpose/CMakePresets.json",
-            "description": "",
-            "displayName": "",
-            "inherits": [
-                "x64-debug"
-            ]
-        },
-        {
             "name": "CMakePresets.json",
             "displayName": "Configure preset using toolchain file",
             "description": "Sets Ninja generator, build and install directory",

@@ -24,10 +24,10 @@ using namespace std;
 #define ldr_check false
 
 // Check training functionality
-#define trn_check false
+#define trn_check true
 
 // Check saving and loading model
-#define stw_model true
+#define stw_model false
 
 // Train checkpoint
 #define trn_ckpt false
@@ -39,14 +39,14 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "train_kpt2";
+    opts.model_dir = "train_kpt1";
     opts.resume_train = rsm_check;
     opts.optim = "adam";
-    opts.batch_size = 1;
+    opts.batch_size = 2;
     opts.class_name = "ape";
     opts.initial_lr = 0.0001;
     opts.reduce_on_plateau = false;
-    opts.kpt_num = 2;
+    opts.kpt_num = 1;
     opts.demo_mode = false;
     opts.test_occ = false;
     return opts;

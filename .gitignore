@@ -137,3 +137,6 @@ test_storage/out/build/x64-debug/CMakeFiles/test.dir/manifest.rc
 test_storage/out/build/x64-debug/CMakeFiles/test.dir/manifest.res
 test_storage/out/build/x64-debug/CMakeFiles/test.dir/test_storage.cpp.obj
 test_storage/out/build/x64-debug/Testing/Temporary/LastTest.log
+test_storage/.vs/test_storage/FileContentIndex/0e40031a-275e-4d82-a62d-d239861f8ff4.vsidx
+test_storage/.vs/test_storage/FileContentIndex/2edb6736-db5c-4178-89de-5967862df8b7.vsidx
+test_storage/.vs/test_storage/FileContentIndex/aa5b7d2c-065f-4f94-bef6-4aeaf781baf9.vsidx

@@ -234,12 +234,11 @@ void Trainer::train()
                 batch_sem_target.push_back(example.sem_target());
             }
 
+            optim->zero_grad();
          
             auto data = torch::stack(batch_data, 0).to(device); 
             auto target = torch::stack(batch_target, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
-;
-          
 
             auto scores = model->forward(data);
 
@@ -306,6 +305,7 @@ void Trainer::train()
 
             auto loss_s = loss_sem(score, sem_target);
             auto loss_r = compute_r_loss(score_rad, target);
+
             auto loss = loss_r + loss_s;
 
             if (loss.numel() == 0)
@@ -550,6 +550,4 @@ void Trainer::output_pred(const int& idx, const string& path)
         cout << "Error: Could not open score_rad file" << endl;
     score_out << out_score << endl;
     score_rad_out << out_score_rad << endl;
-
-
 }

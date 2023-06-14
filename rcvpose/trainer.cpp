@@ -349,9 +349,7 @@ void Trainer::train()
             output_model_info.write("optimizer", opts.optim);
             output_model_info.write("lr", current_lr);
 
-
             output_model_info.save_to(save_location + "/info.pt");
-
   
             torch::serialize::OutputArchive output_model_archive;
             model->to(torch::kCPU);
@@ -486,4 +484,72 @@ void Trainer::store_model(std::string path)
     model->save(model_out);
 
     model_out.save_to(path + "/model.pt");
+}
+
+void Trainer::output_pred(const int& idx, const string& path)
+{
+    cout << string(100, '=') << endl;
+    string out_path = out + "/" + path;
+    cout << "Storing Output to " << out_path << endl;
+
+
+    std::filesystem::path outPath(out_path);
+    if (!std::filesystem::is_directory(outPath)) {
+        if (std::filesystem::create_directories(outPath)) {
+            cout << "Directory created" << endl;
+        }
+        else {
+            cout << "Error creating directory" << endl;
+        }
+    }
+
+    torch::Device device(device_type);
+    cout << "Setting up dataset loader" << endl;
+
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
+
+    model->to(device);
+    model->eval();
+
+    auto data_tensor = val_dataset.get(idx).data();
+
+    cout << "Data tensor size: " << data_tensor.sizes() << endl;
+
+    auto batch = torch::stack(data_tensor, 0);
+
+    cout << "Batch Tensor Size: " << batch.sizes() << endl;
+
+    batch = batch.to(device);
+
+    auto output = model->forward(batch);
+
+    auto score = std::get<0>(output).to(torch::kCPU);
+    auto score_rad = std::get<1>(output).to(torch::kCPU);
+
+    cout << "Score size " << score.sizes() << endl;
+    cout << "Score Rad size " << score_rad.sizes() << endl;
+
+    //Unstack output (wrong impl)
+    auto score_unstack = torch::unbind(score, 0);
+    auto score_rad_unstack = torch::unbind(score_rad, 0);
+
+    auto out_score = score_unstack[0];
+    auto out_score_rad = score_rad_unstack[0];
+
+    cout << "Unstacked Score size " << out_score.sizes() << endl;
+    cout << "Unstacked Score Rad size " << out_score_rad.sizes() << endl;    
+
+    //Save the scores to file
+    auto score_path = out_path + "/score_" + std::to_string(idx) + ".txt";
+    auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
+    std::ofstream score_out(score_path);
+    std::ofstream score_rad_out(score_rad_path);
+    if (!score_out.is_open())
+        cout << "Error: Could not open score file" << endl;
+    if (!score_rad_out.is_open())
+        cout << "Error: Could not open score_rad file" << endl;
+    score_out << out_score << endl;
+    score_rad_out << out_score_rad << endl;
+
+
 }

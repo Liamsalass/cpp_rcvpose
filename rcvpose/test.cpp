@@ -24,10 +24,10 @@ using namespace std;
 #define ldr_check false
 
 // Check training functionality
-#define trn_check true
+#define trn_check false
 
 // Check saving and loading model
-#define stw_model false
+#define stw_model true
 
 // Train checkpoint
 #define trn_ckpt false
@@ -42,7 +42,7 @@ Options testing_options() {
     opts.model_dir = "train_kpt2";
     opts.resume_train = rsm_check;
     opts.optim = "adam";
-    opts.batch_size = 2;
+    opts.batch_size = 1;
     opts.class_name = "ape";
     opts.initial_lr = 0.0001;
     opts.reduce_on_plateau = false;
@@ -168,7 +168,7 @@ int main(int argc, char* args[])
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Saving and Loading Model" << endl;
         RCVpose rcv(testing_options());
-        rcv.saveModel("test_store1");
+        rcv.saveOutput(1 , "test_store1");
     }
 
     if (trn_ckpt) {

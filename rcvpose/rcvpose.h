@@ -60,8 +60,7 @@ public:
 
     void compare_models(std::string model1, std::string model2);
 
-    // Saves the model to specified directory
-    void saveModel(std::string path);
+    void saveOutput(const int& idx, const std::string& path);
 
     // Tests on a single image and saves the output
     void test_img(std::string img_path, std::string output_path);

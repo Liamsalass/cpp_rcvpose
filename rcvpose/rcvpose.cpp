@@ -107,11 +107,11 @@ void RCVpose::compare_models(string model1, string model2) {
 
 }
 
-void RCVpose::saveModel(std::string path) {
+void RCVpose::saveOutput(const int& idx,const std::string& path) {
     try {
         Trainer trainer(opts);
 
-        trainer.store_model(path);
+        trainer.output_pred(idx,path);
     }
     catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;

@@ -47,7 +47,7 @@ private:
 	torch::DeviceType device_type;
 
 	void printProgressBar(int current, int total, int width);
-	void tensorToFile(const torch::Tensor& tensor, const std::string& filename)
+	void tensorToFile(const torch::Tensor& tensor, const std::string& filename);
 
 	int epoch;
 	int starting_epoch;

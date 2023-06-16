@@ -103,8 +103,6 @@ Trainer::Trainer(Options& options) : opts(options)
             return;
 		}
     }
-
-
     cout << "Setting up loss function" << endl;
 
     // Instantiate the loss function
@@ -205,7 +203,7 @@ void Trainer::train()
     while (epoch < max_epoch) {
         auto epoch_start_time = std::chrono::steady_clock::now();
         cout << string(100, '-') << endl;
-        cout << string(43, ' ') << "Epoch " << epoch << endl;
+        cout << string(43, ' ') << "Epoch " << epoch ;
 
 
 
@@ -222,7 +220,7 @@ void Trainer::train()
             count = batch.size() + count;
             iteration = batch.size() + iteration;
 
-            printProgressBar(count, train_size.value(), 80);
+            //printProgressBar(count, train_size.value(), 80);
 
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
@@ -264,7 +262,6 @@ void Trainer::train()
 
         }
 
-        cout << "\r" << string(100, ' ');
         auto train_end = std::chrono::steady_clock::now();
         auto train_duration = std::chrono::duration_cast<std::chrono::seconds>(train_end - train_start);
         cout << "\rTraining Time: " << train_duration.count() << " s" << endl;
@@ -282,7 +279,7 @@ void Trainer::train()
         for (const auto& batch : *val_loader) {
             count = batch.size() + count;
             iteration_val = batch.size() + iteration_val;
-            printProgressBar(count, val_size.value(), 80);
+            //printProgressBar(count, val_size.value(), 80);
 
 
             std::vector<torch::Tensor> batch_data;
@@ -314,8 +311,6 @@ void Trainer::train()
             val_loss += loss.item<float>();
 
         }
-
-        cout << "\r" << string(100, ' ');
         auto val_end = std::chrono::steady_clock::now();
         auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
         cout << "\rValidation Time: " << val_duration.count()<< " s" << endl;
@@ -486,4 +481,119 @@ void Trainer::store_model(std::string path)
     model->save(model_out);
 
     model_out.save_to(path + "/model.pt");
+}
+
+
+void Trainer::output_pred(const int& idx, const string& path)
+{
+    // Stores tensor to txt file, since archive, pickle, and jit doesn't work
+    // - Look into implementation of archive, pickle, and jit
+    cout << string(100, '=') << endl;
+    string out_path = out + "/" + path;
+    cout << "Storing Output to " << out_path << endl;
+
+
+    std::filesystem::path outPath(out_path);
+    if (!std::filesystem::is_directory(outPath)) {
+        if (std::filesystem::create_directories(outPath)) {
+            cout << "Directory created" << endl;
+        }
+        else {
+            cout << "Error creating directory" << endl;
+        }
+    }
+
+    torch::Device device(device_type);
+    cout << "Setting up dataset loader" << endl;
+
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
+
+    model->to(device);
+    model->eval();
+
+    auto data_tensor = val_dataset.get(idx).data();
+
+    // cout << "Data tensor size: " << data_tensor.sizes() << endl;
+
+    auto batch = torch::stack(data_tensor, 0);
+
+    // cout << "Batch Tensor Size: " << batch.sizes() << endl;
+
+    batch = batch.to(device);
+
+    auto output = model->forward(batch);
+
+    auto score = std::get<0>(output).to(torch::kCPU);
+    auto score_rad = std::get<1>(output).to(torch::kCPU);
+
+    // cout << "Score size " << score.sizes() << endl;
+    // cout << "Score Rad size " << score_rad.sizes() << endl;
+
+    //Unstack output 
+    auto score_unstack = torch::unbind(score, 0);
+    auto score_rad_unstack = torch::unbind(score_rad, 0);
+
+    auto out_score = score_unstack[0];
+    auto out_score_rad = score_rad_unstack[0];
+
+    // cout << "Unstacked Score size " << out_score.sizes() << endl;
+    // cout << "Unstacked Score Rad size " << out_score_rad.sizes() << endl;    
+
+
+    auto score_path = out_path + "/score_" + std::to_string(idx) + ".txt";
+    auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
+    tensorToFile(out_score, score_path);
+    tensorToFile(out_score_rad, score_rad_path);
+}
+
+void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {
+    /*===============================================================================================
+    Write a tensor to a file in binary format. The file format is as follows:
+    1. The size of the tensor (number of dimensions and size of each dimension)
+    2. The number of elements in the tensor
+    3. The tensor data
+    =================================================================================================
+    How to read in data in python:
+    import torch
+    import struct
+
+    def fileToTensor(filename):
+        with open(filename, "rb") as file:
+            # Read the number of dimensions from the file
+            num_dimensions = struct.unpack("Q", file.read(8))[0]
+
+            # Read the shape of the tensor from the file
+            shape = struct.unpack(f"{num_dimensions}q", file.read(8 * num_dimensions))
+
+            # Read the number of elements from the file
+            num_elements = struct.unpack("Q", file.read(8))[0]
+
+            # Read the tensor data from the file
+            tensor_data = struct.unpack(f"{num_elements}f", file.read(4 * num_elements))
+
+            # Create a torch.Tensor with the retrieved shape and data
+            tensor = torch.tensor(tensor_data).reshape(shape)
+
+        return tensor
+    ================================================================================================*/
+    std::ofstream outputFile(filename, std::ios::binary);
+    if (!outputFile) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
+    }
+
+    torch::IntArrayRef size = tensor.sizes();
+    const float* data = tensor.data_ptr<float>();
+
+    size_t numDimensions = size.size();
+    outputFile.write(reinterpret_cast<const char*>(&numDimensions), sizeof(size_t));
+    outputFile.write(reinterpret_cast<const char*>(size.data()), numDimensions * sizeof(int64_t));
+
+    size_t numElements = tensor.numel();
+    outputFile.write(reinterpret_cast<const char*>(&numElements), sizeof(size_t));
+    outputFile.write(reinterpret_cast<const char*>(data), numElements * sizeof(float));
+
+    outputFile.close();
+
+    std::cout << "Tensor data written to file: " << filename << std::endl;
 }

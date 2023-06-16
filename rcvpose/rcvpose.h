@@ -49,6 +49,8 @@ public:
 
     void train();
 
+    void save_tensor(const std::string path, const int idx);
+
     // Evaluates the model on the test set
     void validate();
 

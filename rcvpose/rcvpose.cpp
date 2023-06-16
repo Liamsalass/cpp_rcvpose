@@ -98,6 +98,12 @@ void RCVpose::train()
     
 }
 
+void RCVpose::save_tensor(const string path, const int idx){
+    opts.resume_train = true;
+    Trainer trainer(opts);
+
+    trainer.output_pred(idx, path);
+}
 
 void RCVpose::validate() {
     // Implementation for evaluating the model
@@ -117,6 +123,8 @@ void RCVpose::saveModel(std::string path) {
 		std::cout << e.what() << std::endl;
 	}
 }
+
+
 
 void RCVpose::test_img(std::string img_path, std::string output_path)
 {

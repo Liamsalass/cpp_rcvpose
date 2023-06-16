@@ -9,7 +9,7 @@
 using namespace std;
 
 //Set true to load in a model and resume, doens't start any programs
-#define rsm_check true
+#define rsm_check false
 
 //Check library functionality
 #define lib_check false
@@ -24,14 +24,15 @@ using namespace std;
 #define ldr_check false
 
 // Check training functionality
-#define trn_check true
+#define trn_check false
 
 // Check saving and loading model
 #define stw_model false
 
 // Train checkpoint
 #define trn_ckpt false
-#define trn_gpu false
+
+#define trn_gpu true
 
 Options testing_options() {
     Options opts;
@@ -75,7 +76,7 @@ Options gpu_train_opts(int kpt, bool rsm, int batch_size) {
     Options opts;
 	opts.gpu_id = 0;
 	opts.dname = "lm";
-	opts.root_dataset = "/dataset/public/RCVLab/Bluewrist/16yw11";
+	opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113";
 	opts.model_dir = "kpt" + to_string(kpt);
 	opts.resume_train = rsm;
 	opts.optim = "adam";
@@ -213,9 +214,25 @@ int main(int argc, char* args[])
         rcv.train();
     }
     if (trn_gpu) {
-        Options opts = gpu_train_opts(1, false, 20);
-        RCVpose rcv(opts);
-        rcv.train();
+        
+        Options opts1 = gpu_train_opts(1, false, 24);
+        RCVpose kp1(opts1);
+        kp1.train();
+        kp1.save_tensor("kpt1_t", 0);
+        kp1.~RCVpose();
+
+        Options opts2 = gpu_train_opts(2, false, 24);
+        RCVpose kp2(opts2);
+        kp2.train();
+        kp2.save_tensor("kpt2_t", 0);
+        kp2.~RCVpose();
+    
+        Options opts3 = gpu_train_opts(3, false, 24);
+        RCVpose kp3(opts3);
+        kp3.train();
+        kp3.save_tensor("kpt3_t", 0);
+        kp3.~RCVpose();
+    
     }
     return 0;
 }

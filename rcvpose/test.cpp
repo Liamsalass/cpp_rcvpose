@@ -168,7 +168,7 @@ int main(int argc, char* args[])
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Saving and Loading Model" << endl;
         RCVpose rcv(testing_options());
-        rcv.saveOutput(1 , "test_store1");
+        rcv.saveOutput(1 , "test_store");
     }
 
     if (trn_ckpt) {

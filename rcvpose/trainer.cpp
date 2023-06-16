@@ -529,7 +529,7 @@ void Trainer::output_pred(const int& idx, const string& path)
     cout << "Score size " << score.sizes() << endl;
     cout << "Score Rad size " << score_rad.sizes() << endl;
 
-    //Unstack output (wrong impl)
+    //Unstack output 
     auto score_unstack = torch::unbind(score, 0);
     auto score_rad_unstack = torch::unbind(score_rad, 0);
 
@@ -542,19 +542,12 @@ void Trainer::output_pred(const int& idx, const string& path)
     //Save the scores to file
     auto score_path = out_path + "/score_" + std::to_string(idx) + ".txt";
     auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
-    std::ofstream score_out(score_path);
-    std::ofstream score_rad_out(score_rad_path);
-    if (!score_out.is_open())
-        cout << "Error: Could not open score file" << endl;
-    if (!score_rad_out.is_open())
-        cout << "Error: Could not open score_rad file" << endl;
-    score_out << out_score << endl;
-    score_rad_out << out_score_rad << endl;
+    tensorToFile(out_score, score_path);
+    tensorToFile(out_score_rad, score_rad_path);
 }
 
 void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {
-    /*
-    =================================================================================================
+    /*===============================================================================================
     Write a tensor to a file in binary format. The file format is as follows:
     1. The size of the tensor (number of dimensions and size of each dimension)
     2. The number of elements in the tensor
@@ -582,30 +575,25 @@ void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filen
             tensor = torch.tensor(tensor_data).reshape(shape)
 
         return tensor
-    =================================================================================================    
-    */
+    ================================================================================================*/
     std::ofstream outputFile(filename, std::ios::binary);
     if (!outputFile) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return;
     }
 
-    // Get the size and data pointer of the tensor
     torch::IntArrayRef size = tensor.sizes();
     const float* data = tensor.data_ptr<float>();
 
-    // Write the size of the tensor to the file
     size_t numDimensions = size.size();
     outputFile.write(reinterpret_cast<const char*>(&numDimensions), sizeof(size_t));
     outputFile.write(reinterpret_cast<const char*>(size.data()), numDimensions * sizeof(int64_t));
 
-    // Write the tensor data to the file
     size_t numElements = tensor.numel();
     outputFile.write(reinterpret_cast<const char*>(&numElements), sizeof(size_t));
     outputFile.write(reinterpret_cast<const char*>(data), numElements * sizeof(float));
 
     outputFile.close();
 
-    // Print location of file
     std::cout << "Tensor data written to file: " << filename << std::endl;
 }

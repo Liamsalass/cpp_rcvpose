@@ -488,6 +488,8 @@ void Trainer::store_model(std::string path)
 
 void Trainer::output_pred(const int& idx, const string& path)
 {
+    // Stores tensor to txt file, since archive, pickle, and jit doesn't work
+    // - Look into implementation of archive, pickle, and jit
     cout << string(100, '=') << endl;
     string out_path = out + "/" + path;
     cout << "Storing Output to " << out_path << endl;
@@ -513,11 +515,11 @@ void Trainer::output_pred(const int& idx, const string& path)
 
     auto data_tensor = val_dataset.get(idx).data();
 
-    cout << "Data tensor size: " << data_tensor.sizes() << endl;
+    // cout << "Data tensor size: " << data_tensor.sizes() << endl;
 
     auto batch = torch::stack(data_tensor, 0);
 
-    cout << "Batch Tensor Size: " << batch.sizes() << endl;
+    // cout << "Batch Tensor Size: " << batch.sizes() << endl;
 
     batch = batch.to(device);
 
@@ -526,8 +528,8 @@ void Trainer::output_pred(const int& idx, const string& path)
     auto score = std::get<0>(output).to(torch::kCPU);
     auto score_rad = std::get<1>(output).to(torch::kCPU);
 
-    cout << "Score size " << score.sizes() << endl;
-    cout << "Score Rad size " << score_rad.sizes() << endl;
+    // cout << "Score size " << score.sizes() << endl;
+    // cout << "Score Rad size " << score_rad.sizes() << endl;
 
     //Unstack output 
     auto score_unstack = torch::unbind(score, 0);
@@ -536,10 +538,10 @@ void Trainer::output_pred(const int& idx, const string& path)
     auto out_score = score_unstack[0];
     auto out_score_rad = score_rad_unstack[0];
 
-    cout << "Unstacked Score size " << out_score.sizes() << endl;
-    cout << "Unstacked Score Rad size " << out_score_rad.sizes() << endl;    
+    // cout << "Unstacked Score size " << out_score.sizes() << endl;
+    // cout << "Unstacked Score Rad size " << out_score_rad.sizes() << endl;    
 
-    //Save the scores to file
+
     auto score_path = out_path + "/score_" + std::to_string(idx) + ".txt";
     auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
     tensorToFile(out_score, score_path);

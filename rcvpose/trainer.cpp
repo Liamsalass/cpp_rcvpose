@@ -325,9 +325,13 @@ void Trainer::train()
         float mean_acc = val_loss;
         cout << "Mean Loss: " << mean_acc << endl;
         bool is_best = mean_acc < best_acc_mean;
-        if (is_best) 
-            best_acc_mean = mean_acc;
         
+        if (is_best) {
+            best_acc_mean = mean_acc;
+            epochs_without_improvement = 0;
+        } else {
+            epochs_without_improvement++;
+        }
         cout << "Iterations: " << iteration << endl;
 
 
@@ -378,25 +382,49 @@ void Trainer::train()
         
 
         // Reduce learning rate every 70 epoch
-        if (epoch % 70 == 0 && epoch != 0) {
-            cout << "Learning rate reduction" << endl;
+        if (opts.reduce_on_plateau = false){
+            if (epoch % 70 == 0 && epoch != 0) {
+                cout << "Learning rate reduction" << endl;
+                current_lr.clear();
+                for (auto& param_group : optim->param_groups()) {
+                    if (param_group.has_options()) {
+                        double lr = param_group.options().get_lr();
+                        cout << "Current LR: " << lr << endl;
+                        double new_lr = lr * 0.1;
+                        if (opts.optim == "adam") 
+                            static_cast<torch::optim::AdamOptions &>(param_group.options()).lr(new_lr);
+                        if (opts.optim == "sgd")
+                            static_cast<torch::optim::SGDOptions &>(param_group.options()).lr(new_lr);
+                        cout << "New LR: " << new_lr << endl;
+                        current_lr.push_back(new_lr);
+                    }
+                    else {
+                        cout << "Error: param_group has no options" << endl;
+                    }
+                }
+            }
+        }
+        if (opts.reduce_on_plateau && epochs_without_improvement >= opts.patience) {
+            cout << "Reducing learning rate" << endl;
             current_lr.clear();
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {
                     double lr = param_group.options().get_lr();
                     cout << "Current LR: " << lr << endl;
-                    double new_lr = lr * 0.1;
-                    if (opts.optim == "adam") 
-                        static_cast<torch::optim::AdamOptions &>(param_group.options()).lr(new_lr);
-                    if (opts.optim == "sgd")
-                        static_cast<torch::optim::SGDOptions &>(param_group.options()).lr(new_lr);
+                    double new_lr = lr * opts.lr_reduce_factor;
+                    if (opts.optim == "adam")
+                        static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(new_lr);
+                    else if (opts.optim == "sgd")
+                        static_cast<torch::optim::SGDOptions&>(param_group.options()).lr(new_lr);
+                    else
+                        cout << "Error: Invalid optimizer" << endl;
                     cout << "New LR: " << new_lr << endl;
                     current_lr.push_back(new_lr);
-                }
-                else {
+                } else {
                     cout << "Error: param_group has no options" << endl;
                 }
             }
+            epochs_without_improvement = 0;
         }
         if (iteration >= max_iteration) {
             break;

@@ -50,6 +50,7 @@ private:
 	void tensorToFile(const torch::Tensor& tensor, const std::string& filename);
 
 	int epoch;
+	int epochs_without_improvement;
 	int starting_epoch;
 	int iteration;
 	int iteration_val;

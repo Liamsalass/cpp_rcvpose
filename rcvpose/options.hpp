@@ -35,5 +35,8 @@ struct Options {
     bool test_occ = false;
     // Configs
     std::map<std::string, std::vector<float>> cfg;
+    // Patience for reduce on plateau
+    // Number of epochs without improvement before lr reduction
+    int patience = 10;
 };
 

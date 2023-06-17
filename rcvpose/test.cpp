@@ -49,6 +49,7 @@ Options testing_options() {
     opts.kpt_num = 1;
     opts.demo_mode = false;
     opts.test_occ = false;
+    opts.patience = 10;
     return opts;
 }
 
@@ -68,6 +69,7 @@ Options training_options(int kpt, bool rsm, int batch_size = 2) {
 	opts.kpt_num = kpt;
 	opts.demo_mode = false;
 	opts.test_occ = false;
+    opts.patience = 10;
 	return opts;
 }
 
@@ -86,6 +88,7 @@ Options gpu_train_opts(int kpt, bool rsm, int batch_size) {
 	opts.kpt_num = kpt;
 	opts.demo_mode = false;
 	opts.test_occ = false;
+    opts.patience = 10;    
 	return opts;
 }
 

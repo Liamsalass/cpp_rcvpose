@@ -147,3 +147,6 @@ test_storage/.vs/test_storage/FileContentIndex/2945da1d-ea15-42eb-9fff-068ea8886
 acc_space/python/kpt2_t
 acc_space/python/kpt3_t
 acc_space/python/kpt1_t
+acc_space/python/pretrained/ape_pt1.pth.tar
+acc_space/python/pretrained/ape_pt2.pth.tar
+acc_space/python/pretrained/ape_pt3.pth.tar

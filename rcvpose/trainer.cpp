@@ -86,7 +86,6 @@ Trainer::Trainer(Options& options) : opts(options)
                 count++;
             }
 
-
             current_lr.clear();
             current_lr.push_back(opts.initial_lr);
 
@@ -411,7 +410,7 @@ void Trainer::train()
                 if (param_group.has_options()) {
                     double lr = param_group.options().get_lr();
                     cout << "Current LR: " << lr << endl;
-                    double new_lr = lr * opts.lr_reduce_factor;
+                    double new_lr = lr * 0.1;
                     if (opts.optim == "adam")
                         static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(new_lr);
                     else if (opts.optim == "sgd")

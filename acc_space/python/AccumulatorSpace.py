@@ -11,7 +11,6 @@ import open3d as o3d
 import time
 from numba import prange
 import math
-import h5py
 from sklearn import metrics
 import scipy
 

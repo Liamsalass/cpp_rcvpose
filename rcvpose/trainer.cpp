@@ -158,6 +158,8 @@ void Trainer::train()
     cout << string(100, '=') << endl; 
     cout << string(24, ' ') << "Begining Training Initialization" << endl << endl;
 
+    //Select device base on opts.gpu_id
+
     torch::Device device(device_type);
     cout << "Setting up dataset loader" << endl;
     // Instantiate the training dataset
@@ -268,6 +270,7 @@ void Trainer::train()
 
             torch::Tensor loss = loss_r + loss_s;
 
+            //cout << "Radial Loss: " << loss_r.item<float>() << " Semantic Loss: " << loss_s.item<float>() << " Total Loss: " << loss.item<float>() << "\r";
 
             loss.backward();
 
@@ -325,7 +328,7 @@ void Trainer::train()
 
             auto loss = loss_r + loss_s;
 
-            cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << endl;
+            //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
 
             if (loss.numel() == 0)
                 std::runtime_error("Loss is empty");
@@ -467,6 +470,9 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
     torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
     // Compute the loss
     torch::Tensor loss = loss_radial(pred_masked, gt_masked);
+    // Normalize the loss
+    loss = loss / static_cast<float>(gt_masked.size(0));
+
     return loss;
 }
 

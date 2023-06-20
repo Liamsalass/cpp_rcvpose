@@ -83,10 +83,9 @@ CustomExample RMapDataset::get(size_t index) {
 			int cols = static_cast<int>(shape[1]);
 			cv::Mat target_test(rows, cols, CV_64F);
 
-
-
 			// Assign the data to the cv::Mat object based on the fortran_order
 			if (fortran_order) {
+			#pragma omp parallel for collapse(2)
 				for (int i = 0; i < rows; ++i) {
 					for (int j = 0; j < cols; ++j) {
 						target_test.at<double>(i, j) = data[i + j * rows];
@@ -94,23 +93,25 @@ CustomExample RMapDataset::get(size_t index) {
 				}
 			}
 			else {
+				#pragma omp parallel for collapse(2)
 				for (int i = 0; i < rows; ++i) {
 					for (int j = 0; j < cols; ++j) {
 						target_test.at<double>(i, j) = data[i * cols + j];
 					}
 				}
 			}
-			target = target_test.clone();
+		
 
-			//// Divide all values in target_test by the greatest value in target_test
+			// Divide all values in target_test by the greatest value in target_test
 			//double max_val;
 			//cv::minMaxLoc(target_test, NULL, &max_val);
 			//target_test = target_test / max_val;
-			//
+
+			target = target_test;
+			
 			//// Show target_test
 			//cv::imshow("target_test", target_test);
 			//cv::waitKey(0);
-
 		}
 		catch (const std::exception& e) {
 			std::cout << "Error reading in image: " << imgpath_ + img_id + ".jpg" << std::endl;

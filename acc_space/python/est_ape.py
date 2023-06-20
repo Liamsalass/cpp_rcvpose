@@ -1,3 +1,4 @@
+from models.fcnresnet import DenseFCNResNet152, ResFCNResNet152
 from util.horn import HornPoseFitting
 import utils
 import torch
@@ -524,7 +525,10 @@ def estimate_6d_pose_lm():
     test_list = open(root_dataset + "LINEMOD/"+class_name+"/" +"Split/val.txt","r").readlines()
     test_list = [ s.replace('\n', '') for s in test_list]
 
-    #
+    # test = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(2) + '_t/score_' + str(0) +'.txt'
+    # sem_out = fileToTensor(test)
+    # print('Testing shape of kpt2 score0: ')
+    # print (sem_out.shape)
     
     pcd_load = o3d.io.read_point_cloud(root_dataset + "LINEMOD/"+class_name+"/"+class_name+".ply")
     
@@ -556,14 +560,18 @@ def estimate_6d_pose_lm():
         
     for filename in os.listdir(dataPath):
         # Only 25 first images
-        count = count + 1
-        if (count == 25):
+
+        if (count > 24):
             break
 
         if filename.endswith(".jpg"):
             #print(os.path.splitext(filename)[0][5:].zfill(6))
             #if os.path.splitext(filename)[0][5:].zfill(6) in test_list:
             filename_without_ext = os.path.splitext(filename)[0]
+
+            plt.imshow(Image.open(dataPath+filename))
+            plt.show()
+            
 
             if filename_without_ext not in test_list:
                 print('Not in test list: ', filename_without_ext)
@@ -574,7 +582,11 @@ def estimate_6d_pose_lm():
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
                 print(RTGT.shape)
                 #print(RTGT.shape)
-                keypoint_count = 1
+
+                # ======================
+                keypoint_count = 2
+
+
                 for keypoint in keypoints:
                     keypoint=keypoints[keypoint_count]
                     #print(keypoint)
@@ -601,24 +613,49 @@ def estimate_6d_pose_lm():
                     normalized_depth = []
                     tic = time.time_ns()
                     
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_test/python/kpt' + str(keypoint_count) + '_t/score_' + str(count) +'.txt'
+                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(keypoint_count) + '_t/score_' + str(count) +'.txt'
                     print (sem_out_path)
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_test/python/kpt' + str(keypoint_count) + '_t/score_rad_' + str(count) +'.txt'
+                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(keypoint_count) + '_t/score_rad_' + str(count) +'.txt'
                     print (rad_out_path)
 
                     sem_out = fileToTensor(sem_out_path)
-                    print(sem_out.shape)
-
                     radial_out = fileToTensor(rad_out_path)
+
+                    # Reshape the output tensors, squeeze to remove batch dimension
+                    sem_out = sem_out.squeeze(0).permute(1, 0)
+                    radial_out = radial_out.squeeze(0).permute(1, 0)
+
+                    print(sem_out.shape)
                     print(radial_out.shape)
 
+                    # Define window size for plt
+                    plt.figure(figsize=(15, 15))
+                    plt.imshow(sem_out)
+                    plt.show()
 
-                    
+                    plt.imshow(radial_out)
+                    plt.show()
+
                     toc = time.time_ns()
                     net_time += toc-tic
                     #print("Network time consumption: ", network_time_single)
                     depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
+                    print ('depth map shape: ', depth_map1.shape)
+
                     sem_out = np.where(sem_out>0.8,1,0)
+
+                    print ('semout shape: ', sem_out.shape)
+
+                    # visualize the depth map
+                    plt.imshow(depth_map1)
+                    plt.show()
+
+                    # visualize the semout
+                    plt.imshow(sem_out)
+                    plt.show()
+
+
+
                     depth_map = depth_map1*sem_out/1000
                     pixel_coor = np.where(sem_out==1)
                     
@@ -628,6 +665,13 @@ def estimate_6d_pose_lm():
                     
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
                     tic = time.time_ns()
+
+                    # XYZ is shape 0,3
+                    # radial list is no shape and no data
+                    print('xys shape: ', xyz.shape)
+                    print('xyz values: ', xyz)
+                    print ('radial list shape: ', radial_list.shape)
+                    print ('radial list values: ', radial_list)
                     center_mm_s = Accumulator_3D(xyz, radial_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
@@ -734,6 +778,7 @@ def estimate_6d_pose_lm():
                 print('ADD\(s\) of '+class_name+' before ICP: ', bf_icp/general_counter)
                 print('ADD\(s\) of '+class_name+' after ICP: ', af_icp/general_counter)   
                 print('Accumulator time: ', acc_time/general_counter)
+        count = count + 1
 
 
 if __name__ == "__main__":

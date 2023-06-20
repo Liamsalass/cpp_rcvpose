@@ -15,7 +15,7 @@ inline std::map<int, std::map<std::string, std::vector<float>>> get_config() {
     return {
         {1,
          {
-             {"max_iteration", {700000}},
+             {"max_iteration", {700}},
              {"lr", {1e-4}},
              {"momentum", {0.99}},
              {"betas", {0.9, 0.999}},
@@ -103,3 +103,4 @@ private:
     DenseFCNResNet152 model_;
     torch::optim::Optimizer* optim_;
 };
+

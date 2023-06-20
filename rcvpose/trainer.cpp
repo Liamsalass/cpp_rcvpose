@@ -575,6 +575,8 @@ void Trainer::output_pred(const int& idx, const string& path)
     tensorToFile(out_score_rad, score_rad_path);
 }
 
+
+
 void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {
     /*===============================================================================================
     Write a tensor to a file in binary format. The file format is as follows:

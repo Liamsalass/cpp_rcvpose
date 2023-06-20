@@ -76,12 +76,41 @@ CustomExample RMapDataset::get(size_t index) {
 			// Read in image and radial distance map 
 			img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
 
-			// Check implementation (What is fortran_order?)
 			std::string npy_path = radialpath_ + img_id + ".npy";
 			npy::LoadArrayFromNumpy(npy_path, shape, fortran_order, data);
+			// Check implementation (What is fortran_order?)
+			int rows = static_cast<int>(shape[0]);
+			int cols = static_cast<int>(shape[1]);
+			cv::Mat target_test(rows, cols, CV_64F);
 
-			// Reshape the data to match that of the image
-			target = cv::Mat(shape[0], shape[1], CV_64FC1, data.data());
+
+
+			// Assign the data to the cv::Mat object based on the fortran_order
+			if (fortran_order) {
+				for (int i = 0; i < rows; ++i) {
+					for (int j = 0; j < cols; ++j) {
+						target_test.at<double>(i, j) = data[i + j * rows];
+					}
+				}
+			}
+			else {
+				for (int i = 0; i < rows; ++i) {
+					for (int j = 0; j < cols; ++j) {
+						target_test.at<double>(i, j) = data[i * cols + j];
+					}
+				}
+			}
+			target = target_test.clone();
+
+			//// Divide all values in target_test by the greatest value in target_test
+			//double max_val;
+			//cv::minMaxLoc(target_test, NULL, &max_val);
+			//target_test = target_test / max_val;
+			//
+			//// Show target_test
+			//cv::imshow("target_test", target_test);
+			//cv::waitKey(0);
+
 		}
 		catch (const std::exception& e) {
 			std::cout << "Error reading in image: " << imgpath_ + img_id + ".jpg" << std::endl;

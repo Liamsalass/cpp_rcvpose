@@ -492,19 +492,10 @@ depthList=[]
 
 def fileToTensor(filename):
     with open(filename, "rb") as file:
-        # Read the number of dimensions from the file
         num_dimensions = struct.unpack("Q", file.read(8))[0]
-
-        # Read the shape of the tensor from the file
         shape = struct.unpack(f"{num_dimensions}q", file.read(8 * num_dimensions))
-
-        # Read the number of elements from the file
         num_elements = struct.unpack("Q", file.read(8))[0]
-
-        # Read the tensor data from the file
         tensor_data = struct.unpack(f"{num_elements}f", file.read(4 * num_elements))
-
-        # Create a torch.Tensor with the retrieved shape and data
         tensor = torch.tensor(tensor_data).reshape(shape)
 
     return tensor
@@ -569,22 +560,18 @@ def estimate_6d_pose_lm():
             #if os.path.splitext(filename)[0][5:].zfill(6) in test_list:
             filename_without_ext = os.path.splitext(filename)[0]
 
-            plt.imshow(Image.open(dataPath+filename))
-            plt.show()
-            
-
             if filename_without_ext not in test_list:
                 print('Not in test list: ', filename_without_ext)
+                continue
 
             if filename_without_ext in test_list:
                 print(filename)
                 estimated_kpts = np.zeros((3,3))
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
-                print(RTGT.shape)
                 #print(RTGT.shape)
 
                 # ======================
-                keypoint_count = 2
+                keypoint_count = 1
 
 
                 for keypoint in keypoints:

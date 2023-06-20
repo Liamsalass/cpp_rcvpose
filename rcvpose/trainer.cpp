@@ -214,6 +214,7 @@ void Trainer::train()
         cout << "Training Epoch" << endl;
         int count = 0;
         model->train();
+        
         auto train_start = std::chrono::steady_clock::now();
         for (const auto& batch : *train_loader) {
           
@@ -239,7 +240,23 @@ void Trainer::train()
             auto target = torch::stack(batch_target, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
-            auto scores = model->forward(data);
+            std::tuple<torch::Tensor, torch::Tensor> scores;
+
+            //Set up device list
+            //std::vector<torch::Device> device_id_list;
+            //for (int i = 0; i < torch::cuda::device_count(); i++) {
+			//	device_id_list.push_back(torch::Device(torch::kCUDA, i));
+			//}
+            //c10::optional device_ids = c10::make_optional<std::vector<torch::Device>>(device_id_list);
+            //
+            //if (torch::cuda::device_count() > 1) {
+            //    scores = torch::nn::parallel::data_parallel(model, data, device_ids, torch::kCPU);
+            //}
+            //else {
+            //    scores = model->forward(data);
+            //}
+
+            scores = model->forward(data);
 
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
@@ -250,6 +267,7 @@ void Trainer::train()
             torch::Tensor loss_r = compute_r_loss(score_rad, target);
 
             torch::Tensor loss = loss_r + loss_s;
+
 
             loss.backward();
 
@@ -306,6 +324,8 @@ void Trainer::train()
             auto loss_r = compute_r_loss(score_rad, target);
 
             auto loss = loss_r + loss_s;
+
+            cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << endl;
 
             if (loss.numel() == 0)
                 std::runtime_error("Loss is empty");
@@ -441,23 +461,24 @@ void Trainer::train()
     }
 }
 
-//Using L1Loss function, remove all 0s from dataset before calculating loss, ensure shape of both tensors is the same before computing loss
 torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
-    try {
-        // Compute the radial loss
-        // Remove all 0s from the ground truth tensor
-        torch::Tensor gt_mask = gt != 0;
-        torch::Tensor gt_masked = torch::masked_select(gt, gt_mask);
-        torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
-        // Compute the loss
-        torch::Tensor loss = loss_radial(pred_masked, gt_masked);
-        return loss;
-    }
-    catch (const torch::Error& e) {
-		cout << "Error: " << e.msg() << endl;
-        return torch::Tensor(torch::empty({}));
-	}
+    torch::Tensor gt_mask = gt != 0;
+    torch::Tensor gt_masked = torch::masked_select(gt, gt_mask);
+    torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
+    // Compute the loss
+    torch::Tensor loss = loss_radial(pred_masked, gt_masked);
+    return loss;
 }
+
+//torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
+//    auto nonzero_indices = torch::nonzero(gt);
+//    auto pred_nonzero = torch::index_select(pred, 0, nonzero_indices);
+//    auto gt_nonzero = torch::index_select(gt, 0, nonzero_indices);
+//
+//    auto loss = loss_radial(pred_nonzero, gt_nonzero) / static_cast<float>(nonzero_indices.size(0));
+//
+//    return loss;
+//}
 
 void Trainer::printProgressBar(int current, int total, int width)
 {

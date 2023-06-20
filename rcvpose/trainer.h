@@ -11,6 +11,7 @@
 #include <torch/optim.h>
 #include <torch/torch.h>
 #include <torch/script.h>
+#include <torch/nn/parallel/data_parallel.h>
 #include <torch/serialize.h>
 #include "models/denseFCNResNet152.h"
 #include <iostream>

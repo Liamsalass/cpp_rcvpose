@@ -43,7 +43,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
-
+	
+	// Possible error here
 	// Create tensors from the transposed matrices
 	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.channels(), imgTransposed.rows, imgTransposed.cols }, torch::kFloat32).clone();
 	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.channels(), targetTransposed.rows, targetTransposed.cols }, torch::kFloat32).clone();

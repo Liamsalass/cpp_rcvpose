@@ -9,14 +9,21 @@ Trainer::Trainer(Options& options) : opts(options)
 
     bool use_cuda = torch::cuda::is_available();
     device_type = use_cuda ? torch::kCUDA : torch::kCPU;
-    torch::Device device(device_type);
     cout << "Using " << (use_cuda ? "CUDA" : "CPU") << endl;
     cout << "Setting up model" << endl;
 
     if (!opts.resume_train) {
         // Instantiate the model
         try {
+            //if(torch::cuda::device_count() > 1){
+            //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
+            //    model = DenseFCNResNet152(3, 2);
+            //    model->to(device);
+            //    model = torch::nn::parallel::data_parallel(model,torch::cude::device_count());
+            //}else {
             model = DenseFCNResNet152(3, 2);
+            // if opts.gpu_id is not -1, then set the device to that gpu
+            torch::Device device(device_type);
             model->to(device);
             //model->to(torch::kCPU);
             cout << "Model initialized " << model->name() << endl;
@@ -68,11 +75,18 @@ Trainer::Trainer(Options& options) : opts(options)
         try {
             // Load model from checkpoint
             cout << "Loading model from checkpoint" << endl;
-            CheckpointLoader loader(opts.model_dir, false);
+            CheckpointLoader loader(opts.model_dir, true);
             epoch = loader.getEpoch();
             starting_epoch = epoch;
             cout << "Epoch: " << epoch << endl;
+            //if(torch::cuda::available()){
+            //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
+            //    model = loader.loadModel();
+            //    model->to(device);
+            //    model = torch::nn::DataParallel(model,torch::cuda::device_count());
+            //}
             model = loader.getModel();
+            torch::Device device(device_type);
             model->to(device);
             cout << "Model loaded" << endl;
             optim = loader.getOptimizer();
@@ -107,6 +121,7 @@ Trainer::Trainer(Options& options) : opts(options)
 
     // Instantiate the loss function
     try {
+        torch::Device device(device_type);
         loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
         //loss_radial->to(torch::kCPU);
 
@@ -117,6 +132,7 @@ Trainer::Trainer(Options& options) : opts(options)
         return;
     }
     try {
+        torch::Device device(device_type);        
         loss_sem = torch::nn::L1Loss();
         //loss_sem->to(torch::kCPU);
         loss_sem->to(device);
@@ -156,8 +172,10 @@ void Trainer::train()
 {
     cout << string(100, '=') << endl; 
     cout << string(24, ' ') << "Begining Training Initialization" << endl << endl;
+    
 
     torch::Device device(device_type);
+   
     cout << "Setting up dataset loader" << endl;
     // Instantiate the training dataset
     // Can use .map(torch::data::transforms::Stack<>()) to stack batches into a single tensor
@@ -194,16 +212,13 @@ void Trainer::train()
         torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1)
     );
 
-
-
     cout << "Max Epochs : " << max_epoch << endl;
-
 
     auto total_train_start = std::chrono::steady_clock::now();
     while (epoch < max_epoch) {
         auto epoch_start_time = std::chrono::steady_clock::now();
         cout << string(100, '-') << endl;
-        cout << string(43, ' ') << "Epoch " << epoch ;
+        cout << string(43, ' ') << "Epoch " << epoch << endl;
 
 
 
@@ -232,12 +247,12 @@ void Trainer::train()
                 batch_sem_target.push_back(example.sem_target());
             }
 
+            optim->zero_grad();
          
             auto data = torch::stack(batch_data, 0).to(device); 
             auto target = torch::stack(batch_target, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
-;
-          
+
 
             auto scores = model->forward(data);
 
@@ -330,8 +345,16 @@ void Trainer::train()
         //                  Save Model and Optimizer                      \\
 
         try {
-
-            std::string save_location = out + "/current";
+            std::string save_location;
+            if (is_best){
+                cout << "Saving New Best Model" << endl;
+                save_location = out + "/model_best";
+            }
+            else {
+                cout << "Saving Current Model" << endl;
+                save_location = out + "/current";
+            }
+            
             if (!std::filesystem::is_directory(save_location))
                 std::filesystem::create_directory(save_location);
 
@@ -358,16 +381,6 @@ void Trainer::train()
             torch::serialize::OutputArchive output_optim_archive;
             optim->save(output_optim_archive);
             output_optim_archive.save_to(save_location + "/optim.pt");
-
-
-            if (is_best) {
-                std::filesystem::path best_path(out + "/model_best");
-                if (!std::filesystem::is_directory(best_path))
-                    std::filesystem::create_directory(best_path);
-
-                std::string model_best_path = out + "/model_best";
-                std::filesystem::copy(save_location, model_best_path, std::filesystem::copy_options::overwrite_existing);
-            }
         }
         catch (std::exception& e) {
 			std::cout << "Error saving model: " << e.what() << std::endl;
@@ -421,6 +434,7 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
         torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
         // Compute the loss
         torch::Tensor loss = loss_radial(pred_masked, gt_masked);
+        loss = loss / static_cast<float>(gt_masked.size(0));
         return loss;
     }
     catch (const torch::Error& e) {
@@ -503,23 +517,21 @@ void Trainer::output_pred(const int& idx, const string& path)
         }
     }
 
-    torch::Device device(device_type);
+    
     cout << "Setting up dataset loader" << endl;
 
     auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
 
-    model->to(device);
+    model->to(torch::kCPU);
     model->eval();
 
     auto data_tensor = val_dataset.get(idx).data();
 
     // cout << "Data tensor size: " << data_tensor.sizes() << endl;
-
     auto batch = torch::stack(data_tensor, 0);
 
     // cout << "Batch Tensor Size: " << batch.sizes() << endl;
 
-    batch = batch.to(device);
 
     auto output = model->forward(batch);
 
@@ -544,6 +556,7 @@ void Trainer::output_pred(const int& idx, const string& path)
     auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
     tensorToFile(out_score, score_path);
     tensorToFile(out_score_rad, score_rad_path);
+    model->to(torch::kCUDA);
 }
 
 void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {

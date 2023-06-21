@@ -18,7 +18,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	img.convertTo(img, CV_32FC3);
 	img /= 255.0;
 	target.convertTo(target, CV_32FC3);
-	target /= 255.0;
 
 	if (target.channels() == 2) {
 		// If lbl has two channels, create a new 3-channel BGR image
@@ -42,7 +41,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 		img = img.colRange(0, img.cols - 1);
 
 	// Print matrix sizes if dim = 0
-if (img.dims == 0 || target.dims == 0) {
+	if (img.dims == 0 || target.dims == 0) {
 		std::cout << "img.dims: " << img.dims << std::endl;
 		std::cout << "target.dims: " << target.dims << std::endl;
 		std::cout << "img.size: " << img.size << std::endl;

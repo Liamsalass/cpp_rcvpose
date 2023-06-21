@@ -9,6 +9,7 @@
 #include <vector>
 #include "utils.hpp"
 #include <torch/torch.h>
+
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 //#include <warning.h>
@@ -49,15 +50,13 @@ public:
 
     void train();
 
-    void save_tensor(const std::string path, const int idx);
-
     // Evaluates the model on the test set
     void validate();
 
     void compare_models(std::string model1, std::string model2);
 
-    // Saves the model to specified directory
-    void saveModel(std::string path);
+    void save_tensor(const std::string& path, const int& idx);
+    void save_tensor(const std::string& path, const int& start, const int& end);
 
     // Tests on a single image and saves the output
     void test_img(std::string img_path, std::string output_path);

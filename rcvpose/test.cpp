@@ -169,7 +169,6 @@ int main(int argc, char* args[])
         cout << string(100, '=') << endl;
         cout << string(40, ' ') << "Testing Saving and Loading Model" << endl;
         RCVpose rcv(testing_options());
-        rcv.saveModel("test_store1");
     }
 
     if (trn_ckpt) {
@@ -214,12 +213,18 @@ int main(int argc, char* args[])
         rcv.train();
     }
     if (trn_gpu) {
-        Options opts = gpu_train_opts(3, false, 22, 3);
-        RCVpose kp(opts);
-        kp.train();
-        for (int i = 0; i < 25; i++)
-            kp.save_tensor("kpt3_t", i);
-        kp.~RCVpose();
+        Options opts1 = gpu_train_opts(1, true, 22, 3);
+        RCVpose kp1(opts1);
+        kp1.save_tensor("kpt1_t", 0, 25);
+
+        Options opts2 = gpu_train_opts(2, true, 22, 3);
+        RCVpose kp2(opts2);
+        kp2.save_tensor("kpt2_t", 0, 25);
+
+        Options opts3 = gpu_train_opts(3, true, 22, 3);
+        RCVpose kp3(opts3);
+        kp3.save_tensor("kpt3_t", 0, 25);
+  
     }
     return 0;
 }

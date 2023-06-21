@@ -107,8 +107,29 @@ void RCVpose::compare_models(string model1, string model2) {
 
 }
 
-void RCVpose::saveModel(std::string path) {
-    // Implementation for saving the model
+void RCVpose::save_tensor(const std::string& path, const int& idx) {
+    try {
+        Trainer trainer(opts);
+
+        trainer.output_pred(idx,path);
+    }
+    catch (const std::exception& e) {
+		std::cout << e.what() << std::endl;
+	}
+}
+
+void RCVpose::save_tensor(const std::string& path, const int& start, const int& end) {
+    try {
+        Trainer trainer(opts);
+
+        for (int i = start; i < end; i++) {
+			trainer.output_pred(i, path);
+		}
+        
+    }
+    catch (const std::exception& e) {
+        cout << e.what() << endl;
+    }
 }
 
 void RCVpose::test_img(std::string img_path, std::string output_path)

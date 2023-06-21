@@ -3,28 +3,23 @@
 
 #pragma once
 
-#ifdef RCVPOSE_DLL_EXPORTS
-#define RCVPOSE_DLL_API __declspec(dllexport)
-#else
-#define RCVPOSE_DLL_API __declspec(dllimport)
-#endif
-
 #include <string>
 #include <map>
 #include <iostream>
 #include <vector>
 #include "utils.hpp"
 #include <torch/torch.h>
+
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
-#include <warning.h>
+//#include <warning.h>
 #include "options.hpp"
 #include <exception>
 #include "trainer.h"
 #include "data_loader.h"
 #include <cuda_runtime.h>
 
-class RCVPOSE_DLL_API RCVpose {
+class RCVpose {
 public:
     RCVpose(Options options);
 
@@ -60,8 +55,8 @@ public:
 
     void compare_models(std::string model1, std::string model2);
 
-    // Saves the model to specified directory
-    void saveModel(std::string path);
+    void save_tensor(const std::string& path, const int& idx);
+    void save_tensor(const std::string& path, const int& start, const int& end);
 
     // Tests on a single image and saves the output
     void test_img(std::string img_path, std::string output_path);

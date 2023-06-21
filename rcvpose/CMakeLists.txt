@@ -11,14 +11,22 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "C:/libtorch_debug/libtorch")
+set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv" "/home/19lhs4/libs/opencv")
+
+set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0")
+
+set(CUDA_HOME "/usr/local/cuda-12.0")
+
+set (CUDA_NVCC_EXECUTABLE "/usr/local/cuda-12.0/bin/nvcc")
+
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.0/bin/nvcc")
 
 # Find and include OpenCV, boost, open3d,
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-find_package(Open3D REQUIRED)
-include_directories(${Open3D_INCLUDE_DIRS})
+# find_package(Open3D REQUIRED)
+# include_directories(${Open3D_INCLUDE_DIRS})
 
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
@@ -42,33 +50,8 @@ set(SOURCE_FILES
     "models/resFCNResNet152.h"
     "models/resFCNResNet152.cpp"
 )
-
-# CMakeLists.txt: CMake project for simple_dll, include source and define
-# project specific logic here.
-cmake_minimum_required(VERSION 3.8)
-
-# Enable Hot Reload for MSVC compilers if supported.
-if(POLICY CMP0141)
-    cmake_policy(SET CMP0141 NEW)
-    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
-
-set(TARGET_NAME "rcvpose")
-project(${TARGET_NAME})
-
-set(CMAKE_PREFIX_PATH "C:/libtorch_debug/libtorch")
-
-# Find and include OpenCV, boost, open3d,
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-find_package(Open3D REQUIRED)
-include_directories(${Open3D_INCLUDE_DIRS})
-
-find_package(Torch REQUIRED)
-include_directories(${TORCH_INCLUDE_DIRS})
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+#  "accumulator_space.h"
+#    "accumulator_space.cpp"
 
 
 option(BUILD_DLL "Build DLL" OFF)
@@ -82,7 +65,7 @@ else()
 endif()
 
 
-target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS} ${Open3D_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS} pthread)
 
 if(MSVC)
     file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
@@ -97,6 +80,5 @@ endif(MSVC)
 if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 20)
 endif()
-
 
 # TODO: Add tests and install targets if needed.

@@ -73,5 +73,5 @@ int main(int argc, char* args[])
 	Options opts = testing_options(1, false, 2, "kpt1");
 	RCVpose rcv(opts);
 	rcv.train();
-	rcv.saveOutput(0, "kpt1_t");
+	rcv.save_tensor("kpt1_t", 0, 25);
 }

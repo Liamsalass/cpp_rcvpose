@@ -151,3 +151,4 @@ acc_space/python/pretrained/ape_pt1.pth.tar
 acc_space/python/pretrained/ape_pt2.pth.tar
 acc_space/python/pretrained/ape_pt3.pth.tar
 acc_space/python/models/__pycache__/
+rcvpose/test.cpp

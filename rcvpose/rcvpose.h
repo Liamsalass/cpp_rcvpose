@@ -55,7 +55,8 @@ public:
 
     void compare_models(std::string model1, std::string model2);
 
-    void saveOutput(const int& idx, const std::string& path);
+    void save_tensor(const std::string& path, const int& idx);
+    void save_tensor(const std::string& path, const int& start, const int& end);
 
     // Tests on a single image and saves the output
     void test_img(std::string img_path, std::string output_path);

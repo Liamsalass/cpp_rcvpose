@@ -600,9 +600,9 @@ def estimate_6d_pose_lm():
                     normalized_depth = []
                     tic = time.time_ns()
                     
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(keypoint_count) + '_t/score_' + str(count) +'.txt'
+                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/kpt' + str(keypoint_count) + '_t/score_' + str(count) +'.txt'
                     print (sem_out_path)
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(keypoint_count) + '_t/score_rad_' + str(count) +'.txt'
+                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/kpt' + str(keypoint_count) + '_t/score_rad_' + str(count) +'.txt'
                     print (rad_out_path)
 
                     sem_out = fileToTensor(sem_out_path)
@@ -616,7 +616,7 @@ def estimate_6d_pose_lm():
                     print(radial_out.shape)
 
                     # Define window size for plt
-                    plt.figure(figsize=(15, 15))
+                    plt.figure(figsize=(10, 10))
                     plt.imshow(sem_out)
                     plt.show()
 

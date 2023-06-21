@@ -15,13 +15,13 @@ project(${TARGET_NAME})
 set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv" "/home/19lhs4/libs/opencv" "C:/libtorch_debug/libtorch")
 
 # Must fix on pc
-set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0")
-
-set(CUDA_HOME "/usr/local/cuda-12.0")
-
-set (CUDA_NVCC_EXECUTABLE "/usr/local/cuda-12.0/bin/nvcc")
-
-set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.0/bin/nvcc")
+# set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0")
+# 
+# set(CUDA_HOME "/usr/local/cuda-12.0")
+# 
+# set (CUDA_NVCC_EXECUTABLE "/usr/local/cuda-12.0/bin/nvcc")
+# 
+# set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.0/bin/nvcc")
 #
 
 # Find and include OpenCV, boost, open3d,

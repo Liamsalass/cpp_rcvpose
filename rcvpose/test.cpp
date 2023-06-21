@@ -9,6 +9,7 @@
 using namespace std;
 
 
+
 Options testing_options(int kpt = 1, bool rsm = false, int batchsize = 2, string out_dir = "kpt1") {
     Options opts;
     opts.gpu_id = 0;
@@ -49,11 +50,11 @@ Options training_options(int kpt, bool rsm, int batch_size = 2) {
 	return opts;
 }
 
-Options gpu_train_opts(int kpt, bool rsm, int batch_size) {
+Options gpu_train_opts(int kpt, bool rsm, int batch_size, int gpuid) {
     Options opts;
-	opts.gpu_id = 0;
+	opts.gpu_id = gpuid;
 	opts.dname = "lm";
-	opts.root_dataset = "/dataset/public/RCVLab/Bluewrist/16yw11";
+	opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113";
 	opts.model_dir = "kpt" + to_string(kpt);
 	opts.resume_train = rsm;
 	opts.optim = "adam";
@@ -74,4 +75,5 @@ int main(int argc, char* args[])
 	RCVpose rcv(opts);
 	rcv.train();
 	rcv.save_tensor("kpt1_t", 0, 25);
+
 }

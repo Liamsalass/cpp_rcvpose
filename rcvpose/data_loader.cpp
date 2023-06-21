@@ -41,6 +41,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	if (img.cols % 2 != 0)
 		img = img.colRange(0, img.cols - 1);
 
+
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
 	

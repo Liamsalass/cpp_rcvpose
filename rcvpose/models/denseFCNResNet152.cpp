@@ -170,11 +170,9 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 
 	auto out = conv8->forward(up);
 
-	auto seg_pred = out.index({ torch::indexing::Slice(), torch::indexing::Slice(0,1), torch::indexing::Slice(), torch::indexing::Slice()});
+	auto seg_pred = out.index({ torch::indexing::Slice(), torch::indexing::Slice(0,1), torch::indexing::Slice(), torch::indexing::Slice()});	
 	auto radial_pred = out.index({ torch::indexing::Slice(),torch::indexing::Slice(1),torch::indexing::Slice(),torch::indexing::Slice()});
-
-
+  
 	return std::make_tuple(seg_pred, radial_pred);
-
 }
 

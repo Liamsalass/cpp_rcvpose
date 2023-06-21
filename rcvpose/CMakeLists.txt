@@ -67,7 +67,7 @@ else()
     add_executable(${TARGET_NAME} ${SOURCE_FILES})
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS} pthread)
 
 
 if(MSVC)

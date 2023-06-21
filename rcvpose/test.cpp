@@ -73,14 +73,14 @@ int main(int argc, char* args[])
 {
 	Options opts1 = gpu_train_opts(1, true, 24, 0);
 	RCVpose rcv1(opts1);
-	rcv.save_tensor("kpt1_t", 0, 25);
+	rcv1.save_tensor("kpt1_t", 0, 25);
 
     Options opts2 = gpu_train_opts(2, true, 24, 0);
     RCVpose rcv2(opts2);
-    rcv.save_tensor("kpt2_t", 0, 25);
+    rcv1.save_tensor("kpt2_t", 0, 25);
 
     Options opts3 = gpu_train_opts(3, true, 24, 0);
     RCVpose rcv3(opts3);
-    rcv.save_tensor("kpt3_t", 0, 25);
+    rcv1.save_tensor("kpt3_t", 0, 25);
     
 }

@@ -71,16 +71,7 @@ Options gpu_train_opts(int kpt, bool rsm, int batch_size, int gpuid) {
 
 int main(int argc, char* args[])
 {
-	Options opts1 = gpu_train_opts(1, true, 24, 0);
-	RCVpose rcv1(opts1);
-	rcv1.save_tensor("kpt1_t", 0, 1050);
-
-    Options opts2 = gpu_train_opts(2, true, 24, 0);
-    RCVpose rcv2(opts2);
-    rcv2.save_tensor("kpt2_t", 0, 1050);
-
     Options opts3 = gpu_train_opts(3, true, 24, 0);
     RCVpose rcv3(opts3);
-    rcv2.save_tensor("kpt3_t", 0, 1050);
-    
+    rcv3.save_tensor("kpt3_t", 0, 1050);
 }

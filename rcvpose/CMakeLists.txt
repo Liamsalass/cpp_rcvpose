@@ -11,8 +11,10 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv" "/home/19lhs4/libs/opencv")
 
+set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv" "/home/19lhs4/libs/opencv" "C:/libtorch_debug/libtorch")
+
+=======
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0")
 
 set(CUDA_HOME "/usr/local/cuda-12.0")
@@ -20,6 +22,7 @@ set(CUDA_HOME "/usr/local/cuda-12.0")
 set (CUDA_NVCC_EXECUTABLE "/usr/local/cuda-12.0/bin/nvcc")
 
 set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.0/bin/nvcc")
+========
 
 # Find and include OpenCV, boost, open3d,
 find_package(OpenCV REQUIRED)
@@ -64,8 +67,8 @@ else()
     add_executable(${TARGET_NAME} ${SOURCE_FILES})
 endif()
 
+target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS})
 
-target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS} pthread)
 
 if(MSVC)
     file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")

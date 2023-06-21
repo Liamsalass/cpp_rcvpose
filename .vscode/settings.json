@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/19lhs4/cpp_rcvpose/rcvpose"
+    "cmake.sourceDirectory": "C:/Users/User/.cw/work/cpp_rcvpose/acc_space",
+    "files.associations": {
+        "chrono": "cpp"
+    }
 }

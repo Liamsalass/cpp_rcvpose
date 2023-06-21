@@ -15,6 +15,7 @@
 #include <algorithm>
 #include "npy.hpp"
 #include <utility>
+#include <omp.h>
 #include <filesystem>
 #include <omp.h>
 

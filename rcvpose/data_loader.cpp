@@ -14,9 +14,10 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	const std::vector<double> mean = { 0.485, 0.456, 0.406 };
 	const std::vector<double> std = { 0.229, 0.224, 0.225 };
 
-	// Convert img and target to floating point format
+	// Convert img and target to floating point format, must be done to CV_32FC3 because of normalization errors
 	img.convertTo(img, CV_32FC3);
 	img /= 255.0;
+
 	target.convertTo(target, CV_32FC3);
 
 	if (target.channels() == 2) {
@@ -40,37 +41,17 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	if (img.cols % 2 != 0)
 		img = img.colRange(0, img.cols - 1);
 
-	// Print matrix sizes if dim = 0
-	if (img.dims == 0 || target.dims == 0) {
-		std::cout << "img.dims: " << img.dims << std::endl;
-		std::cout << "target.dims: " << target.dims << std::endl;
-		std::cout << "img.size: " << img.size << std::endl;
-		std::cout << "target.size: " << target.size << std::endl;
-		std::cin.get();
-	}
-	
+
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
-
+	
+	// Possible error here
 	// Create tensors from the transposed matrices
 	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.channels(), imgTransposed.rows, imgTransposed.cols }, torch::kFloat32).clone();
 	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.channels(), targetTransposed.rows, targetTransposed.cols }, torch::kFloat32).clone();
 
 	// Create semantic label tensor
 	torch::Tensor semLblTensor = torch::where(targetTensor > 0, torch::ones_like(targetTensor), -torch::ones_like(targetTensor));
-
-	//Print if tensor has no dimensions or missing data, wait for key input and print the tensor idx
-	if (imgTensor.ndimension() == 0 || targetTensor.ndimension() == 0) {
-		std::cout << "Tensor has no dimensions" << std::endl;
-		std::cout << "imgTensor: " << imgTensor.ndimension() << std::endl;
-		std::cout << "targetTensor: " << targetTensor.ndimension() << std::endl;
-		std::cout << "semLblTensor: " << semLblTensor.ndimension() << std::endl;
-		std::cout << "imgTensor: " << imgTensor << std::endl;
-		std::cout << "targetTensor: " << targetTensor << std::endl;
-		std::cout << "semLblTensor: " << semLblTensor << std::endl;
-		std::cin.get();
-	}
-		
 
 	return std::make_tuple(imgTensor, targetTensor, semLblTensor);
 }

@@ -11,6 +11,7 @@
 #include <torch/optim.h>
 #include <torch/torch.h>
 #include <torch/script.h>
+#include <torch/nn/parallel/data_parallel.h>
 #include <torch/serialize.h>
 #include "models/denseFCNResNet152.h"
 #include <iostream>
@@ -29,6 +30,10 @@ public:
 	
 	void store_model(std::string path);
 	void output_pred(const int& idx, const std::string& path);
+
+	void output_pred(const int& idx, const std::string& path);
+
+	void tensorToFile(const torch::Tensor& tensor, const std::string& path);
 
 private:
 	// Have to nest train_epoch function within train function due to instantiation of dataloaders
@@ -49,6 +54,7 @@ private:
 
 
 	int epoch;
+	int epochs_without_improvement;
 	int starting_epoch;
 	int iteration;
 	int iteration_val;

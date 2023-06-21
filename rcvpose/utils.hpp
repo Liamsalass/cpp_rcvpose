@@ -26,6 +26,7 @@ inline std::map<int, std::map<std::string, std::vector<float>>> get_config() {
 }
 
 
+
 class CheckpointLoader {
 public:
     CheckpointLoader(const std::string& checkpointPath, bool get_best_ckpt = false) {
@@ -103,3 +104,4 @@ private:
     DenseFCNResNet152 model_;
     torch::optim::Optimizer* optim_;
 };
+

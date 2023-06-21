@@ -84,7 +84,6 @@ CustomExample RMapDataset::get(size_t index) {
 			cv::Mat target_test(rows, cols, CV_64F);
 
 
-
 			// Assign the data to the cv::Mat object based on the fortran_order
 			if (fortran_order) {
 			#pragma omp parallel for collapse(2)
@@ -102,16 +101,15 @@ CustomExample RMapDataset::get(size_t index) {
 					}
 				}
 			}
-
-			//target = target_test.clone();
-
 			// Divide all values in target_test by the greatest value in target_test
-			double max_val;
-			cv::minMaxLoc(target_test, NULL, &max_val);
-			target_test = target_test / max_val;
+			//double max_val;
+			//cv::minMaxLoc(target_test, NULL, &max_val);
+			//target_test = target_test / max_val;
+
+			target = target_test;
 			
-			target = target_test.clone();
-			// Show target_test
+			//// Show target_test
+
 			//cv::imshow("target_test", target_test);
 			//cv::waitKey(0);
 		}

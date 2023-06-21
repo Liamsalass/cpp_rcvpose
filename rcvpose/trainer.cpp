@@ -100,7 +100,6 @@ Trainer::Trainer(Options& options) : opts(options)
                 count++;
             }
 
-
             current_lr.clear();
             current_lr.push_back(opts.initial_lr);
 
@@ -174,6 +173,8 @@ void Trainer::train()
     cout << string(24, ' ') << "Begining Training Initialization" << endl << endl;
     
 
+    //Select device base on opts.gpu_id
+
     torch::Device device(device_type);
    
     cout << "Setting up dataset loader" << endl;
@@ -228,6 +229,7 @@ void Trainer::train()
         cout << "Training Epoch" << endl;
         int count = 0;
         model->train();
+        
         auto train_start = std::chrono::steady_clock::now();
         for (const auto& batch : *train_loader) {
           
@@ -254,7 +256,23 @@ void Trainer::train()
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
 
-            auto scores = model->forward(data);
+            std::tuple<torch::Tensor, torch::Tensor> scores;
+
+            //Set up device list
+            //std::vector<torch::Device> device_id_list;
+            //for (int i = 0; i < torch::cuda::device_count(); i++) {
+			//	device_id_list.push_back(torch::Device(torch::kCUDA, i));
+			//}
+            //c10::optional device_ids = c10::make_optional<std::vector<torch::Device>>(device_id_list);
+            //
+            //if (torch::cuda::device_count() > 1) {
+            //    scores = torch::nn::parallel::data_parallel(model, data, device_ids, torch::kCPU);
+            //}
+            //else {
+            //    scores = model->forward(data);
+            //}
+
+            scores = model->forward(data);
 
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
@@ -265,6 +283,8 @@ void Trainer::train()
             torch::Tensor loss_r = compute_r_loss(score_rad, target);
 
             torch::Tensor loss = loss_r + loss_s;
+
+            //cout << "Radial Loss: " << loss_r.item<float>() << " Semantic Loss: " << loss_s.item<float>() << " Total Loss: " << loss.item<float>() << "\r";
 
             loss.backward();
 
@@ -318,7 +338,10 @@ void Trainer::train()
 
             auto loss_s = loss_sem(score, sem_target);
             auto loss_r = compute_r_loss(score_rad, target);
+
             auto loss = loss_r + loss_s;
+
+            //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
 
             if (loss.numel() == 0)
                 std::runtime_error("Loss is empty");
@@ -335,9 +358,13 @@ void Trainer::train()
         float mean_acc = val_loss;
         cout << "Mean Loss: " << mean_acc << endl;
         bool is_best = mean_acc < best_acc_mean;
-        if (is_best) 
-            best_acc_mean = mean_acc;
         
+        if (is_best) {
+            best_acc_mean = mean_acc;
+            epochs_without_improvement = 0;
+        } else {
+            epochs_without_improvement++;
+        }
         cout << "Iterations: " << iteration << endl;
 
 
@@ -367,9 +394,7 @@ void Trainer::train()
             output_model_info.write("optimizer", opts.optim);
             output_model_info.write("lr", current_lr);
 
-
             output_model_info.save_to(save_location + "/info.pt");
-
   
             torch::serialize::OutputArchive output_model_archive;
             model->to(torch::kCPU);
@@ -388,25 +413,49 @@ void Trainer::train()
         
 
         // Reduce learning rate every 70 epoch
-        if (epoch % 70 == 0 && epoch != 0) {
-            cout << "Learning rate reduction" << endl;
+        if (opts.reduce_on_plateau = false){
+            if (epoch % 70 == 0 && epoch != 0) {
+                cout << "Learning rate reduction" << endl;
+                current_lr.clear();
+                for (auto& param_group : optim->param_groups()) {
+                    if (param_group.has_options()) {
+                        double lr = param_group.options().get_lr();
+                        cout << "Current LR: " << lr << endl;
+                        double new_lr = lr * 0.1;
+                        if (opts.optim == "adam") 
+                            static_cast<torch::optim::AdamOptions &>(param_group.options()).lr(new_lr);
+                        if (opts.optim == "sgd")
+                            static_cast<torch::optim::SGDOptions &>(param_group.options()).lr(new_lr);
+                        cout << "New LR: " << new_lr << endl;
+                        current_lr.push_back(new_lr);
+                    }
+                    else {
+                        cout << "Error: param_group has no options" << endl;
+                    }
+                }
+            }
+        }
+        if (opts.reduce_on_plateau && epochs_without_improvement >= opts.patience) {
+            cout << "Reducing learning rate" << endl;
             current_lr.clear();
             for (auto& param_group : optim->param_groups()) {
                 if (param_group.has_options()) {
                     double lr = param_group.options().get_lr();
                     cout << "Current LR: " << lr << endl;
                     double new_lr = lr * 0.1;
-                    if (opts.optim == "adam") 
-                        static_cast<torch::optim::AdamOptions &>(param_group.options()).lr(new_lr);
-                    if (opts.optim == "sgd")
-                        static_cast<torch::optim::SGDOptions &>(param_group.options()).lr(new_lr);
+                    if (opts.optim == "adam")
+                        static_cast<torch::optim::AdamOptions&>(param_group.options()).lr(new_lr);
+                    else if (opts.optim == "sgd")
+                        static_cast<torch::optim::SGDOptions&>(param_group.options()).lr(new_lr);
+                    else
+                        cout << "Error: Invalid optimizer" << endl;
                     cout << "New LR: " << new_lr << endl;
                     current_lr.push_back(new_lr);
-                }
-                else {
+                } else {
                     cout << "Error: param_group has no options" << endl;
                 }
             }
+            epochs_without_improvement = 0;
         }
         if (iteration >= max_iteration) {
             break;
@@ -424,24 +473,27 @@ void Trainer::train()
     }
 }
 
-//Using L1Loss function, remove all 0s from dataset before calculating loss, ensure shape of both tensors is the same before computing loss
 torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
-    try {
-        // Compute the radial loss
-        // Remove all 0s from the ground truth tensor
-        torch::Tensor gt_mask = gt != 0;
-        torch::Tensor gt_masked = torch::masked_select(gt, gt_mask);
-        torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
-        // Compute the loss
-        torch::Tensor loss = loss_radial(pred_masked, gt_masked);
-        loss = loss / static_cast<float>(gt_masked.size(0));
-        return loss;
-    }
-    catch (const torch::Error& e) {
-		cout << "Error: " << e.msg() << endl;
-        return torch::Tensor(torch::empty({}));
-	}
+    torch::Tensor gt_mask = gt != 0;
+    torch::Tensor gt_masked = torch::masked_select(gt, gt_mask);
+    torch::Tensor pred_masked = torch::masked_select(pred, gt_mask);
+    // Compute the loss
+    torch::Tensor loss = loss_radial(pred_masked, gt_masked);
+    // Normalize the loss
+    loss = loss / static_cast<float>(gt_masked.size(0));
+
+    return loss;
 }
+
+//torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
+//    auto nonzero_indices = torch::nonzero(gt);
+//    auto pred_nonzero = torch::index_select(pred, 0, nonzero_indices);
+//    auto gt_nonzero = torch::index_select(gt, 0, nonzero_indices);
+//
+//    auto loss = loss_radial(pred_nonzero, gt_nonzero) / static_cast<float>(nonzero_indices.size(0));
+//
+//    return loss;
+//}
 
 void Trainer::printProgressBar(int current, int total, int width)
 {
@@ -497,7 +549,6 @@ void Trainer::store_model(std::string path)
     model_out.save_to(path + "/model.pt");
 }
 
-
 void Trainer::output_pred(const int& idx, const string& path)
 {
     // Stores tensor to txt file, since archive, pickle, and jit doesn't work
@@ -517,21 +568,24 @@ void Trainer::output_pred(const int& idx, const string& path)
         }
     }
 
-    
+    torch::Device device(device_type);
+
     cout << "Setting up dataset loader" << endl;
 
     auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
 
+
     model->to(torch::kCPU);
+
     model->eval();
 
     auto data_tensor = val_dataset.get(idx).data();
 
     // cout << "Data tensor size: " << data_tensor.sizes() << endl;
+
     auto batch = torch::stack(data_tensor, 0);
 
     // cout << "Batch Tensor Size: " << batch.sizes() << endl;
-
 
     auto output = model->forward(batch);
 
@@ -556,7 +610,8 @@ void Trainer::output_pred(const int& idx, const string& path)
     auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
     tensorToFile(out_score, score_path);
     tensorToFile(out_score_rad, score_rad_path);
-    model->to(torch::kCUDA);
+
+    model->to(device);
 }
 
 void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {

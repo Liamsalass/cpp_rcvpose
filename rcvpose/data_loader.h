@@ -15,6 +15,7 @@
 #include "RMapDataset.h"
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 #include "rcvpose.h"
 #include <iostream>
 #include <string>

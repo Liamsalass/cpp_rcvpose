@@ -38,5 +38,7 @@ struct Options {
     // Patience for reduce on plateau
     // Number of epochs without improvement before lr reduction
     int patience = 10;
+
+    bool debug = false;
 };
 

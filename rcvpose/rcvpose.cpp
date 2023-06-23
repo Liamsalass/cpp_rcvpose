@@ -119,17 +119,11 @@ void RCVpose::save_tensor(const std::string& path, const int& idx) {
 }
 
 void RCVpose::save_tensor(const std::string& path, const int& start, const int& end) {
-    try {
-        Trainer trainer(opts);
+    Trainer trainer(opts);
 
-        for (int i = start; i < end; i++) {
-			trainer.output_pred(i, path);
-		}
-        
-    }
-    catch (const std::exception& e) {
-        cout << e.what() << endl;
-    }
+    for (int i = start; i < end; i++) {
+		trainer.output_pred(i, path);
+	}  
 }
 
 void RCVpose::test_img(std::string img_path, std::string output_path)
@@ -145,56 +139,19 @@ void RCVpose::loadModel(std::string path) {
     // Implementation for loading a pretrained model
 }
 
-int RCVpose::test_loaders()
+void RCVpose::test_loaders()
 {
-    int ret = 0;
-    try {
-        //Print image data
-        RData test(opts.root_dataset, opts.dname, "trainall", opts.class_name, opts.kpt_num);
-        torch::optional dataset_size = test.size();
-        cout << "Dataset size: " << dataset_size.value() << endl;
-        cv::Mat img = test.get_img(0);
-        cv::imshow("test", img);
-    }
-    catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
-		ret = -1;
-    }
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
 
-    try {
-        auto test_data = RData(opts.root_dataset, opts.dname, "trainall", opts.class_name , opts.kpt_num);
-        auto test_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(test_data), torch::data::DataLoaderOptions().batch_size(opts.batch_size).workers(1));
-        
-        int count = 0;
+    auto data_tensor = val_dataset.get(0).data();
+    auto sem_target = val_dataset.get(0).sem_target();
+    auto rad_target = val_dataset.get(0).target();
 
-        for (auto& batch : *test_loader) {
-            cout << "Iteration: " << count++ << endl;
-            auto batch_size = batch.size();
-            cout << "Batch Size: " << batch_size << endl;
-            for (auto data : batch) {
-                auto img = data.data();
-                auto target = data.target();
-                auto sem_target = data.sem_target();
-           
-                cout << "Image Tensor" << endl;
-                cout << "Image size: " << img.sizes() << endl;
+    auto test_tensor = Trainer(opts);
 
-                cout << "Sem Tensor" << endl;
-                cout << "Sem size: " << target.sizes() << endl;
-
-                cout << "Sem lbl Tensor" << endl;
-                cout << "Sem lbl size: " << sem_target.sizes() << endl;
-
-            }
-            if (count > 2)
-                break;
-        }
-    }
-    catch (const std::exception& e) {
-		std::cerr << e.what() << '\n';
-		ret = -1;
-	}
-    return ret;
+    test_tensor.tensorToFile(data_tensor, opts.model_dir + "/img0/input_data_tensor.txt");
+    test_tensor.tensorToFile(sem_target, opts.model_dir + "/img0/input_sem_target.txt");
+    test_tensor.tensorToFile(rad_target, opts.model_dir + "/img0/input_rad_target.txt");
 }
 
 

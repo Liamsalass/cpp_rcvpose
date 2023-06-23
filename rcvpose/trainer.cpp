@@ -2,6 +2,7 @@
 
 using namespace std;
 
+
 Trainer::Trainer(Options& options) : opts(options)
 {
     cout << string(100, '=') << endl;
@@ -237,7 +238,7 @@ void Trainer::train()
             count = batch.size() + count;
             iteration = batch.size() + iteration;
 
-            //printProgressBar(count, train_size.value(), 80);
+            printProgressBar(count, train_size.value(), 80);
 
             std::vector<torch::Tensor> batch_data;
             std::vector<torch::Tensor> batch_target;
@@ -255,24 +256,7 @@ void Trainer::train()
             auto target = torch::stack(batch_target, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
-
-            std::tuple<torch::Tensor, torch::Tensor> scores;
-
-            //Set up device list
-            //std::vector<torch::Device> device_id_list;
-            //for (int i = 0; i < torch::cuda::device_count(); i++) {
-			//	device_id_list.push_back(torch::Device(torch::kCUDA, i));
-			//}
-            //c10::optional device_ids = c10::make_optional<std::vector<torch::Device>>(device_id_list);
-            //
-            //if (torch::cuda::device_count() > 1) {
-            //    scores = torch::nn::parallel::data_parallel(model, data, device_ids, torch::kCPU);
-            //}
-            //else {
-            //    scores = model->forward(data);
-            //}
-
-            scores = model->forward(data);
+            std::tuple<torch::Tensor, torch::Tensor> scores = model->forward(data);
 
             auto& score = std::get<0>(scores);
             auto& score_rad = std::get<1>(scores);
@@ -299,6 +283,7 @@ void Trainer::train()
 
         auto train_end = std::chrono::steady_clock::now();
         auto train_duration = std::chrono::duration_cast<std::chrono::seconds>(train_end - train_start);
+        cout << string(100, ' ');
         cout << "\rTraining Time: " << train_duration.count() << " s" << endl;
 
         // ========================================================================================== \\
@@ -311,10 +296,12 @@ void Trainer::train()
         torch::NoGradGuard no_grad;
         auto val_start = std::chrono::steady_clock::now();
 
+        int val_count = 0;
+
         for (const auto& batch : *val_loader) {
             count = batch.size() + count;
             iteration_val = batch.size() + iteration_val;
-            //printProgressBar(count, val_size.value(), 80);
+            printProgressBar(count, val_size.value(), 80);
 
 
             std::vector<torch::Tensor> batch_data;
@@ -327,14 +314,53 @@ void Trainer::train()
                 batch_sem_target.push_back(example.sem_target());
             }
 
-            auto img = torch::stack(batch_data, 0).to(device);
-            auto target = torch::stack(batch_target, 0).to(device);
-            auto sem_target = torch::stack(batch_sem_target, 0).to(device);
+
+            auto img = torch::stack(batch_data, 0);
+            auto target = torch::stack(batch_target, 0);
+            auto sem_target = torch::stack(batch_sem_target, 0);
+
+            if (opts.debug == true && val_count == 0) {
+
+                cout << "Image shape: " << img.sizes() << endl;
+                cout << "Target shape: " << target.sizes() << endl;
+                cout << "Semantic Target shape: " << sem_target.sizes() << endl;
+
+                std::string path_t = out + "/epoch_" + std::to_string(epoch);
+                std::filesystem::path outPath(path_t);
+                if (!std::filesystem::is_directory(outPath)) {
+                    if (!std::filesystem::create_directories(outPath)) {
+                        cout << "Failed to create output directory for input tensors" << endl;
+                    }
+                }
+                tensorToFile(img, path_t + "/input_img0.txt");
+                tensorToFile(target, path_t + "/input_rad0.txt");
+                tensorToFile(sem_target, path_t + "/input_sem0.txt");
+            }
+
+
+            img = img.to(device);
+            target = target.to(device);
+            sem_target = sem_target.to(device);
 
             auto output = model->forward(img);
 
             auto score = std::get<0>(output);
             auto score_rad = std::get<1>(output);
+
+            if (opts.debug == true && val_count == 0) {
+                auto cpu_score = score.to(torch::kCPU);
+                auto cpu_score_rad = score_rad.to(torch::kCPU);
+
+                cout << "Score shape: " << cpu_score.sizes() << endl;
+                cout << "Score_rad shape: " << cpu_score_rad.sizes() << endl;
+
+                std::string path_t = out + "/epoch_" + std::to_string(epoch);
+                tensorToFile(cpu_score, path_t + "/output_rad.txt");
+                tensorToFile(cpu_score_rad, path_t + "/output_sem.txt");
+            }
+
+
+            val_count++;
 
             auto loss_s = loss_sem(score, sem_target);
             auto loss_r = compute_r_loss(score_rad, target);
@@ -351,6 +377,7 @@ void Trainer::train()
         }
         auto val_end = std::chrono::steady_clock::now();
         auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
+        cout << string(100, ' ');
         cout << "\rValidation Time: " << val_duration.count()<< " s" << endl;
         cout.flush();
 
@@ -366,6 +393,8 @@ void Trainer::train()
             epochs_without_improvement++;
         }
         cout << "Iterations: " << iteration << endl;
+        cout << "Epochs without improvement: " << epochs_without_improvement << endl;
+
 
 
         //================================================================\\
@@ -575,12 +604,13 @@ void Trainer::output_pred(const int& idx, const string& path)
     auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
 
 
+
     model->to(torch::kCPU);
 
     model->eval();
 
     auto data_tensor = val_dataset.get(idx).data();
-
+    auto sem_target = val_dataset.get(idx).sem_target();
     // cout << "Data tensor size: " << data_tensor.sizes() << endl;
 
     auto batch = torch::stack(data_tensor, 0);
@@ -592,24 +622,23 @@ void Trainer::output_pred(const int& idx, const string& path)
     auto score = std::get<0>(output).to(torch::kCPU);
     auto score_rad = std::get<1>(output).to(torch::kCPU);
 
-    // cout << "Score size " << score.sizes() << endl;
-    // cout << "Score Rad size " << score_rad.sizes() << endl;
-
-    //Unstack output 
     auto score_unstack = torch::unbind(score, 0);
     auto score_rad_unstack = torch::unbind(score_rad, 0);
 
+ 
     auto out_score = score_unstack[0];
     auto out_score_rad = score_rad_unstack[0];
 
-    // cout << "Unstacked Score size " << out_score.sizes() << endl;
-    // cout << "Unstacked Score Rad size " << out_score_rad.sizes() << endl;    
 
+    out_score = out_score.permute({ 1,2,0 });
+    out_score_rad = out_score_rad.permute({ 1,2,0 });
 
+ 
     auto score_path = out_path + "/score_" + std::to_string(idx) + ".txt";
     auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
     tensorToFile(out_score, score_path);
     tensorToFile(out_score_rad, score_rad_path);
+    
 
     model->to(device);
 }
@@ -644,9 +673,23 @@ void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filen
 
         return tensor
     ================================================================================================*/
+
+    // If file directory doesn't exist, create it.
+    // Remove .txt and the file name from the path
+    std::filesystem::path filePath(filename);
+    std::filesystem::path fileDirectory = filePath.parent_path();
+    if (!std::filesystem::is_directory(fileDirectory)) {
+        if (std::filesystem::create_directories(fileDirectory)) {
+			cout << "Directory created" << endl;
+		}
+        else {
+			cout << "Error creating directory" << endl;
+		}
+	}
+
     std::ofstream outputFile(filename, std::ios::binary);
     if (!outputFile) {
-        std::cerr << "Error opening file: " << filename << std::endl;
+        cout << "Error opening file: " << filename << endl;
         return;
     }
 
@@ -663,5 +706,4 @@ void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filen
 
     outputFile.close();
 
-    std::cout << "Tensor data written to file: " << filename << std::endl;
 }

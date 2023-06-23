@@ -15,6 +15,7 @@
 #include <torch/serialize.h>
 #include "models/denseFCNResNet152.h"
 #include <iostream>
+#include <omp.h>
 #include <iomanip>
 #include <chrono>
 
@@ -32,6 +33,8 @@ public:
 
 	void output_pred(const int& idx, const std::string& path);
 
+	void tensorToFile(const torch::Tensor& tensor, const std::string& filename);
+
 private:
 	// Have to nest train_epoch function within train function due to instantiation of dataloaders
 	// This means resume training isn't currently functioning
@@ -47,8 +50,6 @@ private:
 	torch::DeviceType device_type;
 
 	void printProgressBar(int current, int total, int width);
-	void tensorToFile(const torch::Tensor& tensor, const std::string& filename);
-
 
 	int epoch;
 	int epochs_without_improvement;

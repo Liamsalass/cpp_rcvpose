@@ -616,7 +616,7 @@ def estimate_6d_pose_lm():
                     print(radial_out.shape)
 
                     # Define window size for plt
-                    plt.figure(figsize=(10, 10))
+                    plt.figure(figsize=(15, 15))
                     plt.imshow(sem_out)
                     plt.show()
 

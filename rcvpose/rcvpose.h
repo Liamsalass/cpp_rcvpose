@@ -62,7 +62,7 @@ public:
     void test_img(std::string img_path, std::string output_path);
 
     //Tests if specified data is loadable
-    int test_loaders();
+    void test_loaders();
 
     void demo();
 

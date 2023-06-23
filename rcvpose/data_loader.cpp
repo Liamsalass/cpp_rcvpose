@@ -14,20 +14,18 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 	const std::vector<double> mean = { 0.485, 0.456, 0.406 };
 	const std::vector<double> std = { 0.229, 0.224, 0.225 };
 
-	// Convert img and target to floating point format, must be done to CV_32FC3 because of normalization errors
 	img.convertTo(img, CV_32FC3);
 	img /= 255.0;
 
 	target.convertTo(target, CV_32FC3);
 
 	if (target.channels() == 2) {
-		// If lbl has two channels, create a new 3-channel BGR image
 		cv::Mat expandedLbl;
 		cv::cvtColor(target, expandedLbl, cv::COLOR_GRAY2BGR);
-		target = expandedLbl.reshape(1, 1); // Reshape expandedLbl to have 1 row and 1 channel
+		target = expandedLbl.reshape(1, 1); 
 	}
 
-	// Subtract mean and divide by standard deviation
+
 	for (int i = 0; i < 3; i++) {
 		cv::Mat channel(img.size(), CV_32FC1);
 		cv::extractChannel(img, channel, i);
@@ -35,7 +33,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 		cv::insertChannel(channel, img, i);
 	}
 
-	// Ensure even dimensions
 	if (img.rows % 2 != 0)
 		img = img.rowRange(0, img.rows - 1);
 	if (img.cols % 2 != 0)
@@ -44,13 +41,20 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 
 	cv::Mat imgTransposed = img.t();
 	cv::Mat targetTransposed = target.t();
-	
-	// Possible error here
-	// Create tensors from the transposed matrices
-	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.channels(), imgTransposed.rows, imgTransposed.cols }, torch::kFloat32).clone();
-	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.channels(), targetTransposed.rows, targetTransposed.cols }, torch::kFloat32).clone();
 
-	// Create semantic label tensor
+
+	//cv::Mat test_target = targetTransposed.clone();
+	//double min, max;
+	//cv::minMaxLoc(test_target, &min, &max);
+	//test_target /= max;
+	//
+	//cv::imshow("Image", imgTransposed);
+	//cv::imshow("Target", test_target);
+	//cv::waitKey();
+
+	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
+	imgTensor = imgTensor.permute({ 2, 0, 1 });
+	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.channels(), targetTransposed.rows, targetTransposed.cols }, torch::kFloat32).clone();
 	torch::Tensor semLblTensor = torch::where(targetTensor > 0, torch::ones_like(targetTensor), -torch::ones_like(targetTensor));
 
 	return std::make_tuple(imgTensor, targetTensor, semLblTensor);

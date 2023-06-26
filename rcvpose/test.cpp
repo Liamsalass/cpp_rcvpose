@@ -10,7 +10,7 @@ using namespace std;
 
 
 
-Options testing_options(int kpt = 1, bool rsm = false, int batchsize = 2, string output_directory = "test_out", bool debug = true) {
+Options testing_options(int kpt = 3, bool rsm = true, int batchsize = 1, string output_directory = "kpt3", bool debug = false) {
     Options opts;
     opts.gpu_id = 0;
     opts.dname = "lm";
@@ -77,5 +77,5 @@ int main(int argc, char* args[])
 {
     Options opts = testing_options();
     RCVpose rcv(opts);
-    rcv.train();
+    rcv.save_tensor("tensors", 0, 50);
 }

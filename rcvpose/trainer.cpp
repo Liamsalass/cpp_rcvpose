@@ -584,7 +584,8 @@ void Trainer::output_pred(const int& idx, const string& path)
     // - Look into implementation of archive, pickle, and jit
     cout << string(100, '=') << endl;
     string out_path = out + "/" + path;
-    cout << "Storing Output to " << out_path << endl;
+    cout << "Storing Output:\n" << out_path << "/score_" << to_string(idx) << endl;
+    cout << out_path << "/score_rad_" << to_string(idx) << endl;
 
 
     std::filesystem::path outPath(out_path);
@@ -599,11 +600,7 @@ void Trainer::output_pred(const int& idx, const string& path)
 
     torch::Device device(device_type);
 
-    cout << "Setting up dataset loader" << endl;
-
     auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
-
-
 
     model->to(torch::kCPU);
 

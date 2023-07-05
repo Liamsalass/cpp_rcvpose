@@ -18,7 +18,7 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Add source to this project's executable.
-add_executable (acc_space "accumulator_space.cpp" "accumulator_space.h" "options.hpp" "JACOBI.c" "JACOBI.h" "lmshorn.c" "lmshorn.h")
+add_executable (acc_space "accumulator_space.cpp" "accumulator_space.h" "options.hpp" "JACOBI.c" "JACOBI.h" "lmshorn.c" "lmshorn.h" "happly.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET acc_space PROPERTY CXX_STANDARD 20)

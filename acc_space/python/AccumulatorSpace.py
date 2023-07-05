@@ -516,7 +516,7 @@ def estimate_6d_pose_lm():
         for i in range(1,4):
             model_path = model_dir + class_name+"_pt"+str(i)+".pth.tar"
             model = DenseFCNResNet152(3,2)
-            model = torch.nn.DataParallel(model)
+            # model = torch.nn.DataParallel(model)
             #checkpoint = torch.load(model_path)
             #model.load_state_dict(checkpoint)
             optim = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -534,20 +534,31 @@ def estimate_6d_pose_lm():
         
         keypoints=np.load(root_dataset + "LINEMOD/"+class_name+"/"+"Outside9.npy")
         #print(keypoints)
-        
+       
         dataPath = rootpvPath + 'JPEGImages/'
-            
         for filename in os.listdir(dataPath):
+            # Only 25 first images
+            count = 0
+
+            if (count > 24):
+                break
+
             if filename.endswith(".jpg"):
-                #print(os.path.splitext(filename)[0][5:].zfill(6))
-                #if os.path.splitext(filename)[0][5:].zfill(6) in test_list:
-                if filename in test_list:
+                filename_without_ext = os.path.splitext(filename)[0]
+
+                if filename_without_ext not in test_list:
+                    print('Not in test list: ', filename_without_ext)
+                    continue
+
+                if filename_without_ext in test_list:
+ 
                     print(filename)
                     estimated_kpts = np.zeros((3,3))
                     RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
                     #print(RTGT.shape)
                     keypoint_count = 1
                     for keypoint in keypoints:
+                        print("Kpt count: ", keypoint_count)
                         keypoint=keypoints[keypoint_count]
                         #print(keypoint)
                         
@@ -563,7 +574,6 @@ def estimate_6d_pose_lm():
                         GTRadiusPath = rootPath+'Out_pt'+str(keypoint_count)+'_dm/'
                         
                         #file1 = open("myfile.txt","w") 
-                        centers_list = []
                         #print(filename)
                         #get the transformed gt center 
                         
@@ -643,17 +653,22 @@ def estimate_6d_pose_lm():
                     dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
               
                     input_image = np.asarray(Image.open(input_path).convert('RGB'))
+                    input_image_copy = np.copy(input_image)
+
                     for coor in dump:
-                        input_image[int(coor[1]),int(coor[0])] = [255,0,0]
-                    plt.imshow(input_image)
-                    plt.show()
+                        y, x = int(coor[1]), int(coor[0])
+                        if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
+                            input_image_copy[y, x] = [255, 0, 0]
+
+                    #plt.imshow(input_image_copy)
+                    #plt.show()
                     sceneGT = o3d.geometry.PointCloud()
                     sceneEst = o3d.geometry.PointCloud()
                     sceneGT.points=o3d.utility.Vector3dVector(xyz_load_transformed*1000)
                     sceneEst.points=o3d.utility.Vector3dVector(xyz_load_est_transformed)
                     sceneGT.paint_uniform_color(np.array([0,0,1]))
                     sceneEst.paint_uniform_color(np.array([1,0,0]))
-                    o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
+                    #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
                     distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                     min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
                     #print('ADD(s) point distance before ICP: ', distance)
@@ -676,7 +691,7 @@ def estimate_6d_pose_lm():
                         criteria)
                     sceneGT.transform(reg_p2p.transformation)
                   
-                    o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est after icp')
+                    #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est after icp')
                     distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                     min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
                     #print('ADD(s) point distance after ICP: ', distance)
@@ -687,6 +702,7 @@ def estimate_6d_pose_lm():
                         if distance <= add_threshold[class_name]*1000:
                             af_icp+=1                   
                     general_counter += 1
+                count = count + 1
             
         
         #os.system("pause")

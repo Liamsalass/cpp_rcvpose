@@ -40,8 +40,7 @@ def load_checkpoint(model, optimizer, filename='model_best.pth.tar'):
     start_epoch = 0
     loss = []
     if os.path.isfile(filename):
-        #print("=> loading checkpoint '{}'".format(filename))
-        checkpoint = torch.load(filename)
+        checkpoint = torch.load(filename, map_location=torch.device('cpu'))
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optim_state_dict'])

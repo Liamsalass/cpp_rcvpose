@@ -1,5 +1,6 @@
 #pragma once
 #include "lmshorn.h"
+#include "happly.h"
 #include "options.hpp"
 #include <chrono>
 #include <string>

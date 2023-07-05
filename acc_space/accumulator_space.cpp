@@ -5,6 +5,16 @@ using namespace std;
 using namespace open3d;
 namespace e = Eigen;
 
+struct fVertex {
+    float x, y, z;
+};
+
+struct dVertex {
+    double x, y, z;
+};
+
+
+
 typedef e::MatrixXd matrix;
 typedef shared_ptr<geometry::PointCloud> pc_ptr;
 typedef geometry::PointCloud pc;
@@ -177,32 +187,19 @@ void estimate_6d_pose_lm(const Options opts)
 
         cout << pcv_load_path << endl;
 
-        pc_ptr pcv(new geometry::PointCloud);
+        //pc_ptr pcv(new geometry::PointCloud);
 
-        //try {
-        //    cout << "File format " << open3d::utility::filesystem::GetFileExtensionInLowerCase(pcv_load_path) << endl;
+        geometry::PointCloud pcv;
+        
+
+        io::ReadPointCloudFromPLY("C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/ape.ply", pcv, io::ReadPointCloudOption("ply"));
+
+        cout << "Number of points " << pcv.points_.size() << endl;
+
+        //for (int i = 0; i < 5 && i < pcv->points_.size(); ++i) {
+        //    const Eigen::Vector3d& point = pcv->points_[i];
+        //    cout << "Point " << i + 1 << ": " << point.transpose() << endl;
         //}
-        //catch (const std::exception& e) {
-		//	cout << "Error: " << e.what() << endl;
-		//}
-
-
-        if (!io::ReadPointCloud(pcv_load_path, *pcv, io::ReadPointCloudOption("auto", false, false, false))) {
-            if (!io::ReadPointCloud(pcv_load_path, *pcv, io::ReadPointCloudOption("auto", false, false, false))) {
-                cout << "Error: cannot load point cloud" << endl;
-            }
-        }
-        // "C:\Users\User\.cw\work\datasets\test\LINEMOD\ape\ape.ply"
-        pcv = io::CreatePointCloudFromFile("C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/ape.ply", "auto");
-        pcv = io::CreatePointCloudFromFile("C:\Users\User\.cw\work\datasets\test\LINEMOD\ape\ape.ply", "auto");
-
-
-        cout << "Number of points " << pcv->points_.size() << endl;
-
-        for (int i = 0; i < 5 && i < pcv->points_.size(); ++i) {
-            const Eigen::Vector3d& point = pcv->points_[i];
-            cout << "Point " << i + 1 << ": " << point.transpose() << endl;
-        }
 
         return; 
     }
@@ -214,6 +211,47 @@ void estimate_6d_pose_lm(const Options opts)
 
 int main() {
     cout << "Testing acc space" << endl;
+
+    string filename = "C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/ape.ply";
+    ifstream file(filename);
+
+    string line;
+    vector<fVertex> vertices;
+
+    int count = 0;
+
+    while (getline(file, line)) {
+        if (line == "end_header") {
+            break;
+        }
+        
+        if (count < 40) {
+            cout << line << endl;
+            count++;
+        }
+
+        if (line.substr(0, 14) == "element vertex") {
+            int numVertices = stoi(line.substr(15));
+            vertices.reserve(numVertices);
+            for (int i = 0; i < numVertices; ++i) {
+                getline(file, line);
+                fVertex vertex;
+                sscanf(line.c_str(), "%f %f %f", &vertex.x, &vertex.y, &vertex.z);
+                vertices.push_back(vertex);
+            }
+        }
+
+    }
+
+    cout << "Number of vertices: " << vertices.size() << endl;
+    // Print out top ten vertex values
+    for (int i = 0; i < 10 && i < vertices.size(); ++i) {
+        const fVertex& vertex = vertices[i];
+        cout << "Vertex " << i + 1 << ": " << vertex.x << " " << vertex.y << " " << vertex.z << endl;
+    }
+
+
+
 
     if (proj_func) {
         e::MatrixXd xyz(4, 3); 
@@ -272,8 +310,10 @@ int main() {
 
     }
 
-    Options opts = testing_options();
 
+
+    Options opts = testing_options();
+    // 
     estimate_6d_pose_lm(opts);
 
     return 0;

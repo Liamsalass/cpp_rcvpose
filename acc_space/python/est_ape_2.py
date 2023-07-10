@@ -606,9 +606,6 @@ def estimate_6d_pose_lm():
 
                     depth_map = depth_map1*sem_out/1000   
 
-                    plt.imshow(depth_map)
-                    plt.show() 
-
                     pixel_coor = np.where(sem_out==1)
                     
                     radial_list = radial_out[pixel_coor]
@@ -679,9 +676,6 @@ def estimate_6d_pose_lm():
                     y, x = int(coor[1]), int(coor[0])
                     if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
                         input_image_copy[y, x] = [255, 0, 0]
-
-                plt.imshow(input_image_copy)
-                #plt.show()
 
                 sceneGT = o3d.geometry.PointCloud()
                 sceneEst = o3d.geometry.PointCloud()

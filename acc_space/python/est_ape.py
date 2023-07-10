@@ -570,20 +570,21 @@ def estimate_6d_pose_lm():
 
                 estimated_kpts = np.zeros((3,3))
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
-
+                
                 keypoint_count = 1
 
                 for keypoint in keypoints:
                     print("Kpt count: ", keypoint_count)
                     keypoint=keypoints[keypoint_count]
-
+                    print("Keypoint: ")
+                    print(keypoint)
                     
                     iter_count = 0
                     centers_list = []
                     
                     GTRadiusPath = rootPath+'Out_pt'+str(keypoint_count)+'_dm/'
                     transformed_gt_center_mm = (np.dot(keypoint, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
-                    
+
                     input_path = dataPath +filename
 
                     normalized_depth = []
@@ -605,10 +606,6 @@ def estimate_6d_pose_lm():
 
             
                     depth_map = depth_map1*sem_out/1000  
-
-                    # Display depth map
-                    plt.imshow(depth_map)
-                    plt.show() 
 
                     pixel_coor = np.where(sem_out==1)
                     

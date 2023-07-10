@@ -1,6 +1,12 @@
 #pragma once
+#include "AccSpaceIO.hpp"
+#include "AccSpaceMath.hpp"
 #include "lmshorn.h"
+#include "npy.hpp"
 #include "happly.h"
+#include "models/denseFCNResNet152.h"
+#include "utils.hpp"
+#include "npy_reader.hpp"
 #include "options.hpp"
 #include <chrono>
 #include <string>

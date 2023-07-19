@@ -593,26 +593,31 @@ def estimate_6d_pose_lm():
                     sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_cpp/score_' + str(count) +'.txt'
                     rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_cpp/score_rad_' + str(count) +'.txt'
     
-                    sem_out = fileToTensor(sem_out_path)
                     radial_out = fileToTensor(rad_out_path)
-
+                    sem_out = fileToTensor(sem_out_path)
                     toc = time.time_ns()
                     net_time += toc-tic
                     #print("Network time consumption: ", network_time_single)
                     depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
-
+   
+                    
                     sem_out = np.where(sem_out>0.8,1,0).squeeze(2).transpose(1,0)
                     radial_out = np.array(radial_out).squeeze(2).transpose(1,0)
-
-            
+                
                     depth_map = depth_map1*sem_out/1000  
 
                     pixel_coor = np.where(sem_out==1)
                     
                     radial_list = radial_out[pixel_coor]
+                   
+
                     xyz = rgbd_to_point_cloud(linemod_K,depth_map)
-                    
+
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
+
+                    print("xyz_load_transformed: ", xyz_load_transformed.shape)
+                    print(xyz_load_transformed[:20,:])
+
                     tic = time.time_ns()
 
 

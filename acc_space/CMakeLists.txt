@@ -48,6 +48,11 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} ${Open3D_LIBRARIES} ${OpenCV_LIBS} ${TORCH_LIBRARIES})
 
+# Set OpenMP flag
+#find_package(OpenMP REQUIRED)
+#target_compile_options(${TARGET_NAME} PRIVATE ${OpenMP_CXX_FLAGS})
+
+
 if(MSVC)
     file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
     add_custom_command(TARGET ${TARGET_NAME}

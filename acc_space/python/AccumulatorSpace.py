@@ -591,6 +591,7 @@ def estimate_6d_pose_lm():
                         depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
                         sem_out = np.where(sem_out>0.8,1,0)
                         depth_map = depth_map1*sem_out/1000
+  
                         pixel_coor = np.where(sem_out==1)
                         
                         
@@ -760,15 +761,13 @@ def estimate_6d_pose_lmo(opts):
                         sem_out, radial_out = FCResBackbone(model_path, input_path,0)
 
                         depth_map = Image.open(depthPath+'depth_'+os.path.splitext(filename)[0][6:].zfill(5)+'.png')
+                        # Print out top 20 depth values
+                        print(np.array(depth_map).flatten()[np.argsort(np.array(depth_map).flatten())[-20:]])
                         depth_map = np.array(depth_map, dtype=np.float64)
 
                         depth_map = depth_map/1000
                         sem_out = np.where(sem_out>=0.1,1,0)
-                        plt.imshow(sem_out)
-                        plt.show()
-
                         radial_out = radial_out*sem_out
-
                         depth_map = depth_map*sem_out
 
                         mean = 0.84241277810665

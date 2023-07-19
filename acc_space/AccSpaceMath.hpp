@@ -25,11 +25,10 @@
 
 using namespace std;
 using namespace open3d;
-namespace e = Eigen;
+using namespace Eigen;
 
 typedef shared_ptr<geometry::PointCloud> pc_ptr;
 typedef geometry::PointCloud pc;
-typedef e::MatrixXd matrix;
 
 //vector<string> lm_cls_names = {"ape", "cam", "can", "cat", "driller", "duck", "eggbox", "glue", "holepuncher", "iron", "lamp"};
 vector<string> lm_cls_names = { "ape" };
@@ -98,36 +97,99 @@ Eigen::MatrixXd transformKeyPoint(const Eigen::MatrixXd& keypoint, const Eigen::
 }
 
 
-void project(const matrix& xyz, const matrix& K, const matrix& RT, matrix& xy, matrix& actual_xyz) {
-    // xyz: [N, 3]
-    // K: [3, 3]
-    // RT: [3, 4]
-    matrix xyz_rt = (xyz * RT.block(0, 0, 3, 3).transpose()) + RT.block(0, 3, 3, 1).transpose().replicate(4, 1);
-    actual_xyz = xyz_rt;
-    matrix xyz_k = xyz_rt * K.transpose();
-    xy = xyz_k.leftCols(2).array() / xyz_k.col(2).array().replicate(1, 2);
-}
+void project(const MatrixXd& xyz, const MatrixXd& K, const MatrixXd& RT, MatrixXd& xy, MatrixXd& actual_xyz, const bool& debug = false)
+{
+    /*
+    xyz: [N, 3]
+    K: [3, 3]
+    RT: [3, 4]
+    */
 
+    actual_xyz =  xyz * (RT.block(0, 0, RT.rows(), 3).transpose());
+    MatrixXd RTslice = RT.block(0, 3, RT.rows(), 1).transpose();
 
-pc_ptr rgbd_to_point_cloud(const matrix& K, const matrix& depth) {
-    pc point_cloud;
-
-    e::Index heigh = depth.rows();
-    e::Index width = depth.cols();
-
-    pc_ptr cloud(new geometry::PointCloud);
-
-    for (e::Index i = 0; i < heigh; i++) {
-        for (e::Index j = 0; j < width; j++) {
-            double z = depth(i, j);
-            if (z > 0) {
-                double x = (j - K(0, 2)) * z / K(0, 0);
-                double y = (i - K(1, 2)) * z / K(1, 1);
-                point_cloud.points_.push_back(e::Vector3d(x, y, z));
-            }
-        }
+    #pragma omp parallel for
+    for (int i = 0; i < actual_xyz.rows(); i++){
+        actual_xyz.row(i) += RTslice;
     }
 
-    cloud->points_ = move(point_cloud.points_);
-    return cloud;
+    MatrixXd xy_temp = actual_xyz * K.transpose();
+
+    xy = xy_temp.leftCols(2).array() / xy_temp.col(2).array().replicate(1, 2);
 }
+
+
+open3d::geometry::PointCloud rgbd_to_point_cloud(const std::array<std::array<double, 3>, 3>& K, const cv::Mat& depth) {
+    cv::Mat depth64F;
+    depth.convertTo(depth64F, CV_64F);  // Convert depth image to CV_64F
+
+    std::vector<cv::Point> nonzeroPoints;
+    cv::findNonZero(depth64F, nonzeroPoints);
+
+    std::vector<double> zs(nonzeroPoints.size());
+    std::vector<double> xs(nonzeroPoints.size());
+    std::vector<double> ys(nonzeroPoints.size());
+
+    #pragma omp parallel for
+    for (int i = 0; i < nonzeroPoints.size(); i++) {
+        int v, u;
+        #pragma omp critical
+        {
+            v = nonzeroPoints[i].y;
+            u = nonzeroPoints[i].x;
+        }
+        zs[i] = depth64F.at<double>(v, u);
+    }
+
+    #pragma omp parallel for
+    for (int i = 0; i < nonzeroPoints.size(); i++) {
+        int v, u;
+        #pragma omp critical
+        {
+            v = nonzeroPoints[i].y;
+            u = nonzeroPoints[i].x;
+        }
+        xs[i] = ((u - K[0][2]) * zs[i]) / K[0][0];
+        ys[i] = ((v - K[1][2]) * zs[i]) / K[1][1];
+    }
+
+    open3d::geometry::PointCloud pointCloud;
+    pointCloud.points_.resize(xs.size());
+
+    #pragma omp parallel for
+    for (int i = 0; i < xs.size(); i++) {
+        pointCloud.points_[i] = Eigen::Vector3d(xs[i], ys[i], zs[i]);
+    }
+
+    return pointCloud;
+}
+
+
+
+void divideByLargest(cv::Mat& matrix, const bool& debug = false) {
+    double maxVal;
+    cv::minMaxLoc(matrix, nullptr, &maxVal);
+    if (debug) {
+        cout << "Max value in cv::Mat: " << maxVal << endl;
+    }
+    matrix /= maxVal;
+}
+
+void normalizeMat(cv::Mat& input, const bool& debug = false) {
+    double minVal, maxVal;
+    cv::minMaxLoc(input, &minVal, &maxVal);
+
+    if (debug) {
+        cout << "Normalizing data between 0-1" << endl;
+        cout << "\tLargest Value: " << maxVal << endl;
+        cout << "\tSmallest Value: " << minVal << endl;
+    }
+
+    if (maxVal - minVal != 0) {
+        double scale = 1.0 / (maxVal - minVal);
+        double shift = -minVal / (maxVal - minVal);
+        input.convertTo(input, CV_32FC1, scale, shift);
+    }
+    // If the range is zero, no normalization is performed
+}
+

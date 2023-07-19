@@ -12,6 +12,8 @@ struct Vertex {
     double x, y, z;
 };
 
+
+
 // Shape of config is {<int, <string, vector<float>>>} in a map
 // Betas has two values, so it is a vector, while the rest are single values
 inline std::map<int, std::map<std::string, std::vector<float>>> get_config() {
@@ -26,6 +28,21 @@ inline std::map<int, std::map<std::string, std::vector<float>>> get_config() {
              {"interval_validate", {1000}},
          }}
     };
+}
+
+void printProgressBar(int current, int total, int width)
+{
+    float progress = float(current) / float(total);
+    int barWidth = width - 7;
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
 }
 
 

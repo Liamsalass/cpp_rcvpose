@@ -8,7 +8,7 @@
 
 using namespace std;
 
-Options testing_options(int kpt = 3, bool rsm = true, int batchsize = 1, string output_directory = "kpt3", bool debug = false) {
+Options testing_options(int kpt = 3, bool rsm = true, int batchsize = 2, string output_directory = "kpt3", bool debug = true) {
     Options opts;
     opts.gpu_id = 0;
     opts.dname = "lm";
@@ -73,7 +73,7 @@ Options gpu_train_opts(int kpt, bool rsm, int batch_size, int gpuid) {
 
 int main(int argc, char* args[])
 {
-    Options opts = testing_options(1, true, 1, "kpt1", false);
+    Options opts = testing_options(1, true, 2, "kpt1", true);
     RCVpose rcv(opts);
-    rcv.save_tensor("tensors", 0, 1050);
+    rcv.train();
 }

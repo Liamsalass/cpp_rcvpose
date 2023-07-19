@@ -2,6 +2,12 @@
 
 using namespace std;
 
+cv::Mat torch_tensor_to_cv_mat(torch::Tensor tensor) {
+    int rows = tensor.size(0);
+    int cols = tensor.size(1);
+    cv::Mat mat(rows, cols, CV_32FC1, tensor.data_ptr<float>());
+    return mat.clone();
+};
 
 Trainer::Trainer(Options& options) : opts(options)
 {
@@ -319,25 +325,8 @@ void Trainer::train()
             auto target = torch::stack(batch_target, 0);
             auto sem_target = torch::stack(batch_sem_target, 0);
 
-            if (opts.debug == true && val_count == 0) {
 
-                cout << "Image shape: " << img.sizes() << endl;
-                cout << "Target shape: " << target.sizes() << endl;
-                cout << "Semantic Target shape: " << sem_target.sizes() << endl;
-
-                std::string path_t = out + "/epoch_" + std::to_string(epoch);
-                std::filesystem::path outPath(path_t);
-                if (!std::filesystem::is_directory(outPath)) {
-                    if (!std::filesystem::create_directories(outPath)) {
-                        cout << "Failed to create output directory for input tensors" << endl;
-                    }
-                }
-                tensorToFile(img, path_t + "/input_img0.txt");
-                tensorToFile(target, path_t + "/input_rad0.txt");
-                tensorToFile(sem_target, path_t + "/input_sem0.txt");
-            }
-
-
+            cout << "Image shape: " << img.sizes() << endl;
             img = img.to(device);
             target = target.to(device);
             sem_target = sem_target.to(device);
@@ -347,18 +336,25 @@ void Trainer::train()
             auto score = std::get<0>(output);
             auto score_rad = std::get<1>(output);
 
-            if (opts.debug == true && val_count == 0) {
-                auto cpu_score = score.to(torch::kCPU);
-                auto cpu_score_rad = score_rad.to(torch::kCPU);
+            if (opts.debug == true && (val_count % 50 == 0)) {
+                auto score_cpu = score.to(torch::kCPU);
+                auto rad_cpu = score_rad.to(torch::kCPU);
 
-                cout << "Score shape: " << cpu_score.sizes() << endl;
-                cout << "Score_rad shape: " << cpu_score_rad.sizes() << endl;
+                auto score_unstack = torch::unbind(score_cpu, 0);
+                auto score_rad_unstack = torch::unbind(rad_cpu, 0);
 
-                std::string path_t = out + "/epoch_" + std::to_string(epoch);
-                tensorToFile(cpu_score, path_t + "/output_rad.txt");
-                tensorToFile(cpu_score_rad, path_t + "/output_sem.txt");
+                auto out_score = score_unstack[0];
+                auto out_score_rad = score_rad_unstack[0];
+
+                out_score = out_score.permute({ 1,2,0 });
+                out_score_rad = out_score_rad.permute({ 1,2,0 });
+
+                cv::Mat sem = torch_tensor_to_cv_mat(out_score);
+                cv::Mat rad = torch_tensor_to_cv_mat(out_score_rad);
+                cv::imshow("Semantic", sem);
+                cv::imshow("Radial", rad);
+                cv::waitKey(0);
             }
-
 
             val_count++;
 
@@ -399,46 +395,51 @@ void Trainer::train()
 
         //================================================================\\
         //                  Save Model and Optimizer                      \\
+        
+        if (!opts.debug) {
+            try {
+                std::string save_location;
+                if (is_best) {
+                    cout << "Saving New Best Model" << endl;
+                    save_location = out + "/model_best";
+                }
+                else {
+                    cout << "Saving Current Model" << endl;
+                    save_location = out + "/current";
+                }
 
-        try {
-            std::string save_location;
-            if (is_best){
-                cout << "Saving New Best Model" << endl;
-                save_location = out + "/model_best";
+                if (!std::filesystem::is_directory(save_location))
+                    std::filesystem::create_directory(save_location);
+
+                torch::serialize::OutputArchive output_model_info;
+                output_model_info.write("epoch", epoch);
+                output_model_info.write("iteration", iteration);
+                output_model_info.write("arch", model->name());
+                output_model_info.write("best_acc_mean", best_acc_mean);
+                output_model_info.write("loss", val_loss);
+                output_model_info.write("optimizer", opts.optim);
+                output_model_info.write("lr", current_lr);
+
+                output_model_info.save_to(save_location + "/info.pt");
+
+                torch::serialize::OutputArchive output_model_archive;
+                model->to(torch::kCPU);
+                model->save(output_model_archive);
+                model->to(device);
+                output_model_archive.save_to(save_location + "/model.pt");
+
+
+                torch::serialize::OutputArchive output_optim_archive;
+                optim->save(output_optim_archive);
+                output_optim_archive.save_to(save_location + "/optim.pt");
             }
-            else {
-                cout << "Saving Current Model" << endl;
-                save_location = out + "/current";
+            catch (std::exception& e) {
+                std::cout << "Error saving model: " << e.what() << std::endl;
             }
-            
-            if (!std::filesystem::is_directory(save_location))
-                std::filesystem::create_directory(save_location);
-
-            torch::serialize::OutputArchive output_model_info;
-            output_model_info.write("epoch", epoch);
-            output_model_info.write("iteration", iteration);
-            output_model_info.write("arch", model->name());
-            output_model_info.write("best_acc_mean", best_acc_mean);
-            output_model_info.write("loss", val_loss);
-            output_model_info.write("optimizer", opts.optim);
-            output_model_info.write("lr", current_lr);
-
-            output_model_info.save_to(save_location + "/info.pt");
-  
-            torch::serialize::OutputArchive output_model_archive;
-            model->to(torch::kCPU);
-            model->save(output_model_archive);
-            model->to(device);
-            output_model_archive.save_to(save_location + "/model.pt");
-   
-
-            torch::serialize::OutputArchive output_optim_archive;
-            optim->save(output_optim_archive);
-            output_optim_archive.save_to(save_location + "/optim.pt");
         }
-        catch (std::exception& e) {
-			std::cout << "Error saving model: " << e.what() << std::endl;
-		}
+        else {
+            cout << "Skipping Model saving: Debug == true" << endl;
+        }
         
 
         // Reduce learning rate every 70 epoch

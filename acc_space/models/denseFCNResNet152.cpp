@@ -58,14 +58,14 @@ DenseFCNResNet152Impl::DenseFCNResNet152Impl(int input_channels, int output_chan
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
 	)),
 
-	
+
 	conv_up4(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(1024 + 1024, 512, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(512),
 		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
 	)),
 
-	
+
 	conv_up3(torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(512 + 512, 256, 3).padding(1).stride(1)),
 		torch::nn::BatchNorm2d(256),
@@ -95,7 +95,7 @@ DenseFCNResNet152Impl::DenseFCNResNet152Impl(int input_channels, int output_chan
 
 {
 	//Register modules
-    register_module("conv1", conv1);
+	register_module("conv1", conv1);
 	register_module("bn1", bn1);
 	register_module("relu", relu);
 	register_module("maxpool", maxpool);
@@ -141,7 +141,7 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 	auto x32s = conv6->forward(x16s);
 	x32s = bn6->forward(x32s);
 	x32s = relu(x32s);
-	
+
 	auto cat_input = torch::cat({ x32s, x16s }, 1);
 	auto up = conv_up5->forward(cat_input);
 
@@ -169,11 +169,10 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 	up = conv7->forward(up);
 
 	auto out = conv8->forward(up);
-	auto seg_pred = out.index({ torch::indexing::Slice(), 0, torch::indexing::Slice(), torch::indexing::Slice() });
-	auto radial_pred = out.index({ torch::indexing::Slice(),torch::indexing::Slice(1, torch::indexing::None),torch::indexing::Slice(),torch::indexing::Slice()});
 
+	auto seg_pred = out.index({ torch::indexing::Slice(), torch::indexing::Slice(0,1), torch::indexing::Slice(), torch::indexing::Slice() });
+	auto radial_pred = out.index({ torch::indexing::Slice(),torch::indexing::Slice(1),torch::indexing::Slice(),torch::indexing::Slice() });
 
 	return std::make_tuple(seg_pred, radial_pred);
-
 }
 

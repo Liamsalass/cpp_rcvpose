@@ -10,6 +10,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -32,7 +33,7 @@ typedef shared_ptr<geometry::PointCloud> pc_ptr;
 typedef geometry::PointCloud pc;
 
 
-matrix cvmat_to_eigen(const cv::Mat& mat)
+matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
 {
     int width = mat.cols;
     int height = mat.rows;
@@ -40,6 +41,13 @@ matrix cvmat_to_eigen(const cv::Mat& mat)
 
     int type = mat.type();
     int dataType = type & CV_MAT_DEPTH_MASK;
+
+    if (debug) {
+        cout << "Converting CVMat to Eigen Matrix" << endl;
+        cout << "Data Type: " << type << endl;
+        cout << "Channels: " << channels << endl;
+    }
+
 
     matrix eigenMat;
     if (dataType == CV_8U)
@@ -53,6 +61,7 @@ matrix cvmat_to_eigen(const cv::Mat& mat)
             {
                 for (int c = 0; c < channels; ++c)
                 {
+                    #pragma omp critical
                     eigenMat(row, col * channels + c) = static_cast<double>(mat.at<cv::Vec3b>(row, col)[c]);
                 }
             }
@@ -69,6 +78,7 @@ matrix cvmat_to_eigen(const cv::Mat& mat)
             {
                 for (int c = 0; c < channels; ++c)
                 {
+                    #pragma omp critical
                     eigenMat(row, col * channels + c) = static_cast<double>(mat.at<cv::Vec3f>(row, col)[c]);
                 }
             }
@@ -85,6 +95,7 @@ matrix cvmat_to_eigen(const cv::Mat& mat)
             {
                 for (int c = 0; c < channels; ++c)
                 {
+                    #pragma omp critical
                     eigenMat(row, col * channels + c) = mat.at<cv::Vec3d>(row, col)[c];
                 }
             }
@@ -99,7 +110,36 @@ matrix cvmat_to_eigen(const cv::Mat& mat)
     return eigenMat;
 }
 
-pc_ptr read_point_cloud(string path, bool debug = "false") {
+cv::Mat torch_tensor_to_cv_mat(torch::Tensor tensor) {
+    int rows = tensor.size(0);
+    int cols = tensor.size(1);
+    cv::Mat mat(rows, cols, CV_32FC1, tensor.data_ptr<float>());
+    return mat.clone();
+}
+
+matrix torch_tensor_to_eigen(torch::Tensor tensor, const bool& debug = false) {
+    int rows = tensor.size(0);
+    int cols = tensor.size(1);
+    matrix mat(rows, cols);
+
+    if (debug) {
+        cout << "Converting Torch Tensor to Eigen Matrix" << endl;
+    }
+
+    auto tensor_accessor = tensor.accessor<double, 2>();
+
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; ++j) {
+            #pragma omp critical
+            mat(i, j) = tensor_accessor[i][j];
+        }
+    }
+
+    return mat;
+}
+
+pc_ptr read_point_cloud(string path, const bool& debug = false) {
     //geometry:: PointCloud pcv;
     pc_ptr pcv(new geometry::PointCloud);
     vector<double> data;
@@ -119,6 +159,7 @@ pc_ptr read_point_cloud(string path, bool debug = "false") {
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; ++j) {
+            #pragma omp critical
             mat(i, j) = data[i * cols + j];
         }
     }
@@ -134,7 +175,7 @@ pc_ptr read_point_cloud(string path, bool debug = "false") {
     return pcv;
 }
 
-vector<vector<double>> read_key_points(string path, const bool debug = "false") {
+vector<vector<double>> read_key_points(string path, const bool debug = false) {
     vector<double> data;
     vector<unsigned long> shape;
     bool fortran_order;
@@ -159,7 +200,7 @@ vector<vector<double>> read_key_points(string path, const bool debug = "false") 
     return mat;
 }
 
-vector<vector<double>> read_ground_truth(const string& path, const bool& debug) {
+vector<vector<double>> read_ground_truth(const string& path, const bool& debug = false) {
     ifstream file(path); // Open the file
     string line;
     vector<vector<double>> data;
@@ -188,11 +229,124 @@ vector<vector<double>> read_ground_truth(const string& path, const bool& debug) 
     return data;
 }
 
+Eigen::MatrixXd read_depth_to_matrix(const string& path, const bool& debug = false) {
+    Eigen::MatrixXd depth_image;
+
+    if (path.substr(path.length() - 3) == "dpt") {
+        if (debug) {
+			cout << "Reading in depth file manually " << endl;
+		}
+		std::ifstream file(path, std::ios::binary);
+
+        if (file) {
+			uint32_t h, w;
+			file.read(reinterpret_cast<char*>(&h), sizeof(h));
+			file.read(reinterpret_cast<char*>(&w), sizeof(w));
+
+			Eigen::MatrixXd data(h, w);
+			file.read(reinterpret_cast<char*>(data.data()), h * w * sizeof(double));
+
+			depth_image = data;
+		}
+
+		file.close();
+	}
+    
+    depth_image.transpose();
+    
+    if (debug) {
+        cout << "Depth size: " << depth_image.rows() << " x " << depth_image.cols() << endl;
+    }
+
+	return depth_image;
+}
+
+cv::Mat eigen_matrix_to_cv_mat(Eigen::MatrixXd matrix, const bool& debug = false) {
+    cv::Mat mat(matrix.rows(), matrix.cols(), CV_64FC1);
+
+    if (debug) {
+        cout << "Converting Eigen to CV Mat" << endl;
+    }
+
+	#pragma omp parallel for collapse(2)
+    for (int i = 0; i < matrix.rows(); i++) {
+        for (int j = 0; j < matrix.cols(); ++j) {
+			mat.at<double>(i, j) = matrix(i, j);
+		}
+	}
+
+	return mat;
+
+}
+
+cv::Mat read_depth_to_cv(const std::string& path, const bool& debug = false) {
+    cv::Mat depth_image;
+
+    if (path.substr(path.length() - 3) == "dpt") {
+        if (debug) {
+            cout << "Reading in depth file manually " << endl;
+        }
+        std::ifstream file(path, std::ios::binary);
+
+        if (file) {
+            uint32_t h, w;
+            file.read(reinterpret_cast<char*>(&h), sizeof(h));
+            file.read(reinterpret_cast<char*>(&w), sizeof(w));
+
+            cv::Mat data(h, w, CV_16UC1);
+            file.read(reinterpret_cast<char*>(data.data), h * w * sizeof(uint16_t));
+
+            depth_image = data.clone();
+        }
+
+        file.close();
+    }
+    else {
+        if (debug) {
+            cout << "Using Opencv to read depth file" << endl;
+        }
+        depth_image = cv::imread(path, cv::IMREAD_UNCHANGED);
+    }
+
+    if (debug) {
+        cout << "Depth Image size: " << depth_image.size() << endl;
+    }
+
+    return depth_image;
+}
 
 
 
+Eigen::MatrixXd convertToEigenMatrix(const std::vector<Vertex>& vertices){
+    int numVertices = vertices.size();
+    Eigen::MatrixXd matrix(numVertices, 3);
+
+    #pragma omp parallel for 
+    for (int i = 0; i < numVertices; i++)
+    {
+        matrix(i, 0) = vertices[i].x;
+        matrix(i, 1) = vertices[i].y;
+        matrix(i, 2) = vertices[i].z;
+    }
+
+    return matrix;
+}
 
 
+Eigen::MatrixXd convertToEigenMatrix(const std::array<std::array<double, 3>, 3>& inputArray)
+{
+    Eigen::MatrixXd matrix(3,3);
+
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            matrix(i, j) = inputArray[i][j];
+        }
+    }
+    return matrix;
+}
 
 
 

@@ -594,6 +594,8 @@ def estimate_6d_pose_lm():
     
                     sem_out = np.load(sem_out_path)
                     radial_out = np.load(rad_out_path)
+                    plt.imshow(radial_out)
+                    plt.show()
 
                     
                     toc = time.time_ns()

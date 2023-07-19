@@ -372,7 +372,6 @@ def Accumulator_3D(xyz, radial_list):
     xyz_mm = xyz*1000/acc_unit #point cloud is in meter
 
     #print(xyz_mm.shape)
-    
     #recenter the point cloud
     x_mean_mm = np.mean(xyz_mm[:,0])
     y_mean_mm = np.mean(xyz_mm[:,1])
@@ -383,19 +382,36 @@ def Accumulator_3D(xyz, radial_list):
     xyz_mm[:,0] -= x_mean_mm
     xyz_mm[:,1] -= y_mean_mm
     xyz_mm[:,2] -= z_mean_mm
+
+    for i in range (20):
+        print(xyz_mm[i])
     
     radial_list_mm = radial_list*100/acc_unit  #radius map is in decimetre for training purpose
     
+    for i in range (20):
+        print(radial_list_mm[i])
+
     xyz_mm_min = xyz_mm.min()
     xyz_mm_max = xyz_mm.max()
     radius_max = radial_list_mm.max()
     
+    print("xyz_mm_min: ",xyz_mm_min)
+    print("xyz_mm_max: ",xyz_mm_max)
+    print("radius_max: ",radius_max)
+
+
     zero_boundary = int(xyz_mm_min-radius_max)+1
+
+    print("zero_boundary: ",zero_boundary)
     
     if(zero_boundary<0):
         xyz_mm -= zero_boundary
         #length of 3D vote map 
     length = int(xyz_mm.max())
+
+    print("length: ",length)
+    for i in range(20):
+        print(xyz_mm[i])
     
     VoteMap_3D = np.zeros((length+int(radius_max),length+int(radius_max),length+int(radius_max)))
     tic = time.perf_counter()
@@ -576,8 +592,7 @@ def estimate_6d_pose_lm():
                 for keypoint in keypoints:
                     print("Kpt count: ", keypoint_count)
                     keypoint=keypoints[keypoint_count]
-                    print("Keypoint: ")
-                    print(keypoint)
+                   
                     
                     iter_count = 0
                     centers_list = []
@@ -607,19 +622,15 @@ def estimate_6d_pose_lm():
                     depth_map = depth_map1*sem_out/1000  
 
                     pixel_coor = np.where(sem_out==1)
-                    
+
+                
                     radial_list = radial_out[pixel_coor]
-                   
 
                     xyz = rgbd_to_point_cloud(linemod_K,depth_map)
 
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
 
-                    print("xyz_load_transformed: ", xyz_load_transformed.shape)
-                    print(xyz_load_transformed[:20,:])
-
                     tic = time.time_ns()
-
 
                     center_mm_s = Accumulator_3D(xyz, radial_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)

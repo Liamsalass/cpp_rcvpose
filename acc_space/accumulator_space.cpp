@@ -31,19 +31,7 @@ Options testing_options() {
 }
 
 
-Vector3d Accumulator_3D(const geometry::PointCloud& xyz, const vector<Vertex>& radial_list, const bool& debug = false) {
 
-    double acc_unit = 5;
-    // unit 5mm
-    Eigen::MatrixXd xyz_mm = Eigen::MatrixXd::Zero(xyz.points_.size(), 3);
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < xyz.points_.size(); ++i) {
-        xyz_mm(i, 0) = xyz.points_[i].x() * 1000 / acc_unit;
-        xyz_mm(i, 1) = xyz.points_[i].y() * 1000 / acc_unit;
-        xyz_mm(i, 2) = xyz.points_[i].z() * 1000 / acc_unit;
-    }
-}
 
 void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Tensor& radial_output, torch::Tensor& semantic_output, const torch::DeviceType device_type, const bool& debug) {
 
@@ -108,19 +96,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
         cout << endl;
         cout << "\t\t\tDebug Mode" << endl;
         cout << "\t\t\t\b------------" << endl << endl;
-    }
-
-    bool display = false;
-    char c;
-    if (debug) {
-        //Get user input if to display images
-        cout << "Display images? (y/n): ";
-  
-        cin >> c;
-        if (c == 'y') {
-            cout << "Displaying Images" << endl;
-			display = true;
-		}
     }
 
     torch::DeviceType device_type = use_cuda ? torch::kCUDA : torch::kCPU;
@@ -342,13 +317,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 sem_tmp.release();
 
 
-                if (display) {
-                    cv::imshow("Radial Output", rad_cv);
-                    cv::imshow("Semantic Output after threshold", sem_cv);
-                    cv::imshow("Depth with Semantic Output", depth_cv);
-                    cv::waitKey(0);
-                }
-
                 vector<Vertex> pixel_coor;
                 if (debug) {
                     cout << "Gathering Pixel Coordinates from semantic output" << endl;
@@ -372,7 +340,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                     cout << "\tPixel Coord Size: " << pixel_coor.size() << endl;
                 }
 
-                vector<Vertex> radial_list;
+                vector<double> radial_list;
 
                 #pragma omp parallel for 
                 for (auto cord : pixel_coor) {
@@ -381,7 +349,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                     v.y = cord.y;
                     v.z = rad_cv.at<float>(cord.x, cord.y);
                     #pragma omp critical
-                    radial_list.push_back(v);
+                    radial_list.push_back(v.z);
                 }
 
                 if (debug) {
@@ -389,13 +357,14 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                     cout << "Converting depth image to pointcloud" << endl;
                 }
 
+                //Check imkplementation since values are slightly off from python (Most likely depth that is different causing different output)
                 auto xyz = rgbd_to_point_cloud(linemod_K, depth_cv);
+
 
                 if (debug) {
 					cout << "\tPointcloud Size: " << xyz.points_.size() << endl << endl;
 				}
 
-                //  dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
                 Eigen::MatrixXd dump, xyz_load_transformed;
 
                 if (debug) {
@@ -411,7 +380,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 }
       
 
-                project(xyz_load_matrix, linemod_K_matrix, RTGT_matrix, dump, xyz_load_transformed, debug);
+                project(xyz_load_matrix, linemod_K_matrix, RTGT_matrix, dump, xyz_load_transformed);
 
                 if (debug) {
                     cout << "\tTransformed Pointcloud Size: " << xyz_load_transformed.rows() << endl;
@@ -427,12 +396,29 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 if (debug) {
                     cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
                     cout << "Function inputs: " << endl;
-                    cout << "\XYZ pointcloud size: " << xyz.points_.size() << endl;
-                    cout << "\tRadial List Size: " << radial_list.size() << endl << endl;
-                   
+                    cout << "\tXYZ pointcloud size: " << xyz.points_.size() << endl;
+                    cout << "\tXYZ pointcloud data: " << endl;
+                    for (int i = 0; i < 5; i++) {
+                        cout << "\t\t" << xyz.points_[i] << endl;
+                    }
+                    cout << "\tRadial List Size: " << radial_list.size() << endl;
+                    cout << "\tRadial List Data: " << endl;
+                    for (int i = 0; i < 5; i++) {
+						cout << "\t\t" << radial_list[i] << endl;
+					}
+				    cout << endl;
+
+                    start = chrono::high_resolution_clock::now();
                 }
 
-                auto center_mm_s = Accumulator_3D(xyz, radial_list, debug);
+
+                Eigen::Vector3d center_mm_s = Accumulator_3D(xyz, radial_list, debug);
+
+                if (debug) {
+                    end = chrono::high_resolution_clock::now();
+                    cout << "Acc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
+                }
+
 
                 if (debug) {
                     break;

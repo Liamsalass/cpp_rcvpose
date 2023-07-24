@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "utils.hpp"
 #include "options.hpp"
 #include "FastFor.cu"
@@ -58,18 +57,6 @@ array<array<double, 3>, 3> linemod_K {{
 atomic<int> progress(0);
 mutex mtx;
 
-void print_progress_bar(int length, double percentage) {
-    int pos = length * percentage;
-    lock_guard<mutex> lock(mtx); // lock the console output
-    cout << "[";
-    for (int i = 0; i < length; ++i) {
-        if (i < pos) cout << "=";
-        else if (i == pos) cout << ">";
-        else cout << " ";
-    }
-    cout << "] " << int(percentage * 100.0) << " %\r";
-    cout.flush();
-}
 
 Eigen::MatrixXd vectorToEigenMatrix(const vector<double>& vec) {
     int size = vec.size();
@@ -236,7 +223,7 @@ void normalizeMat(cv::Mat& input, const bool& debug = false) {
 
 
 
-void fast_for1(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list_mm, vector<vector<vector<double>>>& VoteMap_3D, const bool& print_progress = true) {
+void fast_for1(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list_mm, vector<vector<vector<double>>>& VoteMap_3D) {
     double factor = (3.0 * sqrt(3.0)) / 4.0;
     int vote_map_size_i = VoteMap_3D.size();
     int vote_map_size_j = VoteMap_3D[0].size();
@@ -246,6 +233,7 @@ void fast_for1(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list
     {
     #pragma omp for collapse(2) schedule(static) nowait
         for (int count = 0; count < xyz_mm.rows(); ++count) {
+
             Eigen::Vector3d xyz = xyz_mm.row(count);
             double radius = round(radial_list_mm(count));
             int i_start = max(0, static_cast<int>(xyz[0] - radius - 1));
@@ -268,17 +256,10 @@ void fast_for1(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list
                     }
                 }
             }
-            if (print_progress) {
-                progress++; 
-                double percentage = static_cast<double>(progress) / xyz_mm.rows();
-                print_progress_bar(75, percentage); 
-            }
+
         }
     }
-    if (print_progress) {
-        cout << endl; 
-        progress = 0;
-    }
+
 }
 
 
@@ -318,7 +299,6 @@ Vector3d Accumulator_3D(const geometry::PointCloud& xyz, const vector<double>& r
     double radius_max = radial_list_mm.maxCoeff();
 
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
-
 
     if (zero_boundary < 0) {
         xyz_mm.array() -= zero_boundary;
@@ -360,7 +340,7 @@ Vector3d Accumulator_3D(const geometry::PointCloud& xyz, const vector<double>& r
     }
     else {
         cout << "Using CPU for fast_for" << endl;
-        fast_for1(xyz_mm, radial_list_mm, VoteMap_3D, print_progress);
+        fast_for1(xyz_mm, radial_list_mm, VoteMap_3D);
     }    
 
     chrono::steady_clock::time_point toc = chrono::steady_clock::now();

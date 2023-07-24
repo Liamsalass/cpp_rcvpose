@@ -631,11 +631,12 @@ def estimate_6d_pose_lm():
                     
                     estimated_center_mm = center_mm_s[0]
 
-                    print ("Estimated center: ", estimated_center_mm)
+
                     
                     center_off_mm = ((transformed_gt_center_mm[0,0]-estimated_center_mm[0])**2+
                                     (transformed_gt_center_mm[0,1]-estimated_center_mm[1])**2+
                                     (transformed_gt_center_mm[0,2]-estimated_center_mm[2])**2)**0.5
+                    
                     print("estimated offset: ", center_off_mm)
                     
                     #save estimations

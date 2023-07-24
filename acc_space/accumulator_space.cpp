@@ -132,13 +132,16 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
         int bf_icp = 0;
         int af_icp = 0;
+
+        vector<string> filename_list;
         
         vector<DenseFCNResNet152> model_list;
 
         cout << endl << "Loading Models" << endl;
         for (int i = 1; i < 4; i++) {
-         
+        
             string model_dir = "kpt" + to_string(i);
+
             if (debug) {
                 cout << "\t" << model_dir << endl;
             }
@@ -238,7 +241,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
             
                 int iteration_count = 0;
             
-                vector<vector<double>> centers_list;
+                vector<Eigen::MatrixXd> centers_list;
 
                 //string GTRadiusPath = rootPath + "Out_pt" + to_string(keypoint_count) + "_dm
 
@@ -447,12 +450,31 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
                 estimated_kpts.row(keypoint_count) = estimated_center_mm;
                 
-                if (iteration_count == 0) {
-                    
+  
+                centers_list.push_back(centers);
+    
+                filename_list.push_back(test_img);
+
+                iteration_count++;
+
+                keypoint_count++;
+
+                if (keypoint_count == 4) {
+                    break;
                 }
-
-
             }
+
+            vector<vector<double>> kpts;
+
+            for (int i = 0; i < 3; i++) {
+                kpts.push_back(keypoints[i]);
+            }
+
+            Eigen::MatrixXd RT = Eigen::MatrixXd::Zero(4, 4);
+
+
+
+
             if (debug) {
                 break;
             }

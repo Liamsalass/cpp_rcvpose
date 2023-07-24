@@ -31,8 +31,6 @@ Options testing_options() {
 }
 
 
-
-
 void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Tensor& radial_output, torch::Tensor& semantic_output, const torch::DeviceType device_type, const bool& debug) {
 
     torch::Device device(device_type);
@@ -146,6 +144,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
             }
 
             DenseFCNResNet152 model;
+
             CheckpointLoader loader(model_dir, true);
 
             model = loader.getModel();
@@ -197,6 +196,10 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
             cout << string(15, ' ') << "Estimating for image " << test_img << ".jpg" << endl;
 
             string image_path = data_path + test_img + ".jpg";
+            
+            
+            Eigen::MatrixXd estimated_kpts = Eigen::MatrixXd::Zero(3, 3);
+
 
             string RTGT_path = opts.root_dataset + "/LINEMOD/" + class_name + "/pose_txt/pose" + to_string(img_num) + ".txt";
 
@@ -223,7 +226,8 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
             
 
             for (const auto& keypoint : keypoints) {
-                cout << "Keypoint Count: " << keypoint_count << endl;
+                cout << string(50, '-') << endl;
+                cout << string(15, ' ')  << "Keypoint Count: " << keypoint_count << endl;
 
                 //Ask Greenspan about this
                 auto keypoint = keypoints[keypoint_count];
@@ -252,7 +256,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
                 torch::Tensor semantic_output;
                 torch::Tensor radial_output;
-
+                
                 auto model = model_list.at(keypoint_count - 1);
 
                 auto start = chrono::high_resolution_clock::now();
@@ -395,34 +399,58 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
                 if (debug) {
                     cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
-                    cout << "Function inputs: " << endl;
-                    cout << "\tXYZ pointcloud size: " << xyz.points_.size() << endl;
-                    cout << "\tXYZ pointcloud data: " << endl;
-                    for (int i = 0; i < 5; i++) {
-                        cout << "\t\t" << xyz.points_[i] << endl;
-                    }
-                    cout << "\tRadial List Size: " << radial_list.size() << endl;
-                    cout << "\tRadial List Data: " << endl;
-                    for (int i = 0; i < 5; i++) {
-						cout << "\t\t" << radial_list[i] << endl;
-					}
-				    cout << endl;
-
                     start = chrono::high_resolution_clock::now();
                 }
 
-
-                Eigen::Vector3d center_mm_s = Accumulator_3D(xyz, radial_list, debug);
+                Eigen::Vector3d center_mm_s = Accumulator_3D(xyz, radial_list, false, true, false);
 
                 if (debug) {
                     end = chrono::high_resolution_clock::now();
                     cout << "Acc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
+                    cout << "Number of Centers Returned: " << center_mm_s.size() << endl;
+                    cout << "Estimate: " << center_mm_s << endl << endl;
+                    cout << "Calculating offset" << endl;
                 }
 
+                auto estimated_center_mm = center_mm_s;
+
+                double pre_center_off_mm = std::numeric_limits<double>::infinity();
+
+                Eigen::Vector3d transformed_gt_center_mm_vector(transformed_gt_center_mm(0, 0), transformed_gt_center_mm(0, 1),transformed_gt_center_mm(0, 2));
+
+                Eigen::Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
+
+                double center_off_mm = diff.norm();
+
+                cout << "Estimated offset: " << center_off_mm << endl << endl;
 
                 if (debug) {
-                    break;
+                    cout << "Saving estimation to centers data" << endl;
                 }
+
+                Eigen::MatrixXd centers = Eigen::MatrixXd::Zero(1, 9); // 1 row and 9 columns since Eigen doesn't support 3D structures directly.
+
+                centers(0, 0) = keypoint[0];
+                centers(0, 1) = keypoint[1];
+                centers(0, 2) = keypoint[2];
+                
+                transformed_gt_center_mm_vector *= 0.001;
+
+                centers(0, 3) = transformed_gt_center_mm_vector[0];
+                centers(0, 4) = transformed_gt_center_mm_vector[1];
+                centers(0, 5) = transformed_gt_center_mm_vector[2];
+
+                estimated_center_mm *= 0.001;
+                centers(0, 6) = estimated_center_mm[0];
+                centers(0, 7) = estimated_center_mm[1];
+                centers(0, 8) = estimated_center_mm[2];
+
+                estimated_kpts.row(keypoint_count) = estimated_center_mm;
+                
+                if (iteration_count == 0) {
+                    
+                }
+
 
             }
             if (debug) {

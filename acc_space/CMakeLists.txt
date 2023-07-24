@@ -1,15 +1,12 @@
-﻿# CMakeList.txt : CMake project for acc_space, include source and define
-# project specific logic here.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.8)
 
-# Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
 set(TARGET_NAME "acc_space")
+
 project(${TARGET_NAME})
 
 set(CMAKE_PREFIX_PATH "C:/libtorch_debug/libtorch")
@@ -23,44 +20,39 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
 
-# Add source to this project's executable.
-add_executable (${TARGET_NAME} 
-"accumulator_space.cpp" 
-"accumulator_space.h" 
-"options.hpp" 
-"JACOBI.c" 
-"JACOBI.h" 
-"lmshorn.c" 
-"lmshorn.h" 
-"npy.hpp" 
-"utils.hpp" 
-"models/denseFCNResNet152.h" 
-"models/denseFCNResNet152.cpp" 
-"models/bottleneck.h" 
-"models/bottleneck.cpp"
-"AccSpaceIO.hpp"
-"AccSpaceMath.hpp"
+add_executable(${TARGET_NAME}
+  "accumulator_space.cpp"
+  "accumulator_space.h"
+  "options.hpp"
+  "JACOBI.c"
+  "JACOBI.h"
+  "lmshorn.c"
+  "lmshorn.h"
+  "lmshorn.h"
+  "npy.hpp"
+  "utils.hpp"
+  "models/denseFCNResNet152.h"
+  "models/denseFCNResNet152.cpp"
+  "models/bottleneck.h"
+  "models/bottleneck.cpp"
+  "AccSpaceIO.hpp"
+  "AccSpaceMath.hpp"
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 20)
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${Open3D_LIBRARIES} ${OpenCV_LIBS} ${TORCH_LIBRARIES})
 
-# Set OpenMP flag
-#find_package(OpenMP REQUIRED)
-#target_compile_options(${TARGET_NAME} PRIVATE ${OpenMP_CXX_FLAGS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Open3D_LIBRARIES} ${OpenCV_LIBS} ${TORCH_LIBRARIES})
 
 
-if(MSVC)
-    file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
-    add_custom_command(TARGET ${TARGET_NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${TORCH_DLLS}
-        $<TARGET_FILE_DIR:${TARGET_NAME}>
-    )
+if (MSVC)
+  file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
+  add_custom_command(TARGET ${TARGET_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${TORCH_DLLS}
+    $<TARGET_FILE_DIR:${TARGET_NAME}>
+  )
 endif(MSVC)
-
-# TODO: Add tests and install targets if needed.

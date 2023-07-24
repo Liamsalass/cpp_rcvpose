@@ -383,40 +383,25 @@ def Accumulator_3D(xyz, radial_list):
     xyz_mm[:,1] -= y_mean_mm
     xyz_mm[:,2] -= z_mean_mm
 
-    for i in range (20):
-        print(xyz_mm[i])
     
     radial_list_mm = radial_list*100/acc_unit  #radius map is in decimetre for training purpose
     
-    for i in range (20):
-        print(radial_list_mm[i])
 
     xyz_mm_min = xyz_mm.min()
     xyz_mm_max = xyz_mm.max()
     radius_max = radial_list_mm.max()
     
-    print("xyz_mm_min: ",xyz_mm_min)
-    print("xyz_mm_max: ",xyz_mm_max)
-    print("radius_max: ",radius_max)
-
-
     zero_boundary = int(xyz_mm_min-radius_max)+1
 
-    print("zero_boundary: ",zero_boundary)
-    
     if(zero_boundary<0):
         xyz_mm -= zero_boundary
         #length of 3D vote map 
     length = int(xyz_mm.max())
 
-    print("length: ",length)
-    for i in range(20):
-        print(xyz_mm[i])
     
     VoteMap_3D = np.zeros((length+int(radius_max),length+int(radius_max),length+int(radius_max)))
-    tic = time.perf_counter()
+
     VoteMap_3D = fast_for(xyz_mm,radial_list_mm,VoteMap_3D)
-    toc = time.perf_counter()
                         
     center = np.argwhere(VoteMap_3D==VoteMap_3D.max())
     if len(center) > 1:
@@ -636,13 +621,17 @@ def estimate_6d_pose_lm():
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
                     acc_time += toc-tic
-                    #print("acc space: ", toc-tic)
+                    #print acc time in ms
+                    print("Accumulator time consumption: ", (toc-tic)/1000000, " ms")
+                    
                     
                     print("estimated: ", center_mm_s)
                     
                     pre_center_off_mm = math.inf
                     
                     estimated_center_mm = center_mm_s[0]
+
+                    print ("Estimated center: ", estimated_center_mm)
                     
                     center_off_mm = ((transformed_gt_center_mm[0,0]-estimated_center_mm[0])**2+
                                     (transformed_gt_center_mm[0,1]-estimated_center_mm[1])**2+

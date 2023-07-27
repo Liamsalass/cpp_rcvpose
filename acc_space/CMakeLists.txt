@@ -9,7 +9,8 @@ set(TARGET_NAME "acc_space")
 
 project(${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "C:/libtorch_debug/libtorch")
+set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
+set(TORCH_DIR "C:/libtorch_release/libtorch")
 
 find_package(Open3D REQUIRED)
 include_directories(${Open3D_INCLUDE_DIRS})
@@ -28,7 +29,6 @@ add_executable(${TARGET_NAME}
   "JACOBI.h"
   "lmshorn.c"
   "lmshorn.h"
-  "lmshorn.h"
   "npy.hpp"
   "utils.hpp"
   "models/denseFCNResNet152.h"
@@ -43,6 +43,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 20)
 endif()
 
+set(CMAKE_BUILD_TYPE=Release)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Open3D_LIBRARIES} ${OpenCV_LIBS} ${TORCH_LIBRARIES})
 

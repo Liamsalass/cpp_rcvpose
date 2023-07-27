@@ -102,11 +102,11 @@ public:
         return loss_.toDouble();
     }
 
-    DenseFCNResNet152 getModel() const {
+    DenseFCNResNet152& getModel() {
         return model_;
     }
 
-    torch::optim::Optimizer* getOptimizer() const {
+    torch::optim::Optimizer* getOptimizer() {
         return optim_;
     }
 

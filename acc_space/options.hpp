@@ -29,11 +29,32 @@ struct Options {
     bool reduce_on_plateau = false;
     // Directory to save model
     std::string model_dir;
-    // Run in Demo mode
+    // Run in Demo mode display images
     bool demo_mode = false;
+    // Print out debugging information 
+    bool verbose = false;
     // Run in Test Occ mode
     bool test_occ = false;
     // Configs
     std::map<std::string, std::vector<float>> cfg;
 };
 
+Options testing_options() {
+    Options opts;
+    opts.gpu_id = 0;
+    opts.dname = "lm";
+    opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
+    //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
+    opts.model_dir = "train_kpt2";
+    opts.resume_train = false;
+    opts.optim = "adam";
+    opts.batch_size = 2;
+    opts.class_name = "ape";
+    opts.initial_lr = 0.0001;
+    opts.reduce_on_plateau = false;
+    opts.kpt_num = 1;
+    opts.demo_mode = false;
+    opts.verbose = true;
+    opts.test_occ = false;
+    return opts;
+}

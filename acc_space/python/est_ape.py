@@ -649,7 +649,7 @@ def estimate_6d_pose_lm():
                     centers[0,0] = keypoint
                     centers[0,1] = transformed_gt_center_mm*0.001
                     centers[0,2] = estimated_center_mm*0.001
-                    estimated_kpts[keypoint_count] = estimated_center_mm
+                    estimated_kpts[keypoint_count - 1] = estimated_center_mm
                     
                     if(iter_count==0):
                         centers_list = centers
@@ -667,15 +667,25 @@ def estimate_6d_pose_lm():
                     iter_count += 1
 
                     keypoint_count+=1
-                    if (keypoint_count == 3):
+                    if (keypoint_count == 4):
                         break
                     
-
+                
                 kpts = keypoints[0:3,:]*1000
                 RT = np.zeros((4, 4))
+
+                print('kpts: ', kpts)
+                print('estimated kpts: ', estimated_kpts)
+
                 horn.lmshorn(kpts, estimated_kpts, 3, RT)
+
+                print("Estimated RT: ", RT)
+
                 dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
                 
+                for i in range(5):
+                        print('Estimated center: ', xyz_load_est_transformed[i])
+
                 input_image = np.asarray(Image.open(input_path).convert('RGB'))
                 input_image_copy = np.copy(input_image)
 
@@ -685,7 +695,7 @@ def estimate_6d_pose_lm():
                         input_image_copy[y, x] = [255, 0, 0]
 
                 plt.imshow(input_image_copy)
-                #plt.show()
+                plt.show()
 
                 sceneGT = o3d.geometry.PointCloud()
                 sceneEst = o3d.geometry.PointCloud()
@@ -697,7 +707,8 @@ def estimate_6d_pose_lm():
                 #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
                 distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                 min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
-                #print('ADD(s) point distance before ICP: ', distance)
+                print('ADD(s) point distance before ICP: ', distance)
+                print('ADD(s) point min distance before ICP: ', min_distance')
                 if class_name in lm_syms:
                     if min_distance <= add_threshold[class_name]*1000:
                         bf_icp+=1

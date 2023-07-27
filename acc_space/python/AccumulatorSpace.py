@@ -652,7 +652,10 @@ def estimate_6d_pose_lm():
                     RT = np.zeros((4, 4))
                     horn.lmshorn(kpts, estimated_kpts, 3, RT)
                     dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
-              
+
+                    for i in range(5):
+                        print('Estimated center: ', xyz_load_est_transformed[i])
+
                     input_image = np.asarray(Image.open(input_path).convert('RGB'))
                     input_image_copy = np.copy(input_image)
 

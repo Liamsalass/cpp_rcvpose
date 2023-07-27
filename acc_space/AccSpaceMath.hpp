@@ -262,6 +262,51 @@ void fast_for1(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list
 
 }
 
+void fast_for2(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list_mm, vector<vector<vector<double>>>& VoteMap_3D) {
+    double factor = (3.0 * sqrt(3.0)) / 4.0;
+    int vote_map_size_i = VoteMap_3D.size();
+    int vote_map_size_j = VoteMap_3D[0].size();
+    int vote_map_size_k = VoteMap_3D[0][0].size();
+
+    // Activate nested parallelism
+    omp_set_nested(1);
+
+    #pragma omp parallel
+    {
+    #pragma omp for collapse(2) schedule(dynamic) nowait
+        for (int count = 0; count < xyz_mm.rows(); ++count) {
+
+            Eigen::Vector3d xyz = xyz_mm.row(count);
+            double radius = round(radial_list_mm(count));
+            double radius_sq = radius * radius;  
+
+            int i_start = max(0, static_cast<int>(xyz[0] - radius - 1));
+            int i_end = min(vote_map_size_i - 1, static_cast<int>(xyz[0] + radius + 1));
+            int j_start = max(0, static_cast<int>(xyz[1] - radius - 1));
+            int j_end = min(vote_map_size_j - 1, static_cast<int>(xyz[1] + radius + 1));
+            int k_start = max(0, static_cast<int>(xyz[2] - radius - 1));
+            int k_end = min(vote_map_size_k - 1, static_cast<int>(xyz[2] + radius + 1));
+
+            for (int i = i_start; i <= i_end; ++i) {
+                for (int j = j_start; j <= j_end; ++j) {
+                    double y_diff = j - xyz[1];
+                    double y_diff_sq = y_diff * y_diff;  
+
+                    #pragma omp parallel for  
+                    for (int k = k_start; k <= k_end; ++k) {
+                        double distance_sq = pow(i - xyz[0], 2) + y_diff_sq + pow(k - xyz[2], 2);
+                        if (radius_sq - distance_sq < factor && radius_sq - distance_sq > 0) {
+                            VoteMap_3D[i][j][k] += 1;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+}
+
 
 
 Vector3d Accumulator_3D(const geometry::PointCloud& xyz, const vector<double>& radial_list, const bool& use_cuda = true, const bool& debug = false, const bool& print_progress = true) {

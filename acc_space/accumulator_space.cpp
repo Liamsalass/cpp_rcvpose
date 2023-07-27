@@ -11,33 +11,17 @@ typedef geometry::PointCloud pc;
 const vector<double> mean = { 0.485, 0.456, 0.406 };
 const vector<double> standard = { 0.229, 0.224, 0.225 };
 
-Options testing_options() {
-    Options opts;
-    opts.gpu_id = 0;
-    opts.dname = "lm";
-    opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
-    //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "train_kpt2";
-    opts.resume_train = false;
-    opts.optim = "adam";
-    opts.batch_size = 2;
-    opts.class_name = "ape";
-    opts.initial_lr = 0.0001;
-    opts.reduce_on_plateau = false;
-    opts.kpt_num = 2;
-    opts.demo_mode = false;
-    opts.test_occ = false;
-    return opts;
-}
+
 
 
 void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Tensor& radial_output, torch::Tensor& semantic_output, const torch::DeviceType device_type, const bool& debug) {
 
-    torch::Device device(device_type);
+    torch::Device device(torch::kCPU);
 
     if (debug) {
         cout << "Loading image from path: \n\t" << input_path << endl << endl;
     }
+    model->to(device);
 
     cv::Mat img = cv::imread(input_path);
     img.convertTo(img, CV_32FC3);
@@ -73,11 +57,13 @@ void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Te
     semantic_output = semantic_output.permute({ 1,2,0 });
     radial_output = radial_output.permute({ 1,2,0 });
 
+    model->to(torch::kCPU);
+
     //semantic_output = semantic_output.squeeze(2);
     //radial_output = radial_output.squeeze(2);
 }
 
-void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "true")
+void estimate_6d_pose_lm(const Options opts = testing_options())
 {
     cout << string(75, '=') << endl;
     cout << string(17, ' ') << "Estimating 6D Pose for LINEMOD" << endl;
@@ -89,17 +75,24 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
     else {
         cout << "Using CPU" << endl;
     }
+    
 
-    if (debug) {
+    if (opts.verbose) {
         cout << endl;
-        cout << "\t\t\tDebug Mode" << endl;
-        cout << "\t\t\t\b------------" << endl << endl;
+        cout << "\t\t\Debug Mode" << endl;
+        cout << "\t\t\b------------" << endl << endl;
+    }
+    
+    if (opts.demo_mode) {
+        cout << "\t\tDemo Mode" << endl;
+        cout << "\t\t\b-----------" << endl << endl;
     }
 
     torch::DeviceType device_type = use_cuda ? torch::kCUDA : torch::kCPU;
     torch::Device device(device_type);
 
     for (auto class_name : lm_cls_names) {
+
         cout << string(75, '-') << endl << string(17, ' ') << "Estimating for " << class_name << " object" << endl << endl;
 
         string rootPath = opts.root_dataset + "/LINEMOD_ORIG/" + class_name + "/";
@@ -119,12 +112,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
         string pcv_load_path = "C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/pc_ape.npy";
 
-        if (debug) {
+        if (opts.verbose) {
 			cout << "Loading point cloud from path: \n\t" << pcv_load_path << endl;
 		}
 
-        pc_ptr pcv = read_point_cloud(pcv_load_path, debug);
-
+        pc_ptr pcv = read_point_cloud(pcv_load_path, opts.verbose);
 
         long long net_time = 0;
         long long acc_time = 0;
@@ -142,7 +134,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
         
             string model_dir = "kpt" + to_string(i);
 
-            if (debug) {
+            if (opts.verbose) {
                 cout << "\t" << model_dir << endl;
             }
 
@@ -152,14 +144,16 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
             model = loader.getModel();
             model->eval();
-            model->to(device);
+            
+            model_list.push_back(model);
 
-            model_list.push_back(model);    
+            //if (opts.verbose) {
+            //    break;
+            //}
 
-            if (debug) {                
-                break;
-            }
-
+        }
+        if (opts.verbose) {
+            cout << endl;
         }
 
         vector<string> file_list;
@@ -173,7 +167,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
             xyz_load.push_back(v);
         }
 
-        if (debug) {
+        if (opts.verbose) {
             cout << "XYZ data (top 5)" << endl;
             for (int i = 0; i < 5; i++) {
                 cout << "\tx: " << xyz_load[i].x << " y: " << xyz_load[i].y << " z: " << xyz_load[i].z << endl;
@@ -183,30 +177,39 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
         string keypoints_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Outside9.npy";
 
-        if (debug) {
+        if (opts.verbose) {
 			cout << "Loading keypoints from path: \n\t" << keypoints_path << endl << endl;
 		}
 
-        vector<vector<double>> keypoints = read_key_points(keypoints_path, debug);
+        vector<vector<double>> keypoints = read_key_points(keypoints_path, opts.verbose);
         
         string data_path = rootpvPath + "JPEGImages/";
 
         int img_num = 0;
 
+        //ms clock
+        auto acc_start = chrono::high_resolution_clock::now();
+
         //Loop through all images in the img_path
         for (auto test_img : test_list){
+            auto img_start = chrono::high_resolution_clock::now();
+
             cout << string(75, '-') << endl;
             cout << string(15, ' ') << "Estimating for image " << test_img << ".jpg" << endl;
 
             string image_path = data_path + test_img + ".jpg";
             
             
-            Eigen::MatrixXd estimated_kpts = Eigen::MatrixXd::Zero(3, 3);
-
+            double estimated_kpts[3][3];
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    estimated_kpts[i][j] = 0;
+                }
+            }
 
             string RTGT_path = opts.root_dataset + "/LINEMOD/" + class_name + "/pose_txt/pose" + to_string(img_num) + ".txt";
 
-            if (debug) {
+            if (opts.verbose) {
                 cout << "RTGT Path: \n\t" << RTGT_path << endl << endl;
             }
 
@@ -214,7 +217,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
             vector<vector<double>> RTGT = read_ground_truth(RTGT_path, true);
 
-            if (debug) {
+            if (opts.verbose) {
                 cout << "RTGT data: " << endl;
                 for (auto row : RTGT) {
                     for (auto item : row) {
@@ -227,48 +230,59 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
             int keypoint_count = 1;
             
+            matrix xyz_load_matrix = convertToEigenMatrix(xyz_load);
+            matrix linemod_K_matrix = convertToEigenMatrix(linemod_K);
+
+            MatrixXd dump, xyz_load_transformed;
+
+
+            if (opts.verbose) {
+                cout << "Projecting pointcloud to image plane" << endl;
+            }
+
+            matrix RTGT_matrix = vectorOfVectorToEigenMatrix(RTGT);
+
+            project(xyz_load_matrix, linemod_K_matrix, RTGT_matrix, dump, xyz_load_transformed);
 
             for (const auto& keypoint : keypoints) {
+        
                 cout << string(50, '-') << endl;
                 cout << string(15, ' ')  << "Keypoint Count: " << keypoint_count << endl;
 
                 //Ask Greenspan about this
                 auto keypoint = keypoints[keypoint_count];
 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "Keypoint data: \n" << keypoint << endl << endl;
                 }
             
                 int iteration_count = 0;
             
-                vector<Eigen::MatrixXd> centers_list;
+                vector<MatrixXd> centers_list;
 
                 //string GTRadiusPath = rootPath + "Out_pt" + to_string(keypoint_count) + "_dm
 
                 matrix keypoint_matrix = vectorToEigenMatrix(keypoint);
-                matrix RTGT_matrix = vectorOfVectorToEigenMatrix(RTGT);
-
+                
                 //transformed_gt_center_mm = (np.dot(keypoint, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
 
                 auto transformed_gt_center_mm = transformKeyPoint(keypoint_matrix, RTGT_matrix, false);
 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "Transformed Ground Truth Center: " << endl;
                     cout << transformed_gt_center_mm << endl << endl;
                 }
 
                 torch::Tensor semantic_output;
                 torch::Tensor radial_output;
-                
-                auto model = model_list.at(keypoint_count - 1);
 
                 auto start = chrono::high_resolution_clock::now();
-
-                FCResBackbone(model, image_path, radial_output, semantic_output, device_type, debug);
+               
+                FCResBackbone(model_list.at(keypoint_count - 1), image_path, radial_output, semantic_output, device_type, opts.verbose);
 
                 auto end = chrono::high_resolution_clock::now();
                 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
                     cout << "Semantic Output Shape: " << semantic_output.sizes() << endl;
                     cout << "Radial Output Shape: " << radial_output.sizes() << endl << endl;;
@@ -281,9 +295,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
                 string depth_path = rootPath + "data/depth" + to_string(img_num) + ".dpt";
 
-                cv::Mat depth_cv = read_depth_to_cv(depth_path, debug);
+                cv::Mat depth_cv = read_depth_to_cv(depth_path, opts.verbose);
       
-                if (debug) {
+                if (opts.verbose) {
                     cout << endl << "Data Shapes: " << endl;
                     cout << "\tSemantic Shape: " << sem_cv.size() << endl;
                     cout << "\tSemantic Datatype: " << sem_cv.type() << endl;
@@ -325,7 +339,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
 
                 vector<Vertex> pixel_coor;
-                if (debug) {
+                if (opts.verbose) {
                     cout << "Gathering Pixel Coordinates from semantic output" << endl;
                 }
 
@@ -343,7 +357,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 					}
 				}
 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "\tPixel Coord Size: " << pixel_coor.size() << endl;
                 }
 
@@ -359,7 +373,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                     radial_list.push_back(v.z);
                 }
 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "\tRadial List Size: " << radial_list.size() << endl << endl;
                     cout << "Converting depth image to pointcloud" << endl;
                 }
@@ -368,28 +382,12 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 auto xyz = rgbd_to_point_cloud(linemod_K, depth_cv);
 
 
-                if (debug) {
+                if (opts.verbose) {
 					cout << "\tPointcloud Size: " << xyz.points_.size() << endl << endl;
 				}
 
-                Eigen::MatrixXd dump, xyz_load_transformed;
 
-                if (debug) {
-                    cout << "Converting XYZ_Load and Linemod_K to matrix" << endl << endl;
-                }
-
-                matrix xyz_load_matrix = convertToEigenMatrix(xyz_load);
-                matrix linemod_K_matrix = convertToEigenMatrix(linemod_K);
-
-
-                if (debug) {
-                    cout << "Projecting pointcloud to image plane" << endl;
-                }
-      
-
-                project(xyz_load_matrix, linemod_K_matrix, RTGT_matrix, dump, xyz_load_transformed);
-
-                if (debug) {
+                if (opts.verbose) {
                     cout << "\tTransformed Pointcloud Size: " << xyz_load_transformed.rows() << endl;
                     cout << "\tTransformed Pointcloud 5 points: " << endl;
                     for (int i = 0; i < 5; i++) {
@@ -400,14 +398,14 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 }
 
 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
                     start = chrono::high_resolution_clock::now();
                 }
 
-                Eigen::Vector3d center_mm_s = Accumulator_3D(xyz, radial_list, false, true, false);
+                Vector3d center_mm_s = Accumulator_3D(xyz, radial_list, false, true, false);
 
-                if (debug) {
+                if (opts.verbose) {
                     end = chrono::high_resolution_clock::now();
                     cout << "Acc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
                     cout << "Number of Centers Returned: " << center_mm_s.size() << endl;
@@ -417,21 +415,21 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
 
                 auto estimated_center_mm = center_mm_s;
 
-                double pre_center_off_mm = std::numeric_limits<double>::infinity();
+                double pre_center_off_mm = numeric_limits<double>::infinity();
 
-                Eigen::Vector3d transformed_gt_center_mm_vector(transformed_gt_center_mm(0, 0), transformed_gt_center_mm(0, 1),transformed_gt_center_mm(0, 2));
+                Vector3d transformed_gt_center_mm_vector(transformed_gt_center_mm(0, 0), transformed_gt_center_mm(0, 1),transformed_gt_center_mm(0, 2));
 
-                Eigen::Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
+                Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
 
                 double center_off_mm = diff.norm();
 
                 cout << "Estimated offset: " << center_off_mm << endl << endl;
 
-                if (debug) {
+                if (opts.verbose) {
                     cout << "Saving estimation to centers data" << endl;
                 }
 
-                Eigen::MatrixXd centers = Eigen::MatrixXd::Zero(1, 9); // 1 row and 9 columns since Eigen doesn't support 3D structures directly.
+                MatrixXd centers = MatrixXd::Zero(1, 9); // 1 row and 9 columns since Eigen doesn't support 3D structures directly.
 
                 centers(0, 0) = keypoint[0];
                 centers(0, 1) = keypoint[1];
@@ -448,7 +446,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 centers(0, 7) = estimated_center_mm[1];
                 centers(0, 8) = estimated_center_mm[2];
 
-                estimated_kpts.row(keypoint_count) = estimated_center_mm;
+                for (int i = 0; i < 3; i++) {
+                    estimated_kpts[keypoint_count - 1][i] = estimated_center_mm[i] * 1000;
+                }
                 
   
                 centers_list.push_back(centers);
@@ -464,23 +464,194 @@ void estimate_6d_pose_lm(const Options opts = testing_options(), bool debug = "t
                 }
             }
 
-            vector<vector<double>> kpts;
+            const int num_keypoints = 3;  
+            double kpts[num_keypoints][3]; 
 
+            double RT[4][4];
+
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+					RT[i][j] = 0;
+				}
+			}
+
+
+            for (int i = 0; i < num_keypoints; i++) {
+                for (int j = 0; j < 3; j++) {
+                    kpts[i][j] = keypoints[i][j];
+                }
+            }
+
+            if (opts.verbose) {
+                cout << "Calculating RT" << endl;
+                cout << "Input data: " << endl;
+                cout << "\tkpts: " << endl;
+                for (int i = 0; i < num_keypoints; i++) {
+                    cout << "\t\t";
+                    for (int j = 0; j < 3; j++) {
+						cout << kpts[i][j] << " ";
+					}
+                    cout << endl;
+                }
+                cout << "\testimated_kpts: " << endl;
+                for (int i = 0; i < num_keypoints; i++) {
+					cout << "\t\t";
+                    for (int j = 0; j < 3; j++) {
+                        cout << estimated_kpts[i][j] << " ";
+                    }
+                    cout << endl;
+                }
+                cout << endl;
+            }   
+
+
+            lmshorn(kpts, estimated_kpts, num_keypoints, RT);
+
+            if (opts.verbose) {
+                cout << "RT Data: " << endl;
+                for (int i = 0; i < 4; i++) {
+                    cout << "\t";
+                    for (int j = 0; j < 4; j++) {
+                        cout << RT[i][j] << " ";
+                    }
+                    cout << endl;
+                }
+                cout << endl;
+                cout << "Preforming Projection on estimated RT" << endl;
+            }
+
+            //Convert RT to MatrixXd
+            MatrixXd RT_matrix = MatrixXd::Zero(3, 4);
+
+     
             for (int i = 0; i < 3; i++) {
-                kpts.push_back(keypoints[i]);
+                for (int j = 0; j < 4; j++) {
+                    RT_matrix(i, j) = RT[i][j];
+                }
             }
 
-            Eigen::MatrixXd RT = Eigen::MatrixXd::Zero(4, 4);
+            matrix xy, xyz_load_est_transformed;
 
-
-
-
-            if (debug) {
-                break;
+            if (opts.verbose) {
+                cout << "Projecting Estimated position" << endl;
             }
 
+            //Check outputs of function, xy out of range of data
+            project(xyz_load_matrix * 1000, linemod_K_matrix, RT_matrix, xy, xyz_load_est_transformed);
 
+            if (opts.verbose) {
+                cout << "XYZ_load_est_transformed: " << endl;
+                cout << "\tXYZ_load_est_transformed size : " << xyz_load_est_transformed.rows() << " x " << xyz_load_est_transformed.cols() << endl;
+                for (int i = 0; i < 5; i++) {
+                    cout << "\t" << xyz_load_est_transformed.row(i) << endl;
+                }
+                cout << endl;
+                cout << "XY:" << endl;
+                cout << "\tXY Size: " << xy.rows() << " x " << xy.cols() << endl;
+                cout << "\tXY Data: " << endl;
+                for (int i = 0; i < 5; i++) {
+                    cout << "\t\t" << xy.row(i) << endl;
+                }
+                cout << endl << endl;
+
+            }
+
+            if (opts.demo_mode) {
+                cout << "Displaying " << test_img << " with estimated position" << endl;
+                int out_of_range = 0;
+                cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+                cv::Mat img_only_points;
+                img_only_points = cv::Mat::zeros(img.size(), CV_8UC3);
+
+                for (int i = 0; i < xy.rows(); i++) {
+                    int y = static_cast<int>(xy(i, 1) / 1000);
+                    int x = static_cast<int>(xy(i, 0) / 1000);
+                    if (0 <= y && y < xy.rows() && 0 <= x && x < xy.cols()) {
+                        img.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255);
+                        img_only_points.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255);
+                    }
+                    else {
+                        out_of_range++;
+                    }
+                }
+                cout << "Number of points out of image range: " << out_of_range << endl;
+                cv::imshow("Image with point overlay", img);
+                cv::imshow("Image with points", img_only_points);
+            }
+
+            vector<Vector3d> pointsGT, pointsEst;
+
+            for (int i = 0; i < xyz_load_transformed.rows(); ++i) {
+                pointsGT.push_back(1000 * Vector3d(xyz_load_transformed(i, 0), xyz_load_transformed(i, 1), xyz_load_transformed(i, 2)));
+            }
+
+            for (int i = 0; i < xyz_load_est_transformed.rows(); ++i) {
+                pointsEst.push_back(Vector3d(xyz_load_est_transformed(i, 0), xyz_load_est_transformed(i, 1), xyz_load_est_transformed(i, 2)));
+            }
+
+            geometry::PointCloud sceneGT;
+            geometry::PointCloud sceneEst;
+
+            sceneGT.points_ = pointsGT;
+            sceneEst.points_ = pointsEst;
+
+            sceneGT.PaintUniformColor({ 0,0,1 });
+            sceneEst.PaintUniformColor({ 1,0,0 });
+
+            auto distances = sceneGT.ComputePointCloudDistance(sceneEst);
+            double distance = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+            double min_distance = *std::min_element(distances.begin(), distances.end());
+
+            if (opts.verbose) {
+				cout << "Distance: " << distance << endl;
+				cout << "Min Distance: " << min_distance << endl;
+			}
+
+
+            if (distance <= add_threshold[class_name] * 1000) {
+                bf_icp += 1;
+            }
+         
+            Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity();
+
+            double threshold = distance;
+            open3d::pipelines::registration::ICPConvergenceCriteria criteria(2000000);
+            auto reg_p2p = open3d::pipelines::registration::RegistrationICP(
+                sceneGT, sceneEst, threshold, trans_init,
+                open3d::pipelines::registration::TransformationEstimationPointToPoint(),
+                criteria);
+            sceneGT.Transform(reg_p2p.transformation_);
+
+            distances = sceneGT.ComputePointCloudDistance(sceneEst);
+            distance = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+            min_distance = *std::min_element(distances.begin(), distances.end());
+
+            if (distance <= add_threshold[class_name] * 1000) {
+                af_icp += 1;
+            }
+            
+            general_counter += 1;
+
+            auto img_end = chrono::high_resolution_clock::now();
+
+            if (opts.verbose) {
+				cout << "Total time taken for one image: " << chrono::duration_cast<chrono::minutes>(img_end - img_start).count() << "m "
+                    << chrono::duration_cast<chrono::seconds>(img_end - img_start).count() << "s" << endl;
+			}
+            if (opts.demo_mode) {
+                cout << "Press any key to continue..." << endl;
+                cin.get();
+            }
         }
+
+        auto acc_end = chrono::high_resolution_clock::now();
+
+        cout << "ADD(s) of " << class_name << " before ICP: " << bf_icp / general_counter << endl;
+        cout << "ADD(s) of " << class_name << " after ICP: " << af_icp / general_counter << endl;
+        cout << "Accumulator time: " << acc_time / general_counter << endl;
+        cout << "Total Accumulator time: " << chrono::duration_cast<chrono::hours>(acc_end - acc_start).count() << "h "
+			<< chrono::duration_cast<chrono::minutes>(acc_end - acc_start).count() << "m "
+			<< chrono::duration_cast<chrono::seconds>(acc_end - acc_start).count() << "s" << endl;
 
         return; 
     }

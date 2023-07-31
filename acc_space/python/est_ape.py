@@ -708,7 +708,7 @@ def estimate_6d_pose_lm():
                 distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                 min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
                 print('ADD(s) point distance before ICP: ', distance)
-                print('ADD(s) point min distance before ICP: ', min_distance')
+                print('ADD(s) point min distance before ICP: ', min_distance)
                 if class_name in lm_syms:
                     if min_distance <= add_threshold[class_name]*1000:
                         bf_icp+=1

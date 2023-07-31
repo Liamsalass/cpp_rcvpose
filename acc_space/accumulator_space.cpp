@@ -407,10 +407,10 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
                 if (opts.verbose) {
                     end = chrono::high_resolution_clock::now();
-                    cout << "Acc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
-                    cout << "Number of Centers Returned: " << center_mm_s.size() << endl;
-                    cout << "Estimate: " << center_mm_s << endl << endl;
-                    cout << "Calculating offset" << endl;
+                    cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
+                    cout << "\tNumber of Centers Returned: " << center_mm_s.size() << endl;
+                    cout << "\tEstimate: " << center_mm_s << endl << endl;
+                    cout << "\tCalculating offset" << endl;
                 }
 
                 auto estimated_center_mm = center_mm_s;
@@ -546,6 +546,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << "\t" << xyz_load_est_transformed.row(i) << endl;
                 }
                 cout << endl;
+            }
+
+            if (opts.demo_mode) {
                 cout << "XY:" << endl;
                 cout << "\tXY Size: " << xy.rows() << " x " << xy.cols() << endl;
                 cout << "\tXY Data: " << endl;
@@ -553,10 +556,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << "\t\t" << xy.row(i) << endl;
                 }
                 cout << endl << endl;
-
-            }
-
-            if (opts.demo_mode) {
                 cout << "Displaying " << test_img << " with estimated position" << endl;
                 int out_of_range = 0;
                 cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
@@ -615,15 +614,20 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity();
 
             double threshold = distance;
+
             open3d::pipelines::registration::ICPConvergenceCriteria criteria(2000000);
+
             auto reg_p2p = open3d::pipelines::registration::RegistrationICP(
                 sceneGT, sceneEst, threshold, trans_init,
                 open3d::pipelines::registration::TransformationEstimationPointToPoint(),
                 criteria);
+
             sceneGT.Transform(reg_p2p.transformation_);
 
             distances = sceneGT.ComputePointCloudDistance(sceneEst);
+
             distance = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+
             min_distance = *std::min_element(distances.begin(), distances.end());
 
             if (distance <= add_threshold[class_name] * 1000) {
@@ -635,9 +639,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             auto img_end = chrono::high_resolution_clock::now();
 
             if (opts.verbose) {
-				cout << "Total time taken for one image: " << chrono::duration_cast<chrono::minutes>(img_end - img_start).count() << "m "
-                    << chrono::duration_cast<chrono::seconds>(img_end - img_start).count() << "s" << endl;
-			}
+                auto duration = chrono::duration_cast<chrono::seconds>(img_end - img_start);
+                auto min = duration.count() / 60;
+                auto sec = duration.count() % 60;
+                cout << test_img << " took " << min << " minutes and " << sec << " seconds to calculate offset." << endl;
+            }
             if (opts.demo_mode) {
                 cout << "Press any key to continue..." << endl;
                 cin.get();
@@ -649,9 +655,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
         cout << "ADD(s) of " << class_name << " before ICP: " << bf_icp / general_counter << endl;
         cout << "ADD(s) of " << class_name << " after ICP: " << af_icp / general_counter << endl;
         cout << "Accumulator time: " << acc_time / general_counter << endl;
-        cout << "Total Accumulator time: " << chrono::duration_cast<chrono::hours>(acc_end - acc_start).count() << "h "
-			<< chrono::duration_cast<chrono::minutes>(acc_end - acc_start).count() << "m "
-			<< chrono::duration_cast<chrono::seconds>(acc_end - acc_start).count() << "s" << endl;
+        auto duration = chrono::duration_cast<chrono::seconds>(acc_end - acc_start);
+        auto hours = duration.count() / 3600;
+        auto min = (duration.count() % 3600) / 60;
+        auto sec = (duration.count() % 3600) % 60;
+        cout << "Total Accumulator time: " << hours << " hours, " << min << " minutes, and " << sec << " seconds." << endl;
 
         return; 
     }

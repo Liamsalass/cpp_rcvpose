@@ -190,6 +190,8 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
         // Vector to hold file list
         vector<string> file_list;
+        vector<string> file_list_icp;
+        vector<string> incorrect_list;
 
         // Vector to hold xyz data
         vector<Vertex> xyz_load;
@@ -498,10 +500,8 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
                 double center_off_mm = diff.norm();
 
-                
-                cout << "Estimated offset: " << center_off_mm << endl << endl;
-
                 if (opts.verbose) {
+                    cout << "Estimated offset: " << center_off_mm << endl << endl;
                     cout << "Saving estimation to centers data" << endl;
                 }
 
@@ -698,12 +698,17 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             if (distance <= add_threshold[class_name] * 1000) {
                 bf_icp += 1;
                 if (opts.verbose) {
-                    cout << "ICP not needed" << endl;
+                    cout << "\tICP not needed" << endl;
+                    cout << "\tSaving file" << endl;
                 }
+                ofstream bf_icp_file;
+                bf_icp_file.open("bf_icp_" + class_name + ".txt");
+                bf_icp_file << bf_icp;
+                bf_icp_file.close();
             }
             else {
                 if (opts.verbose) {
-					cout << "ICP needed" << endl;
+					cout << "\tICP needed" << endl;
 				}
 			}
             // Perform ICP
@@ -736,12 +741,25 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 af_icp += 1;
                 if (opts.verbose) {
                     cout << "\tCorrect match!" << endl;
+                    cout << "\tSaving file" << endl;
                 }
+                ofstream af_icp_file;
+                af_icp_file.open("af_icp_" + class_name + ".txt");
+                af_icp_file << af_icp;
+                af_icp_file.close();
             }
             else {
                 if (opts.verbose) {
                     cout << "\tIncorrect match!" << endl;
+                    cout << "\tSaving file" << endl;
                 }
+                ofstream incorrect_file;
+                incorrect_file.open("incorrect_" + class_name + ".txt");
+                incorrect_file << test_img << endl;
+                incorrect_file.close();
+
+            
+
             }
             
             general_counter += 1;
@@ -760,6 +778,8 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 cout << "Press any key to continue..." << endl;
                 cin.get();
             }
+
+
         }
 
         auto acc_end = chrono::high_resolution_clock::now();

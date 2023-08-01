@@ -14,8 +14,9 @@ import math
 from sklearn import metrics
 import scipy
 
+# lm_cls_names = ['ape', 'cam', 'can', 'cat', 'duck', 'driller', 'eggbox', 'glue', 'holepuncher','iron','lamp']
+lm_cls_names = ['ape']
 
-lm_cls_names = ['ape', 'cam', 'can', 'cat', 'duck', 'driller', 'eggbox', 'glue', 'holepuncher','iron','lamp']
 lmo_cls_names = ['ape', 'can', 'cat', 'duck', 'driller',  'eggbox', 'glue', 'holepuncher']
 ycb_cls_names={1:'002_master_chef_can',
            2:'003_cracker_box',
@@ -490,18 +491,18 @@ def read_depth(path):
 
 depthList=[]
 
-def estimate_6d_pose_lm():
+def estimate_6d_pose_lm(opts):
     horn = HornPoseFitting()
-    root_dataset = 'C:/Users/User/.cw/work/datasets/test/'
+    
     for class_name in lm_cls_names:
         print(class_name)
-        rootPath = root_dataset + "LINEMOD_ORIG/"+class_name+"/" 
-        rootpvPath = root_dataset + "LINEMOD/"+class_name+"/" 
+        rootPath = opts.root_dataset + "LINEMOD_ORIG/"+class_name+"/" 
+        rootpvPath = opts.root_dataset + "LINEMOD/"+class_name+"/" 
         
-        test_list = open(root_dataset + "LINEMOD/"+class_name+"/" +"Split/val.txt","r").readlines()
+        test_list = open(opts.root_dataset + "LINEMOD/"+class_name+"/" +"Split/val.txt","r").readlines()
         test_list = [ s.replace('\n', '') for s in test_list]
         
-        pcd_load = o3d.io.read_point_cloud(root_dataset + "LINEMOD/"+class_name+"/"+class_name+".ply")
+        pcd_load = o3d.io.read_point_cloud(opts.root_dataset + "LINEMOD/"+class_name+"/"+class_name+".ply")
         
         #time consumption
         net_time = 0
@@ -512,11 +513,11 @@ def estimate_6d_pose_lm():
         bf_icp = 0
         af_icp = 0
         model_list=[]
-        model_dir = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/pretrained/'
+
         for i in range(1,4):
-            model_path = model_dir + class_name+"_pt"+str(i)+".pth.tar"
+            model_path = opts.model_dir + class_name+"_pt"+str(i)+".pth.tar"
             model = DenseFCNResNet152(3,2)
-            # model = torch.nn.DataParallel(model)
+            model = torch.nn.DataParallel(model)
             #checkpoint = torch.load(model_path)
             #model.load_state_dict(checkpoint)
             optim = torch.optim.Adam(model.parameters(), lr=1e-3)
@@ -532,39 +533,28 @@ def estimate_6d_pose_lm():
         xyz_load = np.asarray(pcd_load.points)
         #print(xyz_load.shape)
         
-        keypoints=np.load(root_dataset + "LINEMOD/"+class_name+"/"+"Outside9.npy")
+        keypoints=np.load(opts.root_dataset + "LINEMOD/"+class_name+"/"+"Outside9.npy")
         #print(keypoints)
-       
+        
         dataPath = rootpvPath + 'JPEGImages/'
+            
         for filename in os.listdir(dataPath):
-            # Only 25 first images
-            count = 0
-
-            if (count > 24):
-                break
-
             if filename.endswith(".jpg"):
-                filename_without_ext = os.path.splitext(filename)[0]
-
-                if filename_without_ext not in test_list:
-                    print('Not in test list: ', filename_without_ext)
-                    continue
-
-                if filename_without_ext in test_list:
- 
+                #print(os.path.splitext(filename)[0][5:].zfill(6))
+                #if os.path.splitext(filename)[0][5:].zfill(6) in test_list:
+                if filename in test_list:
                     print(filename)
                     estimated_kpts = np.zeros((3,3))
-                    RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
+                    RTGT = np.load(opts.root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
                     #print(RTGT.shape)
                     keypoint_count = 1
                     for keypoint in keypoints:
-                        print("Kpt count: ", keypoint_count)
                         keypoint=keypoints[keypoint_count]
                         #print(keypoint)
                         
                         #model_path = "ape_pt0_syn18.pth.tar"
                         if(os.path.exists(model_path)==False):
-                            raise ValueError(model_dir + class_name+"_pt"+str(keypoint_count)+".pth.tar not found")
+                            raise ValueError(opts.model_dir + class_name+"_pt"+str(keypoint_count)+".pth.tar not found")
                         
                         iter_count = 0
                         
@@ -574,6 +564,7 @@ def estimate_6d_pose_lm():
                         GTRadiusPath = rootPath+'Out_pt'+str(keypoint_count)+'_dm/'
                         
                         #file1 = open("myfile.txt","w") 
+                        centers_list = []
                         #print(filename)
                         #get the transformed gt center 
                         
@@ -591,7 +582,6 @@ def estimate_6d_pose_lm():
                         depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
                         sem_out = np.where(sem_out>0.8,1,0)
                         depth_map = depth_map1*sem_out/1000
-  
                         pixel_coor = np.where(sem_out==1)
                         
                         
@@ -652,27 +642,20 @@ def estimate_6d_pose_lm():
                     RT = np.zeros((4, 4))
                     horn.lmshorn(kpts, estimated_kpts, 3, RT)
                     dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
-
-                    for i in range(5):
-                        print('Estimated center: ', xyz_load_est_transformed[i])
-
-                    input_image = np.asarray(Image.open(input_path).convert('RGB'))
-                    input_image_copy = np.copy(input_image)
-
-                    for coor in dump:
-                        y, x = int(coor[1]), int(coor[0])
-                        if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
-                            input_image_copy[y, x] = [255, 0, 0]
-
-                    #plt.imshow(input_image_copy)
-                    #plt.show()
+                    if opts.demo_mode:
+                        input_image = np.asarray(Image.open(input_path).convert('RGB'))
+                        for coor in dump:
+                            input_image[int(coor[1]),int(coor[0])] = [255,0,0]
+                        plt.imshow(input_image)
+                        plt.show()
                     sceneGT = o3d.geometry.PointCloud()
                     sceneEst = o3d.geometry.PointCloud()
                     sceneGT.points=o3d.utility.Vector3dVector(xyz_load_transformed*1000)
                     sceneEst.points=o3d.utility.Vector3dVector(xyz_load_est_transformed)
                     sceneGT.paint_uniform_color(np.array([0,0,1]))
                     sceneEst.paint_uniform_color(np.array([1,0,0]))
-                    #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
+                    if opts.demo_mode:
+                        o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
                     distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                     min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
                     #print('ADD(s) point distance before ICP: ', distance)
@@ -694,8 +677,8 @@ def estimate_6d_pose_lm():
                         o3d.pipelines.registration.TransformationEstimationPointToPoint(),
                         criteria)
                     sceneGT.transform(reg_p2p.transformation)
-                  
-                    #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est after icp')
+                    if opts.demo_mode:
+                        o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est after icp')
                     distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                     min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
                     #print('ADD(s) point distance after ICP: ', distance)
@@ -706,7 +689,6 @@ def estimate_6d_pose_lm():
                         if distance <= add_threshold[class_name]*1000:
                             af_icp+=1                   
                     general_counter += 1
-                count = count + 1
             
         
         #os.system("pause")
@@ -764,13 +746,15 @@ def estimate_6d_pose_lmo(opts):
                         sem_out, radial_out = FCResBackbone(model_path, input_path,0)
 
                         depth_map = Image.open(depthPath+'depth_'+os.path.splitext(filename)[0][6:].zfill(5)+'.png')
-                        # Print out top 20 depth values
-                        print(np.array(depth_map).flatten()[np.argsort(np.array(depth_map).flatten())[-20:]])
                         depth_map = np.array(depth_map, dtype=np.float64)
 
                         depth_map = depth_map/1000
                         sem_out = np.where(sem_out>=0.1,1,0)
+                        plt.imshow(sem_out)
+                        plt.show()
+
                         radial_out = radial_out*sem_out
+
                         depth_map = depth_map*sem_out
 
                         mean = 0.84241277810665
@@ -828,6 +812,7 @@ def estimate_6d_pose_lmo(opts):
                 keypoint_count+=1   
                 if keypoint_count == 3:
                     break         
+                
             kpts = keypoints[0:3,:]*1000
             RT = np.zeros((4, 4))
             horn.lmshorn(kpts, estimated_kpts, 3, RT)
@@ -1096,4 +1081,16 @@ def estimate_6d_pose_ycb(opts):
 
 
 if __name__ == "__main__":
-    estimate_6d_pose_lm() 
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root_dataset',
+                    type=str,
+                    default='C:/Users/User/.cw/work/datasets/test/')
+    parser.add_argument('--model_dir',
+                    type=str,
+                    default='C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/pretrained/')   
+    parser.add_argument('--demo_mode',
+                    type=bool,
+                    default=False)   
+    opts = parser.parse_args()   
+    estimate_6d_pose_lm(opts) 

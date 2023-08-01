@@ -707,14 +707,17 @@ def estimate_6d_pose_lm():
                 #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
                 distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
                 min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
-                print('ADD(s) point distance before ICP: ', distance)
-                print('ADD(s) point min distance before ICP: ', min_distance)
+
                 if class_name in lm_syms:
                     if min_distance <= add_threshold[class_name]*1000:
                         bf_icp+=1
+                        print ('Correct Prediction within threshold')
+                        print("bf_icp: ", bf_icp)
                 else:
                     if distance <= add_threshold[class_name]*1000:
                         bf_icp+=1
+                        print ('Correct Prediction within threshold')
+                        print ("bf_icp: ", bf_icp)
                 
                 trans_init = np.asarray([[1, 0, 0, 0],
                                         [0, 1, 0, 0],
@@ -734,9 +737,11 @@ def estimate_6d_pose_lm():
                 #print('ADD(s) point distance after ICP: ', distance)
                 if class_name in lm_syms:
                     if min_distance <= add_threshold[class_name]*1000:
+                        print('Correct match After ICP')
                         af_icp+=1
                 else:
                     if distance <= add_threshold[class_name]*1000:
+                        print('Correct match After ICP')
                         af_icp+=1                   
                 general_counter += 1
             

@@ -542,6 +542,11 @@ def estimate_6d_pose_lm():
     filenameList = []
     
     xyz_load = np.asarray(pcd_load.points)
+
+    print('XYZ_load head')
+    for i in range(5):
+        print(xyz_load[i])
+
     #print(xyz_load.shape)
     
     keypoints=np.load(root_dataset + "LINEMOD/"+class_name+"/"+"Outside9.npy")
@@ -552,11 +557,6 @@ def estimate_6d_pose_lm():
 
         
     for filename in os.listdir(dataPath):
-        # Only 25 first images
-        count = 0
-
-        if (count > 24):
-            break
 
         if filename.endswith(".jpg"):
             filename_without_ext = os.path.splitext(filename)[0]
@@ -566,10 +566,12 @@ def estimate_6d_pose_lm():
                 continue
 
             if filename_without_ext in test_list:
-                print(filename)
+                print(filename, '\n')
 
                 estimated_kpts = np.zeros((3,3))
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
+
+                print('RTGT: ',RTGT , '\n')
 
                 keypoint_count = 1
 
@@ -583,7 +585,11 @@ def estimate_6d_pose_lm():
                     
                     GTRadiusPath = rootPath+'Out_pt'+str(keypoint_count)+'_dm/'
                     transformed_gt_center_mm = (np.dot(keypoint, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
-                    
+                    print('Transformed GT center: ')
+                    for i in range (5):
+                        print(transformed_gt_center_mm[i])
+                    print('\n')
+
                     input_path = dataPath +filename
 
                     normalized_depth = []
@@ -594,9 +600,6 @@ def estimate_6d_pose_lm():
     
                     sem_out = np.load(sem_out_path)
                     radial_out = np.load(rad_out_path)
-                    plt.imshow(radial_out)
-                    plt.show()
-
                     
                     toc = time.time_ns()
                     net_time += toc-tic
@@ -608,11 +611,21 @@ def estimate_6d_pose_lm():
 
                     depth_map = depth_map1*sem_out/1000   
 
+                    print('Head of depth map after read depth')
+                    for i in range(5):
+                        print(depth_map[i])
+                    print('\n')
+
                     pixel_coor = np.where(sem_out==1)
                     
                     radial_list = radial_out[pixel_coor]
+
                     xyz = rgbd_to_point_cloud(linemod_K,depth_map)
                     
+                    print('Head of XYZ after RGBD to point cloud')
+                    for i in range(5):
+                        print(xyz[i])
+
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
                     tic = time.time_ns()
 
@@ -662,7 +675,7 @@ def estimate_6d_pose_lm():
                     iter_count += 1
 
                     keypoint_count+=1
-                    if (keypoint_count == 3):
+                    if (keypoint_count == 4):
                         break
                     
 
@@ -671,13 +684,13 @@ def estimate_6d_pose_lm():
                 horn.lmshorn(kpts, estimated_kpts, 3, RT)
                 dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
                 
-                input_image = np.asarray(Image.open(input_path).convert('RGB'))
-                input_image_copy = np.copy(input_image)
+                # input_image = np.asarray(Image.open(input_path).convert('RGB'))
+                # input_image_copy = np.copy(input_image)
 
-                for coor in dump:
-                    y, x = int(coor[1]), int(coor[0])
-                    if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
-                        input_image_copy[y, x] = [255, 0, 0]
+                # for coor in dump:
+                #     y, x = int(coor[1]), int(coor[0])
+                #     if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
+                #         input_image_copy[y, x] = [255, 0, 0]
 
                 sceneGT = o3d.geometry.PointCloud()
                 sceneEst = o3d.geometry.PointCloud()
@@ -693,9 +706,14 @@ def estimate_6d_pose_lm():
                 if class_name in lm_syms:
                     if min_distance <= add_threshold[class_name]*1000:
                         bf_icp+=1
+                        print('Before ICP ADD(s) pass')
                 else:
                     if distance <= add_threshold[class_name]*1000:
                         bf_icp+=1
+                        print('Before ICP ADD(s) pass')
+
+                print('Before ICP ADD(s) point distance: ', distance)
+                print('Before ICP ADD(s) min point distance: ', min_distance)
                 
                 trans_init = np.asarray([[1, 0, 0, 0],
                                         [0, 1, 0, 0],
@@ -716,9 +734,13 @@ def estimate_6d_pose_lm():
                 if class_name in lm_syms:
                     if min_distance <= add_threshold[class_name]*1000:
                         af_icp+=1
+                        print('After ICP ADD(s) pass')
                 else:
                     if distance <= add_threshold[class_name]*1000:
-                        af_icp+=1                   
+                        af_icp+=1
+                        print('After ICP ADD(s) pass')      
+                print('\tDistance after ICP: ', distance)
+                print('\tMin distance after ICP: ', min_distance)         
                 general_counter += 1
             
             count = count + 1

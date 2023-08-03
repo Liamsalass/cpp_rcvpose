@@ -2,25 +2,21 @@
 
 using namespace std;
 
-cv::Mat torch_tensor_to_cv_mat(torch::Tensor tensor) {
-    int rows = tensor.size(0);
-    int cols = tensor.size(1);
-    cv::Mat mat(rows, cols, CV_32FC1, tensor.data_ptr<float>());
-    return mat.clone();
-};
 
-Trainer::Trainer(Options& options) : opts(options)
+Trainer::Trainer(Options& options, const int kpt_) : opts(options), kpt(kpt_)
 {
     cout << string(100, '=') << endl;
-    cout << string (34, ' ') << "Initializing Trainer" << endl << endl;
+    cout << string (30, ' ') << "Initializing Trainer for kpt " << to_string(kpt) << endl << endl;
 
     bool use_cuda = torch::cuda::is_available();
     device_type = use_cuda ? torch::kCUDA : torch::kCPU;
     cout << "Using " << (use_cuda ? "CUDA" : "CPU") << endl;
     cout << "Setting up model" << endl;
+    out = opts.model_dir + opts.class_name + "/ckpts" + to_string(kpt) + "/";
 
     if (!opts.resume_train) {
         // Instantiate the model
+        cout << "Model Save location: \n\t" << out << endl;
         try {
             //if(torch::cuda::device_count() > 1){
             //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
@@ -34,7 +30,6 @@ Trainer::Trainer(Options& options) : opts(options)
             model->to(device);
             //model->to(torch::kCPU);
             cout << "Model initialized " << model->name() << endl;
-
             // Data parallelization not working
             //if (torch::cuda::device_count() > 1) {
             //    cout << "Using " << torch::cuda::device_count() << " GPUs" << endl;
@@ -82,7 +77,8 @@ Trainer::Trainer(Options& options) : opts(options)
         try {
             // Load model from checkpoint
             cout << "Loading model from checkpoint" << endl;
-            CheckpointLoader loader(opts.model_dir, true);
+
+            CheckpointLoader loader(out, true);
             epoch = loader.getEpoch();
             starting_epoch = epoch;
             cout << "Epoch: " << epoch << endl;
@@ -153,7 +149,6 @@ Trainer::Trainer(Options& options) : opts(options)
     max_iteration = opts.cfg.at("max_iteration")[0];
     best_acc_mean = std::numeric_limits<double>::infinity();
 
-    out = opts.model_dir;
 
     std::filesystem::path outPath(out);
     if (!std::filesystem::is_directory(outPath)) {
@@ -187,10 +182,10 @@ void Trainer::train()
     cout << "Setting up dataset loader" << endl;
     // Instantiate the training dataset
     // Can use .map(torch::data::transforms::Stack<>()) to stack batches into a single tensor
-    auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, opts.kpt_num);
+    auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, kpt);
     torch::optional<size_t> train_size = train_dataset.size();
 
-    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
+    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, kpt);
     torch::optional<size_t> val_size = val_dataset.size();
 
     // Check if dataset is empty
@@ -336,26 +331,6 @@ void Trainer::train()
             auto score = std::get<0>(output);
             auto score_rad = std::get<1>(output);
 
-            if (opts.debug == true && (val_count % 50 == 0)) {
-                auto score_cpu = score.to(torch::kCPU);
-                auto rad_cpu = score_rad.to(torch::kCPU);
-
-                auto score_unstack = torch::unbind(score_cpu, 0);
-                auto score_rad_unstack = torch::unbind(rad_cpu, 0);
-
-                auto out_score = score_unstack[0];
-                auto out_score_rad = score_rad_unstack[0];
-
-                out_score = out_score.permute({ 1,2,0 });
-                out_score_rad = out_score_rad.permute({ 1,2,0 });
-
-                cv::Mat sem = torch_tensor_to_cv_mat(out_score);
-                cv::Mat rad = torch_tensor_to_cv_mat(out_score_rad);
-                cv::imshow("Semantic", sem);
-                cv::imshow("Radial", rad);
-                cv::waitKey(0);
-            }
-
             val_count++;
 
             auto loss_s = loss_sem(score, sem_target);
@@ -391,12 +366,10 @@ void Trainer::train()
         cout << "Iterations: " << iteration << endl;
         cout << "Epochs without improvement: " << epochs_without_improvement << endl;
 
-
-
         //================================================================\\
         //                  Save Model and Optimizer                      \\
         
-        if (!opts.debug) {
+        if (!opts.verbose) {
             try {
                 std::string save_location;
                 if (is_best) {
@@ -515,15 +488,6 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
     return loss;
 }
 
-//torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
-//    auto nonzero_indices = torch::nonzero(gt);
-//    auto pred_nonzero = torch::index_select(pred, 0, nonzero_indices);
-//    auto gt_nonzero = torch::index_select(gt, 0, nonzero_indices);
-//
-//    auto loss = loss_radial(pred_nonzero, gt_nonzero) / static_cast<float>(nonzero_indices.size(0));
-//
-//    return loss;
-//}
 
 void Trainer::printProgressBar(int current, int total, int width)
 {
@@ -540,168 +504,6 @@ void Trainer::printProgressBar(int current, int total, int width)
 	cout.flush();
 }
 
-//void Trainer::test_compute_r_loss() {
-//    // Test compute_r_loss function
-//    // Pass two tensors, one with 0s and one without
-//    torch::Tensor pred = torch::tensor({ 1.0, 2.0, 3.0, 4.0 });
-//    torch::Tensor gt = torch::tensor({ 1, 0, 3, 4 });
-//
-//    cout << "Expected Loss: 0.5" << endl;
-//    torch::Tensor loss = compute_r_loss(pred, gt);
-//    cout << "Loss: " << loss << endl;
-//}
-
-// Cannot implement due to the way the dataloader works
-// void Trainer::train_epoch() {
-//     cout << string(50, '-') << endl;
-//     cout << string(23, ' ') << "Training" << endl << endl;;
-// }
-// 
-// 
-// void Trainer::validate()
-// {
-//    cout << string(50, '-') << endl;
-//    cout << string(23, ' ') << "Validating" << endl << endl;
-// }
-
-void Trainer::test() {
-    cout << string(50, '=') << endl;
-    cout << string(18, ' ') << "Begining Testing" << endl << endl;
-    //Requires accumulator space for testing each metric
-}
-
-void Trainer::store_model(std::string path)
-{
-    torch::serialize::OutputArchive model_out;
-
-    model->save(model_out);
-
-    model_out.save_to(path + "/model.pt");
-}
-
-void Trainer::output_pred(const int& idx, const string& path)
-{
-    // Stores tensor to txt file, since archive, pickle, and jit doesn't work
-    // - Look into implementation of archive, pickle, and jit
-    cout << string(100, '=') << endl;
-    string out_path = out + "/" + path;
-    cout << "Storing Output:\n" << out_path << "/score_" << to_string(idx) << endl;
-    cout << out_path << "/score_rad_" << to_string(idx) << endl;
 
 
-    std::filesystem::path outPath(out_path);
-    if (!std::filesystem::is_directory(outPath)) {
-        if (std::filesystem::create_directories(outPath)) {
-            cout << "Directory created" << endl;
-        }
-        else {
-            cout << "Error creating directory" << endl;
-        }
-    }
 
-    torch::Device device(device_type);
-
-    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
-
-    model->to(torch::kCPU);
-
-    model->eval();
-
-    auto data_tensor = val_dataset.get(idx).data();
-    auto sem_target = val_dataset.get(idx).sem_target();
-    // cout << "Data tensor size: " << data_tensor.sizes() << endl;
-
-    auto batch = torch::stack(data_tensor, 0);
-
-    // cout << "Batch Tensor Size: " << batch.sizes() << endl;
-
-    auto output = model->forward(batch);
-
-    auto score = std::get<0>(output).to(torch::kCPU);
-    auto score_rad = std::get<1>(output).to(torch::kCPU);
-
-    auto score_unstack = torch::unbind(score, 0);
-    auto score_rad_unstack = torch::unbind(score_rad, 0);
-
- 
-    auto out_score = score_unstack[0];
-    auto out_score_rad = score_rad_unstack[0];
-
-
-    out_score = out_score.permute({ 1,2,0 });
-    out_score_rad = out_score_rad.permute({ 1,2,0 });
-
- 
-    auto score_path = out_path + "/score_" + std::to_string(idx) + ".txt";
-    auto score_rad_path = out_path + "/score_rad_" + std::to_string(idx) + ".txt";
-    tensorToFile(out_score, score_path);
-    tensorToFile(out_score_rad, score_rad_path);
-    
-
-    model->to(device);
-}
-
-void Trainer::tensorToFile(const torch::Tensor& tensor, const std::string& filename) {
-    /*===============================================================================================
-    Write a tensor to a file in binary format. The file format is as follows:
-    1. The size of the tensor (number of dimensions and size of each dimension)
-    2. The number of elements in the tensor
-    3. The tensor data
-    =================================================================================================
-    How to read in data in python:
-    import torch
-    import struct
-
-    def fileToTensor(filename):
-        with open(filename, "rb") as file:
-            # Read the number of dimensions from the file
-            num_dimensions = struct.unpack("Q", file.read(8))[0]
-
-            # Read the shape of the tensor from the file
-            shape = struct.unpack(f"{num_dimensions}q", file.read(8 * num_dimensions))
-
-            # Read the number of elements from the file
-            num_elements = struct.unpack("Q", file.read(8))[0]
-
-            # Read the tensor data from the file
-            tensor_data = struct.unpack(f"{num_elements}f", file.read(4 * num_elements))
-
-            # Create a torch.Tensor with the retrieved shape and data
-            tensor = torch.tensor(tensor_data).reshape(shape)
-
-        return tensor
-    ================================================================================================*/
-
-    // If file directory doesn't exist, create it.
-    // Remove .txt and the file name from the path
-    std::filesystem::path filePath(filename);
-    std::filesystem::path fileDirectory = filePath.parent_path();
-    if (!std::filesystem::is_directory(fileDirectory)) {
-        if (std::filesystem::create_directories(fileDirectory)) {
-			cout << "Directory created" << endl;
-		}
-        else {
-			cout << "Error creating directory" << endl;
-		}
-	}
-
-    std::ofstream outputFile(filename, std::ios::binary);
-    if (!outputFile) {
-        cout << "Error opening file: " << filename << endl;
-        return;
-    }
-
-    torch::IntArrayRef size = tensor.sizes();
-    const float* data = tensor.data_ptr<float>();
-
-    size_t numDimensions = size.size();
-    outputFile.write(reinterpret_cast<const char*>(&numDimensions), sizeof(size_t));
-    outputFile.write(reinterpret_cast<const char*>(size.data()), numDimensions * sizeof(int64_t));
-
-    size_t numElements = tensor.numel();
-    outputFile.write(reinterpret_cast<const char*>(&numElements), sizeof(size_t));
-    outputFile.write(reinterpret_cast<const char*>(data), numElements * sizeof(float));
-
-    outputFile.close();
-
-}

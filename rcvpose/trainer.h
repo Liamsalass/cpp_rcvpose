@@ -22,20 +22,14 @@
 
 class Trainer {
 public:
-	Trainer(Options& options);
+	Trainer(Options& options, const int kpt_);
 	
 	void train();
 	void test();
-
-	void test_compute_r_loss();
 	
-	void store_model(std::string path);
-
-	void output_pred(const int& idx, const std::string& path);
-
-	void tensorToFile(const torch::Tensor& tensor, const std::string& filename);
 
 private:
+	int kpt;
 	// Have to nest train_epoch function within train function due to instantiation of dataloaders
 	// This means resume training isn't currently functioning
 	//void train_epoch();

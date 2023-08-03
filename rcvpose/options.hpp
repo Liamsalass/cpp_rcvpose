@@ -22,23 +22,20 @@ struct Options {
     std::string class_name = "ape";
     // Initial learning rate
     double initial_lr = 0.0001;
-    // Number of keypoints
-    int kpt_num = 3;
     // Use reduce on plateau
     // If false, will reduce lr every 70 epoch
     bool reduce_on_plateau = false;
+    // Patience for reduce on plateau
+    int patience = 10;
     // Directory to save model
     std::string model_dir;
-    // Run in Demo mode
+    // Run in Demo mode display images
     bool demo_mode = false;
+    // Print out debugging information 
+    bool verbose = false;
     // Run in Test Occ mode
     bool test_occ = false;
     // Configs
     std::map<std::string, std::vector<float>> cfg;
-    // Patience for reduce on plateau
-    // Number of epochs without improvement before lr reduction
-    int patience = 10;
-
-    bool debug = false;
 };
 

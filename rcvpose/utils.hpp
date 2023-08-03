@@ -8,6 +8,11 @@
 #include <torch/torch.h>
 #include "models/denseFCNResNet152.h"
 
+struct Vertex {
+    double x, y, z;
+};
+
+
 
 // Shape of config is {<int, <string, vector<float>>>} in a map
 // Betas has two values, so it is a vector, while the rest are single values
@@ -33,11 +38,9 @@ public:
         std::string path;
         if (get_best_ckpt) {
             path = checkpointPath + "/model_best";
-            std::cout << "Resuming from best checkpoint" << std::endl;
         }
         else {
             path = checkpointPath + "/current";
-            std::cout << "Resuming from current checkpoint" << std::endl;
         }
         // Load model info
         torch::serialize::InputArchive modelInfoArchive;
@@ -60,6 +63,7 @@ public:
         //TODO, load current LR values and store them
         optim_ = new torch::optim::Adam(model_->parameters(), torch::optim::AdamOptions(0.0001));
         optim_->load(optimArchive);
+        std::cout << "Succesfully loaded model from: " << path << std::endl;
     }
 
     // Getter methods to retrieve loaded information
@@ -83,11 +87,11 @@ public:
         return loss_.toDouble();
     }
 
-    DenseFCNResNet152 getModel() const {
+    DenseFCNResNet152& getModel() {
         return model_;
     }
 
-    torch::optim::Optimizer* getOptimizer() const {
+    torch::optim::Optimizer* getOptimizer() {
         return optim_;
     }
 

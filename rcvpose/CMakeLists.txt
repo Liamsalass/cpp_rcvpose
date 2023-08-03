@@ -28,8 +28,8 @@ set(CMAKE_PREFIX_PATH "~/libs/libtorch" "~/libs/opencv" "/home/19lhs4/libs/openc
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-# find_package(Open3D REQUIRED)
-# include_directories(${Open3D_INCLUDE_DIRS})
+find_package(Open3D REQUIRED)
+include_directories(${Open3D_INCLUDE_DIRS})
 
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
@@ -52,6 +52,15 @@ set(SOURCE_FILES
     "models/denseFCNResNet152.cpp"
     "models/resFCNResNet152.h"
     "models/resFCNResNet152.cpp"
+    "JACOBI.h"
+    "JACOBI.c"
+    "lmshorn.c"
+    "lmshorn.h"
+    "AccSpaceIO.hpp"
+    "AccSpaceMath.hpp"
+    "accumulator_space.h"
+    "accumulator_space.cpp"
+    "npy.hpp"
 )
 #  "accumulator_space.h"
 #    "accumulator_space.cpp"
@@ -67,7 +76,7 @@ else()
     add_executable(${TARGET_NAME} ${SOURCE_FILES})
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${OpenCV_LIBS}  ${Open3D_LIBRARIES})
 
 
 if(MSVC)

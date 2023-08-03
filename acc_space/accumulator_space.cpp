@@ -162,11 +162,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             // Define directory of model
             string model_dir = "kpt" + to_string(i);
 
-            // Log model directory if verbose
-            if (opts.verbose) {
-                cout << "\t" << model_dir << endl;
-            }
-
             // Instantiate model
             DenseFCNResNet152 model;
 
@@ -266,6 +261,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             // Load the ground truth rotation and translation (RTGT) data from the path
             vector<vector<double>> RTGT = read_ground_truth(RTGT_path, true);
 
+
             // Print the RTGT data if verbose option is enabled
             if (opts.verbose) {
                 cout << "RTGT data: " << endl;
@@ -303,8 +299,10 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             for (const auto& keypoint : keypoints) {
 
                 // Print a separator and the current keypoint count
-                cout << string(50, '-') << endl;
-                cout << string(15, ' ') << "Keypoint Count: " << keypoint_count << endl;
+                if (opts.verbose) {
+                    cout << string(50, '-') << endl;
+                    cout << string(15, ' ') << "Keypoint Count: " << keypoint_count << endl;
+                }
 
                 // Get the current keypoint
                 auto keypoint = keypoints[keypoint_count];
@@ -323,7 +321,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 // Convert the current keypoint to an Eigen matrix for further computations
                 matrix keypoint_matrix = vectorToEigenMatrix(keypoint);
 
-                // Compute the transformed ground truth center in millimeters
+                // Compute the transformed ground truth center in mm
                 auto transformed_gt_center_mm = transformKeyPoint(keypoint_matrix, RTGT_matrix, false);
 
                 // Print the transformed ground truth center if verbose option is enabled
@@ -365,6 +363,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 // Load the depth image
                 cv::Mat depth_cv = read_depth_to_cv(depth_path, opts.verbose);
 
+                // Transpose the semantic and radial matrices for correct orientation
+                cv::transpose(sem_cv, sem_cv);
+                cv::transpose(rad_cv, rad_cv);
+
+
                 // Print the shapes and datatypes of semantic, radial, and depth data if verbose option is enabled
                 if (opts.verbose) {
                     cout << endl << "Data Shapes: " << endl;
@@ -376,10 +379,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << "\tDepth Datatype: " << depth_cv.type() << endl << endl;
                 }
 
-                // Transpose the semantic and radial matrices for correct orientation
-                cv::transpose(sem_cv, sem_cv);
-                cv::transpose(rad_cv, rad_cv);
-
+        
                 // Threshold the semantic matrix to binary
                 cv::Mat thresholded;
                 cv::threshold(sem_cv, thresholded, 0.8, 1, cv::THRESH_BINARY);
@@ -398,7 +398,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 // Multiply the radial matrix by the semantic matrix
                 rad_tmp = rad_tmp.mul(sem_cv);
                 depth_tmp = depth_tmp.mul(sem_tmp);
-                depth_tmp = depth_tmp / 1000.0;
                 depth_cv = depth_tmp.clone();
                 rad_cv = rad_tmp.clone();
                 
@@ -442,26 +441,34 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     v.y = cord.y;
                     v.z = rad_cv.at<float>(cord.x, cord.y);
                     #pragma omp critical
-                    radial_list.push_back(v.z);
+                    radial_list.push_back(static_cast<double>(v.z));
                 }
 
                 // Print the number of radial values gathered if verbose option is enabled
                 if (opts.verbose) {
-                    cout << "\tRadial List Size: " << radial_list.size() << endl << endl;
+                    cout << "\tRadial List Size: " << radial_list.size() << endl;
+                    cout << "\t\tMax: " << *max_element(radial_list.begin(), radial_list.end()) << endl;
+                    cout << "\t\tMin: " << *min_element(radial_list.begin(), radial_list.end()) << endl << endl;
                     cout << "Converting depth image to pointcloud" << endl;
                 }
 
-                //Check imkplementation since values are slightly off from python (Most likely depth that is different causing different output)
                 // Convert the depth image to a pointcloud
-                auto xyz = rgbd_to_point_cloud(linemod_K, depth_cv);
+                auto xyz_mm = rgbd_to_point_cloud(linemod_K, depth_cv);
+                geometry::PointCloud xyz;
+                xyz.points_.resize(xyz_mm.points_.size());
+                #pragma omp parallel for
+                for (int i = 0; i < xyz_mm.points_.size(); i++) {
+					xyz.points_[i].x() = xyz_mm.points_[i].x() / 1000;
+					xyz.points_[i].y() = xyz_mm.points_[i].y() / 1000;
+					xyz.points_[i].z() = xyz_mm.points_[i].z() / 1000;
+				}
+                xyz_mm.points_.clear();
+       
 
                 // Print the number of points in the pointcloud if verbose option is enabled
                 if (opts.verbose) {
 					cout << "\tPointcloud Size: " << xyz.points_.size() << endl << endl;
-				}
 
-                // Define a vector for storing the transformed pointcloud
-                if (opts.verbose) {
                     cout << "\tTransformed Pointcloud Size: " << xyz_load_transformed.rows() << endl;
                     cout << "\tTransformed Pointcloud 5 points: " << endl;
                     for (int i = 0; i < 5; i++) {
@@ -478,17 +485,19 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 }
 
                 // Calculate the 3D vector center
-                Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list, false, true, false);
-
+                Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list, false, opts.verbose);
+                
                 // Print the number of centers returned and the estimate if verbose option is enabled
                 if (opts.verbose) {
                     end = chrono::high_resolution_clock::now();
                     cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
                     cout << "\tNumber of Centers Returned: " << estimated_center_mm.size() << endl;
                     cout << "\tEstimate: " << estimated_center_mm << endl << endl;
+                    //cout << "\tGT from radial map: " << gt_center << endl << endl;
+                 
                     cout << "\tCalculating offset" << endl;
-                }
 
+                }
 
                 // Define a vector for storing the transformed pointcloud
                 double pre_center_off_mm = numeric_limits<double>::infinity();
@@ -498,6 +507,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
                 // Calculate the offset
                 Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
+
+                if (opts.verbose) {
+                    cout << "\tGT point: " << transformed_gt_center_mm_vector << endl << endl;
+                }
+
                 double center_off_mm = diff.norm();
 
                 if (opts.verbose) {
@@ -544,7 +558,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
             
             const int num_keypoints = 3;  
-            double kpts[num_keypoints][3]; 
+            double kpts[3][3]; 
 
             double RT[4][4];
 
@@ -554,8 +568,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 				}
 			}
 
-
-            for (int i = 0; i < num_keypoints; i++) {
+            for (int i = 1; i < num_keypoints + 1; i++) {
                 for (int j = 0; j < 3; j++) {
                     kpts[i][j] = keypoints[i][j];
                 }
@@ -685,26 +698,29 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
             // Compute the distance between the ground truth and estimated point clouds
             auto distances = sceneGT.ComputePointCloudDistance(sceneEst);
-            double distance = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
-            double min_distance = *std::min_element(distances.begin(), distances.end());
+            double distance_bf_icp = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+            double min_distance_bf_icp = *std::min_element(distances.begin(), distances.end());
+            double max_distance_bf_icp = *std::max_element(distances.begin(), distances.end());
+            double median_distance_bf_icp = distances[distances.size() / 2];
+            double standard_deviation_bf_icp = 0.0;
+            for (auto& d : distances) {
+                standard_deviation_bf_icp += (d - distance_bf_icp) * (d - distance_bf_icp);
+			}
+
+
 
             if (opts.verbose) {
-				cout << "\tBefore ICP distance: " << distance << endl;
-				cout << "\tBefore ICP min distance: " << min_distance << endl << endl;
+				cout << "\tBefore ICP distance: " << distance_bf_icp << endl;
+				cout << "\tBefore ICP min distance: " << min_distance_bf_icp << endl << endl;
                 cout << "Calculating ICP" << endl;
 			}
 
             // If the distance is less than the threshold, increment the number of correct matches
-            if (distance <= add_threshold[class_name] * 1000) {
+            if (distance_bf_icp <= add_threshold[class_name] * 1000) {
                 bf_icp += 1;
                 if (opts.verbose) {
                     cout << "\tICP not needed" << endl;
-                    cout << "\tSaving file" << endl;
                 }
-                ofstream bf_icp_file;
-                bf_icp_file.open("bf_icp_" + class_name + ".txt");
-                bf_icp_file << bf_icp;
-                bf_icp_file.close();
             }
             else {
                 if (opts.verbose) {
@@ -714,7 +730,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             // Perform ICP
             Eigen::Matrix4d trans_init = Eigen::Matrix4d::Identity();
 
-            double threshold = distance;
+            double threshold = distance_bf_icp;
 
             open3d::pipelines::registration::ICPConvergenceCriteria criteria(2000000);
 
@@ -727,63 +743,91 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
             distances = sceneGT.ComputePointCloudDistance(sceneEst);
 
-            distance = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
-
-            min_distance = *std::min_element(distances.begin(), distances.end());
+            double distance_af_icp = accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
+            double min_distance_af_icp = *min_element(distances.begin(), distances.end());
+            double max_distance_af_icp = *max_element(distances.begin(), distances.end());
+            double median_distance_af_icp = distances[distances.size() / 2];
+            double standard_deviation_af_icp = 0.0;
+            for (auto& d : distances) {
+                standard_deviation_af_icp += (d - distance_af_icp) * (d - distance_af_icp);
+            }
 
             if (opts.verbose) {
-                cout << "\tAfter ICP distance: " << distance << endl;
-                cout << "\tAfter ICP min distance: " << min_distance << endl << endl;
+                cout << "\tAfter ICP distance: " << distance_af_icp << endl;
+                cout << "\tAfter ICP min distance: " << min_distance_af_icp << endl << endl;
             }
 
             // If the distance is less than the threshold, increment the number of correct matches
-            if (distance <= add_threshold[class_name] * 1000) {
+            if (distance_af_icp <= add_threshold[class_name] * 1000) {
                 af_icp += 1;
                 if (opts.verbose) {
                     cout << "\tCorrect match!" << endl;
-                    cout << "\tSaving file" << endl;
                 }
-                ofstream af_icp_file;
-                af_icp_file.open("af_icp_" + class_name + ".txt");
-                af_icp_file << af_icp;
-                af_icp_file.close();
+
             }
             else {
                 if (opts.verbose) {
                     cout << "\tIncorrect match!" << endl;
-                    cout << "\tSaving file" << endl;
                 }
-                ofstream incorrect_file;
-                incorrect_file.open("incorrect_" + class_name + ".txt");
-                incorrect_file << test_img << endl;
-                incorrect_file.close();
-
-            
-
             }
             
             general_counter += 1;
 
             auto img_end = chrono::high_resolution_clock::now();
 
-            if (opts.verbose) {
-                auto duration = chrono::duration_cast<chrono::seconds>(img_end - img_start);
-                auto min = duration.count() / 60;
-                auto sec = duration.count() % 60;
-                cout << "Image number " << img_num << " took " << min << " minutes and " << sec << " seconds to calculate offset." << endl;
-                cout << "Before ICP Count " << bf_icp << endl;
-                cout << "After ICP Count " << af_icp << endl;
-            }
+            
+            auto duration = chrono::duration_cast<chrono::seconds>(img_end - img_start);
+            auto min = duration.count() / 60;
+            auto sec = duration.count() % 60;
+
+           
+            ofstream myfile;
+            string save_path = "data/img_" + test_img + ".txt";
+            myfile.open(save_path, ios::app);
+            myfile << "Image number " << test_img << " took " << min << " minutes and " << sec << " seconds to calculate offset." << endl;
+            myfile << "Image Count: " << general_counter << endl;
+            myfile << "Before ICP Count " << bf_icp << endl;
+            myfile << "After ICP Count " << af_icp << endl;
+            myfile << "Distances: " << endl;
+            myfile << "\tBF ICP: " << distance_bf_icp << "\tAF ICP: " << distance_af_icp << endl;
+            myfile << "Min Distances: " << endl;
+            myfile << "\tBF ICP: " << min_distance_bf_icp << "\tAF ICP: " << min_distance_af_icp << endl;
+            myfile << "Max Distances: " << endl;
+            myfile << "\tBF ICP: " << max_distance_bf_icp << "\tAF ICP: " << max_distance_af_icp << endl;
+            myfile << "Median Distances: " << endl;
+            myfile << "\tBF ICP: " << median_distance_bf_icp << "\tAF ICP: " << median_distance_af_icp << endl;
+            myfile << "Standard Deviation Distances: " << endl;
+            myfile << "\tBF ICP: " << standard_deviation_bf_icp << "\tAF ICP: " << standard_deviation_af_icp << endl;
+            myfile << "---------------------------------------------" << endl;
+            myfile.close();
+
+
+
+            cout << "Image number " << test_img << " took " << min << " minutes and " << sec << " seconds to calculate offset." << endl;
+            cout << "Image Count: " << general_counter << endl;
+            cout << "Before ICP Count " << bf_icp << endl;
+            cout << "After ICP Count " << af_icp << endl;
+            cout << "Distances: " << endl;
+            cout << "\tBF ICP: " << distance_bf_icp << "\tAF ICP: " << distance_af_icp << endl;
+            cout << "Min Distances: " << endl;
+            cout << "\tBF ICP: " << min_distance_bf_icp << "\tAF ICP: " << min_distance_af_icp << endl;
+            cout << "Max Distances: " << endl;
+            cout << "\tBF ICP: " << max_distance_bf_icp << "\tAF ICP: " << max_distance_af_icp << endl;
+            cout << "Median Distances: " << endl;
+            cout << "\tBF ICP: " << median_distance_bf_icp << "\tAF ICP: " << median_distance_af_icp << endl;
+            cout << "Standard Deviation Distances: " << endl;
+            cout << "\tBF ICP: " << sqrt(standard_deviation_bf_icp / distances.size()) << "\tAF ICP: " << sqrt(standard_deviation_af_icp / distances.size()) << endl;
+            cout << "Threshold: " << add_threshold[class_name] * 1000 << endl;
+            
+            
             if (opts.demo_mode) {
                 cout << "Press any key to continue..." << endl;
                 cin.get();
             }
-
-
         }
 
         auto acc_end = chrono::high_resolution_clock::now();
-
+        
         cout << "ADD(s) of " << class_name << " before ICP: " << bf_icp / general_counter << endl;
         cout << "ADD(s) of " << class_name << " after ICP: " << af_icp / general_counter << endl;
         cout << "Accumulator time: " << acc_time / general_counter << endl;

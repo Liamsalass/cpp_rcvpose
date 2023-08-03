@@ -369,7 +369,20 @@ def fast_for_cuda(xyz_mm,radial_list_mm,VoteMap_3D):
 def Accumulator_3D(xyz, radial_list):
     acc_unit = 5
     # unit 5mm 
+
+    #print('Input data: ')
+    #print('xyz shape: ', xyz.shape)
+    #for i in range(20):
+    #    print('xyz[',i,']',xyz[i])
+    #print('radial_list shape: ', radial_list.shape)
+    #for i in range(20):
+    #    print('radial_list[',i,']',radial_list[i])
+
     xyz_mm = xyz*1000/acc_unit #point cloud is in meter
+
+    #print('xyz_mm shape: ', xyz_mm.shape)
+    #for i in range(20):
+    #    print('xyz_mm[',i,']',xyz_mm[i])
 
     #print(xyz_mm.shape)
     #recenter the point cloud
@@ -556,8 +569,6 @@ def estimate_6d_pose_lm():
         # Only 25 first images
         count = 0
 
-        if (count > 24):
-            break
 
         if filename.endswith(".jpg"):
             filename_without_ext = os.path.splitext(filename)[0]
@@ -571,7 +582,9 @@ def estimate_6d_pose_lm():
 
                 estimated_kpts = np.zeros((3,3))
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
-                
+             
+
+
                 keypoint_count = 1
 
                 for keypoint in keypoints:
@@ -582,7 +595,9 @@ def estimate_6d_pose_lm():
                     iter_count = 0
                     centers_list = []
                     
-                    GTRadiusPath = rootPath+'Out_pt'+str(keypoint_count)+'_dm/'
+                    GTRadiusPath = rootpvPath+'Out_pt'+str(keypoint_count)+'_dm/'
+
+
                     transformed_gt_center_mm = (np.dot(keypoint, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
 
                     input_path = dataPath +filename
@@ -610,14 +625,22 @@ def estimate_6d_pose_lm():
 
                 
                     radial_list = radial_out[pixel_coor]
+                    for i in range(20):
+                        print('\t', radial_list[i])
 
                     xyz = rgbd_to_point_cloud(linemod_K,depth_map)
+                    for i in range (10):
+                        print('\t', xyz[i])
 
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
 
                     tic = time.time_ns()
+                    
+                    gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
+                    gt_list = gt_list[pixel_coor]
 
                     center_mm_s = Accumulator_3D(xyz, radial_list)
+                    gt_center = Accumulator_3D(xyz, gt_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
                     acc_time += toc-tic
@@ -626,7 +649,9 @@ def estimate_6d_pose_lm():
                     
                     
                     print("estimated: ", center_mm_s)
-                    
+                    print("gt: ", gt_center)
+                    print("gt transformed: ", transformed_gt_center_mm)
+
                     pre_center_off_mm = math.inf
                     
                     estimated_center_mm = center_mm_s[0]
@@ -694,8 +719,8 @@ def estimate_6d_pose_lm():
                     if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
                         input_image_copy[y, x] = [255, 0, 0]
 
-                plt.imshow(input_image_copy)
-                plt.show()
+                # plt.imshow(input_image_copy)
+                # plt.show()
 
                 sceneGT = o3d.geometry.PointCloud()
                 sceneEst = o3d.geometry.PointCloud()

@@ -30,7 +30,6 @@ RCVpose::RCVpose(
     opts.batch_size = batch_size;
     opts.class_name = class_name;
     opts.initial_lr = initial_lr;
-    opts.kpt_num = kpt_num;
     opts.model_dir = model_dir;
     opts.demo_mode = demo_mode;
     opts.test_occ = test_occ;
@@ -64,7 +63,6 @@ void RCVpose::summary() {
     cout << "batch_size: " << opts.batch_size << endl;
     cout << "class_name: " << opts.class_name << endl;
     cout << "initial_lr: " << opts.initial_lr << endl;
-    cout << "kpt_num: " << opts.kpt_num << endl;
     cout << "model_dir: " << opts.model_dir << endl;
     cout << "demo_mode: " << opts.demo_mode << endl;
     cout << "test_occ: " << opts.test_occ << endl;
@@ -86,16 +84,26 @@ void RCVpose::summary() {
 void RCVpose::train()
 {
     try {
-        Trainer trainer(opts);
-
-        //trainer.test_compute_r_loss();
-
-        trainer.train();
+        Trainer kpt1(opts, 1);
+        kpt1.train();
     }
     catch (const std::exception& e) {
-        std::cout << e.what() << std::endl;
+		std::cerr << e.what() << '\n';
+	}
+    try {
+        Trainer kpt2(opts, 2);
+        kpt2.train();
     }
-    
+    catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
+    try {
+        Trainer kpt3(opts, 3);
+        kpt3.train();
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
 }
 
 
@@ -103,33 +111,6 @@ void RCVpose::validate() {
     // Implementation for evaluating the model
 }
 
-void RCVpose::compare_models(string model1, string model2) {
-
-}
-
-void RCVpose::save_tensor(const std::string& path, const int& idx) {
-    try {
-        Trainer trainer(opts);
-
-        trainer.output_pred(idx,path);
-    }
-    catch (const std::exception& e) {
-		std::cout << e.what() << std::endl;
-	}
-}
-
-void RCVpose::save_tensor(const std::string& path, const int& start, const int& end) {
-    Trainer trainer(opts);
-
-    for (int i = start; i < end; i++) {
-		trainer.output_pred(i, path);
-	}  
-}
-
-void RCVpose::test_img(std::string img_path, std::string output_path)
-{
-
-}
 
 void RCVpose::demo() {
     // Implementation for running the model in demo mode
@@ -139,20 +120,6 @@ void RCVpose::loadModel(std::string path) {
     // Implementation for loading a pretrained model
 }
 
-void RCVpose::test_loaders()
-{
-    auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name, opts.kpt_num);
-
-    auto data_tensor = val_dataset.get(0).data();
-    auto sem_target = val_dataset.get(0).sem_target();
-    auto rad_target = val_dataset.get(0).target();
-
-    auto test_tensor = Trainer(opts);
-
-    test_tensor.tensorToFile(data_tensor, opts.model_dir + "/img0/input_data_tensor.txt");
-    test_tensor.tensorToFile(sem_target, opts.model_dir + "/img0/input_sem_target.txt");
-    test_tensor.tensorToFile(rad_target, opts.model_dir + "/img0/input_rad_target.txt");
-}
 
 
 void RCVpose::init() {
@@ -236,8 +203,8 @@ bool RCVpose::can_init() {
     }
     // Instantiate the dataset
     try {
-        auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, opts.kpt_num);
-        auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name, opts.kpt_num);
+        auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name, 1);
+        auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name, 1);
 
         // Instantiate the dataloaders 
         auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(

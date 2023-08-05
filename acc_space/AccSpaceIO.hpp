@@ -175,7 +175,34 @@ pc_ptr read_point_cloud(string path, const bool& debug = false) {
     return pcv;
 }
 
-vector<vector<double>> read_key_points(string path, const bool debug = false) {
+
+vector<vector<float>> read_float_npy(string path, const bool debug = false) {
+    vector<float> data;
+    vector<unsigned long> shape;
+    bool fortran_order;
+
+    npy::LoadArrayFromNumpy(path, shape, fortran_order, data);
+
+    int rows = static_cast<int>(shape[0]);
+    int cols = static_cast<int>(shape[1]);
+
+    if (debug) {
+        cout << "Keypoint Shape: " << rows << " " << cols << endl;
+    }
+
+    vector<vector<float>> mat(rows, vector<float>(cols));
+
+#pragma omp parallel for collapse(2)
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; ++j) {
+            mat[i][j] = data[i * cols + j];
+        }
+    }
+    return mat;
+}
+
+
+vector<vector<double>> read_double_npy(string path, const bool debug = false) {
     vector<double> data;
     vector<unsigned long> shape;
     bool fortran_order;
@@ -191,7 +218,7 @@ vector<vector<double>> read_key_points(string path, const bool debug = false) {
 
     vector<vector<double>> mat(rows, vector<double>(cols));
 
-    #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; ++j) {
             mat[i][j] = data[i * cols + j];

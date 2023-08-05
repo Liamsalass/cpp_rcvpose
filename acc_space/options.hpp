@@ -54,7 +54,7 @@ Options testing_options() {
     opts.reduce_on_plateau = false;
     opts.kpt_num = 1;
     opts.demo_mode = false;
-    opts.verbose = false;
+    opts.verbose = true;
     opts.test_occ = false;
     return opts;
 }

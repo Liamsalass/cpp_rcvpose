@@ -58,29 +58,6 @@ linemod_K = np.array([[572.4114, 0., 325.2611],
                   [0., 0., 1.]])
 
 
-def process_image1(idx):
-    depthlist = []
-    sem, radial = FCResBackbone(model, dataPath + test_list[idx] + '.jpg', depthlist)
-    # Store output
-    print('Saving output kpt for image ' + test_list[idx] + ' to ' + save_path + 'kpt1/tensors_py/')
-    np.save(save_path + 'kpt1/tensors_py/score_rad_' + str(idx) + '.npy', radial)
-    np.save(save_path + 'kpt1/tensors_py/score_' + str(idx) + '.npy', sem)
-
-def process_image2(idx):
-    depthlist = []
-    sem, radial = FCResBackbone(model, dataPath + test_list[idx] + '.jpg', depthlist)
-    # Store output
-    print('Saving output kpt for image ' + test_list[idx] + ' to ' + save_path + 'kpt2/tensors_py/')
-    np.save(save_path + 'kpt2/tensors_py/score_rad_' + str(idx) + '.npy', radial)
-    np.save(save_path + 'kpt2/tensors_py/score_' + str(idx) + '.npy', sem)
-
-def process_image3(idx):
-    depthlist = []
-    sem, radial = FCResBackbone(model, dataPath + test_list[idx] + '.jpg', depthlist)
-    # Store output
-    print('Saving output kpt for image ' + test_list[idx] + ' to ' + save_path + 'kpt3/tensors_py/')
-    np.save(save_path + 'kpt3/tensors_py/score_rad_' + str(idx) + '.npy', radial)
-    np.save(save_path + 'kpt3/tensors_py/score_' + str(idx) + '.npy', sem)
 
 
 def fileToTensor(filename):
@@ -151,46 +128,115 @@ dataPath = rootpvPath + 'JPEGImages/'
 
 save_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/'
 
-
 model_dir = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/pretrained/'
 
+for kpt in range(3):
+    print('Running for keypoint ' + str(kpt + 1))
+    ground_truth_path = rootpvPath + 'Out_pt' + str(kpt + 1) +'_dm/'
+    cpp_out = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(kpt+1) + '/tensors_cpp/'
+    python_out = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' + str(kpt+1) + '/tensors_py/'
+    
+    cpp_mean = []
+    cpp_median = []
+    cpp_std = []
+    cpp_max = []
+    cpp_min_val = []
+
+    py_mean = []
+    py_median = []
+    py_std = []
+    py_max = []
+    py_min_val = []
+
+    for img in test_list:
+        count = int(os.path.splitext(img)[0])
+        if ( kpt > 0 and count > 49):
+            break
+        cpp_radial_tensor_path = cpp_out + 'score_rad_' + str(count) + '.txt'
+        cpp_semantic_tensor_path = cpp_out + 'score_' + str(count) + '.txt'
+        py_radial_tensor_path = python_out + 'score_rad_' + str(count) + '.npy'
+        py_semantic_tensor_path = python_out + 'score_' + str(count) + '.npy'
+        radial_ground_truth_path = ground_truth_path + img + '.npy'
 
 
+        cpp_radial_tensor = fileToTensor(cpp_radial_tensor_path)
+        cpp_semantic_tensor = fileToTensor(cpp_semantic_tensor_path)
+        cpp_semantic_tensor = np.where(cpp_semantic_tensor>0.8,1,0).squeeze(2).transpose(1,0)
+        cpp_radial_tensor = np.array(cpp_radial_tensor).squeeze(2).transpose(1,0)
 
-with concurrent.futures.ThreadPoolExecutor() as executor:
+        py_radial_tensor = np.load(py_radial_tensor_path)
+        py_semantic_tensor = np.load(py_semantic_tensor_path)
+        py_semantic_tensor = np.where(py_semantic_tensor>0.8,1,0)
+        py_radial_tensor = np.array(py_radial_tensor)
 
-    print("Processing model 1")
-    model_path = model_dir + class_name + "_pt1.pth.tar"
-    model = DenseFCNResNet152(3, 2)
-    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
-    model, _, _, _ = utils.load_checkpoint(model, optim, model_path)
-    model.eval()
+        radial_ground_truth = np.load(radial_ground_truth_path)
+      
+        cpp_radial_w_sem = cpp_radial_tensor * cpp_semantic_tensor
+        py_radial_w_sem = py_radial_tensor * py_semantic_tensor
 
-    executor.map(process_image1, range(len(test_list)))
+        # Flatten data
+        cpp_radial_w_sem = cpp_radial_w_sem.flatten()
+        py_radial_w_sem = py_radial_w_sem.flatten()
+        radial_ground_truth = radial_ground_truth.flatten()
 
-with concurrent.futures.ThreadPoolExecutor() as executor:
-    print("Processing model " + str(2))
-    model_path = model_dir + class_name + "_pt2.pth.tar"
-    model = DenseFCNResNet152(3, 2)
-    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
-    model, _, _, _ = utils.load_checkpoint(model, optim, model_path)
-    model.eval()
+        # Remove zeros
+        cpp_radial_w_sem = cpp_radial_w_sem[cpp_radial_w_sem != 0]
+        py_radial_w_sem = py_radial_w_sem[py_radial_w_sem != 0]
+        radial_ground_truth = radial_ground_truth[radial_ground_truth != 0]
 
-    executor.map(process_image2, range(len(test_list)))
+        # Check if sizes match
+        if cpp_radial_w_sem.shape != py_radial_w_sem.shape or cpp_radial_w_sem.shape != radial_ground_truth.shape:
+            min_size = min(cpp_radial_w_sem.shape[0], py_radial_w_sem.shape[0], radial_ground_truth.shape[0])
+            cpp_radial_w_sem = cpp_radial_w_sem[:min_size]
+            py_radial_w_sem = py_radial_w_sem[:min_size]
+            radial_ground_truth = radial_ground_truth[:min_size]
 
-with concurrent.futures.ThreadPoolExecutor() as executor:
-    print("Processing model " + str(3))
-    model_path = model_dir + class_name + "_pt3.pth.tar"
-    model = DenseFCNResNet152(3, 2)
-    optim = torch.optim.Adam(model.parameters(), lr=1e-3)
-    model, _, _, _ = utils.load_checkpoint(model, optim, model_path)
-    model.eval()
+        if cpp_radial_w_sem.size == 0:
+            print('cpp_radial_w_sem is empty')
+            continue
+        
+        if py_radial_w_sem.size == 0:
+            print('py_radial_w_sem is empty')
+            continue
 
-    executor.map(process_image3, range(len(test_list)))
+        cpp_diff_w_sem = np.abs(cpp_radial_w_sem - radial_ground_truth)
+        py_diff_w_sem = np.abs(py_radial_w_sem - radial_ground_truth)
+        
+        cpp_diff_w_sem = np.divide(cpp_diff_w_sem,radial_ground_truth)
+        py_diff_w_sem = np.divide(py_diff_w_sem,radial_ground_truth)
+
+        # Save the mean, median, std deviation, max and min
+        cpp_mean.append(np.mean(cpp_diff_w_sem))
+        cpp_median.append(np.median(cpp_diff_w_sem))
+        cpp_std.append(np.std(cpp_diff_w_sem))
+        cpp_max.append(np.max(cpp_diff_w_sem))
+        cpp_min_val.append(np.min(cpp_diff_w_sem))
+
+        py_mean.append(np.mean(py_diff_w_sem))
+        py_median.append(np.median(py_diff_w_sem))
+        py_std.append(np.std(py_diff_w_sem))
+        py_max.append(np.max(py_diff_w_sem))
+        py_min_val.append(np.min(py_diff_w_sem))
+
+        if(count == 1049):
+            break
+        
+
+    # Print the average mean, median, std deviation, max and min
+    print('Printing average values for keypoint ' + str(kpt + 1))
+    print('CPP:')
+    print('\tMean: ' + str(np.mean(cpp_mean)))
+    print('\tMedian: ' + str(np.mean(cpp_median)))
+    print('\tStd: ' + str(np.mean(cpp_std)))
+    print('\tMax: ' + str(np.mean(cpp_max)))
+    print('\tMin: ' + str(np.mean(cpp_min_val)))
+    print('Python:')
+    print('\tMean: ' + str(np.mean(py_mean)))
+    print('\tMedian: ' + str(np.mean(py_median)))
+    print('\tStd: ' + str(np.mean(py_std)))
+    print('\tMax: ' + str(np.mean(py_max)))
+    print('\tMin: ' + str(np.mean(py_min_val)))
+    print('')
 
 
-
-
-
-
-
+        

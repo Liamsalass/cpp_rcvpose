@@ -433,3 +433,4 @@ model_testing/out/build/x64-release/CMakeFiles/model_testing.dir/models/denseFCN
 model_testing/out/build/x64-release/CMakeFiles/model_testing.dir/models/resFCNResNet152.cpp.obj
 model_testing/out/build/x64-release/Testing/Temporary/LastTest.log
 rcvpose/copy_into_build/
+acc_space/python/data/

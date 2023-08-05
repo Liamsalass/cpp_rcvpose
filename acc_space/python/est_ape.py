@@ -392,11 +392,7 @@ def Accumulator_3D(xyz, radial_list):
     xyz_mm[:,0] -= x_mean_mm
     xyz_mm[:,1] -= y_mean_mm
     xyz_mm[:,2] -= z_mean_mm
-    xyz_mm[:,0] -= x_mean_mm
-    xyz_mm[:,1] -= y_mean_mm
-    xyz_mm[:,2] -= z_mean_mm
 
-    
     radial_list_mm = radial_list*100/acc_unit  #radius map is in decimetre for training purpose
     
 
@@ -411,6 +407,7 @@ def Accumulator_3D(xyz, radial_list):
         #length of 3D vote map 
     length = int(xyz_mm.max())
 
+    print ("Length: " + str(length + int(radius_max)))
     
     VoteMap_3D = np.zeros((length+int(radius_max),length+int(radius_max),length+int(radius_max)))
 
@@ -597,70 +594,70 @@ def estimate_6d_pose_lm():
                     
                     GTRadiusPath = rootpvPath+'Out_pt'+str(keypoint_count)+'_dm/'
 
+                    transformed_gt_center_mm = (np.dot(keypoints, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
 
-                    transformed_gt_center_mm = (np.dot(keypoint, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
+                    transformed_gt_center_mm = transformed_gt_center_mm[keypoint_count]
 
                     input_path = dataPath +filename
 
                     normalized_depth = []
                     tic = time.time_ns()
                     
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_cpp/score_' + str(count) +'.txt'
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_cpp/score_rad_' + str(count) +'.txt'
-    
-                    radial_out = fileToTensor(rad_out_path)
-                    sem_out = fileToTensor(sem_out_path)
+                    #Cpp backend
+                    # sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_cpp/score_' + str(count) +'.txt'
+                    # rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_cpp/score_rad_' + str(count) +'.txt'
+                    # radial_out = fileToTensor(rad_out_path)
+                    # sem_out = fileToTensor(sem_out_path)
+                    # sem_out = np.where(sem_out>0.8,1,0).squeeze(2).transpose(1,0)
+                    # radial_out = np.array(radial_out).squeeze(2).transpose(1,0)
+
+                    #Python backend      
+                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_py/score_' + str(count) +'.npy'
+                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_py/score_rad_' + str(count) +'.npy'
+                    sem_out = np.load(sem_out_path)
+                    radial_out = np.load(rad_out_path)
+                    sem_out = np.where(sem_out>0.8,1,0)
+                    radial_out = np.array(radial_out)
+
                     toc = time.time_ns()
                     net_time += toc-tic
                     #print("Network time consumption: ", network_time_single)
                     depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
    
-                    
-                    sem_out = np.where(sem_out>0.8,1,0).squeeze(2).transpose(1,0)
-                    radial_out = np.array(radial_out).squeeze(2).transpose(1,0)
-                
-                    depth_map = depth_map1*sem_out/1000  
+                    depth_map = depth_map1*sem_out 
 
                     pixel_coor = np.where(sem_out==1)
 
-                
                     radial_list = radial_out[pixel_coor]
-                    for i in range(20):
-                        print('\t', radial_list[i])
+      
+                    xyz_mm = rgbd_to_point_cloud(linemod_K,depth_map)
+                    xyz = xyz_mm/1000   
 
-                    xyz = rgbd_to_point_cloud(linemod_K,depth_map)
-                    for i in range (10):
-                        print('\t', xyz[i])
 
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
 
                     tic = time.time_ns()
                     
-                    gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
-                    gt_list = gt_list[pixel_coor]
+                    #gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
+                    #gt_list = gt_list[pixel_coor]
 
                     center_mm_s = Accumulator_3D(xyz, radial_list)
-                    gt_center = Accumulator_3D(xyz, gt_list)
+                    #gt_center = Accumulator_3D(xyz, gt_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
                     acc_time += toc-tic
                     #print acc time in ms
                     print("Accumulator time consumption: ", (toc-tic)/1000000, " ms")
                     
-                    
-                    print("estimated: ", center_mm_s)
-                    print("gt: ", gt_center)
-                    print("gt transformed: ", transformed_gt_center_mm)
-
+              
                     pre_center_off_mm = math.inf
                     
                     estimated_center_mm = center_mm_s[0]
 
-
                     
-                    center_off_mm = ((transformed_gt_center_mm[0,0]-estimated_center_mm[0])**2+
-                                    (transformed_gt_center_mm[0,1]-estimated_center_mm[1])**2+
-                                    (transformed_gt_center_mm[0,2]-estimated_center_mm[2])**2)**0.5
+                    center_off_mm = ((transformed_gt_center_mm[0]-estimated_center_mm[0])**2+
+                                    (transformed_gt_center_mm[1]-estimated_center_mm[1])**2+
+                                    (transformed_gt_center_mm[2]-estimated_center_mm[2])**2)**0.5
                     
                     print("estimated offset: ", center_off_mm)
                     
@@ -696,20 +693,15 @@ def estimate_6d_pose_lm():
                         break
                     
                 
-                kpts = keypoints[0:3,:]*1000
+                kpts = keypoints[1:4,:]*1000
                 RT = np.zeros((4, 4))
 
-                print('kpts: ', kpts)
-                print('estimated kpts: ', estimated_kpts)
 
                 horn.lmshorn(kpts, estimated_kpts, 3, RT)
 
-                print("Estimated RT: ", RT)
 
                 dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
-                
-                for i in range(5):
-                        print('Estimated center: ', xyz_load_est_transformed[i])
+           
 
                 input_image = np.asarray(Image.open(input_path).convert('RGB'))
                 input_image_copy = np.copy(input_image)
@@ -730,16 +722,20 @@ def estimate_6d_pose_lm():
                 sceneEst.paint_uniform_color(np.array([1,0,0]))
             
                 #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
-                distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
-                min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
+                distance_bf_icp = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
+                min_distance_bf_icp = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
+                max_distance_bf_icp = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).max()
+                median_distance_bf_icp = np.median(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
+                std_dev_distance_bf_icp = np.std(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
+
 
                 if class_name in lm_syms:
-                    if min_distance <= add_threshold[class_name]*1000:
+                    if min_distance_bf_icp <= add_threshold[class_name]*1000:
                         bf_icp+=1
                         print ('Correct Prediction within threshold')
                         print("bf_icp: ", bf_icp)
                 else:
-                    if distance <= add_threshold[class_name]*1000:
+                    if distance_bf_icp <= add_threshold[class_name]*1000:
                         bf_icp+=1
                         print ('Correct Prediction within threshold')
                         print ("bf_icp: ", bf_icp)
@@ -748,7 +744,7 @@ def estimate_6d_pose_lm():
                                         [0, 1, 0, 0],
                                         [0, 0, 1, 0], 
                                         [0, 0, 0, 1]])
-                threshold = distance
+                threshold = distance_bf_icp
                 criteria = o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2000000)
                 reg_p2p = o3d.pipelines.registration.registration_icp(
                     sceneGT, sceneEst,  threshold, trans_init,
@@ -757,18 +753,41 @@ def estimate_6d_pose_lm():
                 sceneGT.transform(reg_p2p.transformation)
                 
                 # o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est after icp')
-                distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
-                min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
+                distance_af_icp = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
+                min_distance_af_icp = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
+                max_distance_af_icp = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).max()
+                median_distance_af_icp = np.median(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
+                std_dev_distance_af_icp = np.std(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
                 #print('ADD(s) point distance after ICP: ', distance)
                 if class_name in lm_syms:
-                    if min_distance <= add_threshold[class_name]*1000:
+                    if min_distance_af_icp <= add_threshold[class_name]*1000:
                         print('Correct match After ICP')
                         af_icp+=1
                 else:
-                    if distance <= add_threshold[class_name]*1000:
+                    if distance_af_icp <= add_threshold[class_name]*1000:
                         print('Correct match After ICP')
                         af_icp+=1                   
                 general_counter += 1
+
+                #Save data distances to file
+                with open('data/' + filename_without_ext + '.txt', 'a') as f:
+                    f.write('Before ICP: \n')
+                    f.write('Mean distance: ' + str(distance_bf_icp) + '\n')
+                    f.write('Min distance: ' + str(min_distance_bf_icp) + '\n')
+                    f.write('Max distance: ' + str(max_distance_bf_icp) + '\n')
+                    f.write('Median distance: ' + str(median_distance_bf_icp) + '\n')
+                    f.write('Standard deviation distance: ' + str(std_dev_distance_bf_icp) + '\n')
+                    f.write('After ICP: \n')
+                    f.write('Mean distance: ' + str(distance_af_icp) + '\n')
+                    f.write('Min distance: ' + str(min_distance_af_icp) + '\n')
+                    f.write('Max distance: ' + str(max_distance_af_icp) + '\n')
+                    f.write('Median distance: ' + str(median_distance_af_icp) + '\n')
+                    f.write('Standard deviation distance: ' + str(std_dev_distance_af_icp) + '\n')
+                    f.write('-------------------------------------------------------------------\n')
+                    f.close()
+
+
+
             
             count = count + 1
         #os.system("pause")

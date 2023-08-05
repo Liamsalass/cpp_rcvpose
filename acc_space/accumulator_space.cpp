@@ -43,6 +43,8 @@ void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Te
 
     auto img_batch = torch::stack(imgTensor, 0).to(device);
 
+    torch::NoGradGuard no_grad;
+
     auto output = model->forward(img_batch);
 
     auto sem_out = get<0>(output).to(torch::kCPU);
@@ -152,28 +154,28 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
         // List to hold models
         vector<DenseFCNResNet152> model_list;
-
+        
         // Print loading message
         cout << endl << "Loading Models" << endl;
-
+        
         // Load all models
         for (int i = 1; i < 4; i++) {
-
+        
             // Define directory of model
             string model_dir = "kpt" + to_string(i);
-
+        
             // Instantiate model
             DenseFCNResNet152 model;
-
+        
             // Instantiate loader
             CheckpointLoader loader(model_dir, true);
-
+        
             // Load the model
             model = loader.getModel();
-
+        
             // Put the model in evaluation mode
             model->eval();
-
+        
             // Add the model to the model list
             model_list.push_back(model);
         }
@@ -218,7 +220,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
         }
 
         // Load keypoints from the file
-        vector<vector<double>> keypoints = read_key_points(keypoints_path, opts.verbose);
+        vector<vector<double>> keypoints = read_double_npy(keypoints_path, opts.verbose);
 
         // Define path to data
         string data_path = rootpvPath + "JPEGImages/";
@@ -226,10 +228,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
         // Start high resolution timer for accumulation
         auto acc_start = chrono::high_resolution_clock::now();
-
         // Loop through all images in the img_path
         for (auto test_img : test_list) {
-         
+            
             int img_num = stoi(test_img);
     
             // Record the current time using a high-resolution clock
@@ -330,38 +331,77 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << transformed_gt_center_mm << endl << endl;
                 }
 
-                // Declare tensors for storing the semantic and radial output
+                //CPP backend testing method
                 torch::Tensor semantic_output;
                 torch::Tensor radial_output;
-
+                
                 // Record the current time before executing the FCResBackbone
                 auto start = chrono::high_resolution_clock::now();
-
+                
                 // Execute the FCResBackbone model to get semantic and radial output
                 FCResBackbone(model_list.at(keypoint_count - 1), image_path, radial_output, semantic_output, device_type, opts.verbose);
-
+                
                 // Record the current time after executing the FCResBackbone
                 auto end = chrono::high_resolution_clock::now();
-
+                
                 // Print the FCResBackbone speed, semantic output shape, and radial output shape if verbose option is enabled
                 if (opts.verbose) {
                     cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
-                    cout << "Semantic Output Shape: " << semantic_output.sizes() << endl;
-                    cout << "Radial Output Shape: " << radial_output.sizes() << endl << endl;;
                 }
-
+                
                 // Add the time taken to execute the FCResBackbone to the total network time
                 net_time += chrono::duration_cast<chrono::milliseconds>(end - start).count();
-
+                
                 // Convert the semantic and radial output tensors to OpenCV matrices
                 cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
                 cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_output);
+
+                //For testing with python backend
+
+                //vector<vector<float>> radial_output_py;
+                //vector<vector<float>> semantic_output_py;
+                //string sem_path_py = "C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt" + to_string(keypoint_count) + "/tensors_py/score_" + to_string(img_num) + ".npy";
+                //string rad_path_py = "C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt" + to_string(keypoint_count) + "/tensors_py/score_rad_" + to_string(img_num) + ".npy";
+                //
+                // semantic_output_py = read_float_npy(sem_path_py, true);
+                // radial_output_py = read_float_npy(rad_path_py, true);
+                //
+                //cv::Mat sem_cv;
+                //cv::Mat rad_cv;
+                //sem_cv.create(semantic_output_py.size(), semantic_output_py[0].size(), CV_32FC1);
+                //rad_cv.create(radial_output_py.size(), radial_output_py[0].size(), CV_32FC1);
+                //
+                //#pragma omp parallel for collapse(2)
+                //for (int i = 0; i < semantic_output_py.size(); i++) {
+                //    for (int j = 0; j < semantic_output_py[0].size(); j++) {
+				//		sem_cv.at<float>(i, j) = semantic_output_py[i][j];
+				//		rad_cv.at<float>(i, j) = radial_output_py[i][j];
+				//	}
+				//}
+
 
                 // Define the depth image path
                 string depth_path = rootPath + "data/depth" + to_string(img_num) + ".dpt";
 
                 // Load the depth image
                 cv::Mat depth_cv = read_depth_to_cv(depth_path, opts.verbose);
+        
+
+                string ground_truth_path = "C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/Out_pt" + to_string(keypoint_count) + "_dm/" + test_img + ".npy";
+                cout << ground_truth_path << endl;
+
+                vector<vector<double>> gt;
+                gt = read_double_npy(ground_truth_path);
+              
+                cv::Mat gt_mat;
+                gt_mat.create(gt.size(), gt[0].size(), CV_32FC1);
+
+                #pragma omp parallel for collapse(2)
+                for (int i = 0; i < gt.size(); i++) {
+                    for (int j = 0; j < gt[0].size(); j++) {
+						gt_mat.at<float>(i, j) = gt[i][j];
+					}
+				}
 
                 // Transpose the semantic and radial matrices for correct orientation
                 cv::transpose(sem_cv, sem_cv);
@@ -379,22 +419,22 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << "\tDepth Datatype: " << depth_cv.type() << endl << endl;
                 }
 
-        
                 // Threshold the semantic matrix to binary
+         
                 cv::Mat thresholded;
                 cv::threshold(sem_cv, thresholded, 0.8, 1, cv::THRESH_BINARY);
                 thresholded.convertTo(sem_cv, sem_cv.type());
                 thresholded.release();
-
+                
                 // Define temporary matrices for semantic, depth, and radial data
                 cv::Mat sem_tmp, depth_tmp, rad_tmp;
-
+                
                 // Convert the datatypes of semantic, depth, and radial matrices
                 sem_cv.convertTo(sem_tmp, CV_32F);
                 depth_cv.convertTo(depth_tmp, CV_32F);
                 rad_cv.convertTo(rad_tmp, CV_32F);
                 
-
+                
                 // Multiply the radial matrix by the semantic matrix
                 rad_tmp = rad_tmp.mul(sem_cv);
                 depth_tmp = depth_tmp.mul(sem_tmp);
@@ -434,6 +474,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
                 // Define a vector for storing the radial values
                 vector<double> radial_list;
+                vector<double> gt_list;
                 #pragma omp parallel for 
                 for (auto cord : pixel_coor) {
                     Vertex v;
@@ -442,6 +483,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     v.z = rad_cv.at<float>(cord.x, cord.y);
                     #pragma omp critical
                     radial_list.push_back(static_cast<double>(v.z));
+                    gt_list.push_back(static_cast<double>(gt_mat.at<float>(cord.x, cord.y)));
                 }
 
                 // Print the number of radial values gathered if verbose option is enabled
@@ -463,6 +505,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 					xyz.points_[i].z() = xyz_mm.points_[i].z() / 1000;
 				}
                 xyz_mm.points_.clear();
+
        
 
                 // Print the number of points in the pointcloud if verbose option is enabled
@@ -485,7 +528,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 }
 
                 // Calculate the 3D vector center
-                Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list, false, opts.verbose);
+                Vector3d estimated_center_mm = Accumulator_3D(xyz, gt_list, false, opts.verbose);
                 
                 // Print the number of centers returned and the estimate if verbose option is enabled
                 if (opts.verbose) {
@@ -707,8 +750,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 standard_deviation_bf_icp += (d - distance_bf_icp) * (d - distance_bf_icp);
 			}
 
-
-
             if (opts.verbose) {
 				cout << "\tBefore ICP distance: " << distance_bf_icp << endl;
 				cout << "\tBefore ICP min distance: " << min_distance_bf_icp << endl << endl;
@@ -784,6 +825,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             ofstream myfile;
             string save_path = "data/img_" + test_img + ".txt";
             myfile.open(save_path, ios::app);
+            myfile << "Ground Truth Test" << endl;
             myfile << "Image number " << test_img << " took " << min << " minutes and " << sec << " seconds to calculate offset." << endl;
             myfile << "Image Count: " << general_counter << endl;
             myfile << "Before ICP Count " << bf_icp << endl;
@@ -807,6 +849,8 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             cout << "Image Count: " << general_counter << endl;
             cout << "Before ICP Count " << bf_icp << endl;
             cout << "After ICP Count " << af_icp << endl;
+            cout << "Before ICP ADDs " << bf_icp / general_counter << endl;
+            cout << "After ICP ADDs " << af_icp / general_counter << endl;
             cout << "Distances: " << endl;
             cout << "\tBF ICP: " << distance_bf_icp << "\tAF ICP: " << distance_af_icp << endl;
             cout << "Min Distances: " << endl;

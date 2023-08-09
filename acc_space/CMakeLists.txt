@@ -12,6 +12,8 @@ project(${TARGET_NAME})
 set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
 set(TORCH_DIR "C:/libtorch_release/libtorch")
 
+find_package(OpenMP)
+
 find_package(Open3D REQUIRED)
 include_directories(${Open3D_INCLUDE_DIRS})
 
@@ -44,6 +46,10 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
 endif()
 
 # set(CMAKE_BUILD_TYPE=Release)
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${TARGET_NAME} PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Open3D_LIBRARIES} ${OpenCV_LIBS} ${TORCH_LIBRARIES})
 

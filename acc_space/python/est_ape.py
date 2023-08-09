@@ -322,6 +322,7 @@ def parallel_for(count,xyz_mm,radial_list_mm,VoteMap_3D):
 #@jit(parallel=True)     
 def fast_for(xyz_mm,radial_list_mm,VoteMap_3D):  
     factor = (3**0.5)/4
+    #print ('XYZ shape' , xyz_mm.shape[0])
     for count in prange(xyz_mm.shape[0]):
         xyz = xyz_mm[count]
         radius = radial_list_mm[count]
@@ -331,6 +332,7 @@ def fast_for(xyz_mm,radial_list_mm,VoteMap_3D):
             for j in prange(VoteMap_3D.shape[1]):
                 for k in prange(VoteMap_3D.shape[2]):
                     distance = ((i-xyz[0])**2+(j-xyz[1])**2+(k-xyz[2])**2)**0.5
+                    #print ('Count: ',count,' Distance: ',distance,' Radius: ',radius,' Factor: ',factor,' VoteMap: ',VoteMap_3D[i,j,k],' i: ',i,' j: ',j,' k: ',k,' xyz: ',xyz)
                     if radius - distance < factor and radius - distance>0:
                         VoteMap_3D[i,j,k]+=1
         
@@ -389,31 +391,38 @@ def Accumulator_3D(xyz, radial_list):
     x_mean_mm = np.mean(xyz_mm[:,0])
     y_mean_mm = np.mean(xyz_mm[:,1])
     z_mean_mm = np.mean(xyz_mm[:,2])
+
+  
+
     xyz_mm[:,0] -= x_mean_mm
     xyz_mm[:,1] -= y_mean_mm
     xyz_mm[:,2] -= z_mean_mm
 
+
     radial_list_mm = radial_list*100/acc_unit  #radius map is in decimetre for training purpose
-    
 
     xyz_mm_min = xyz_mm.min()
     xyz_mm_max = xyz_mm.max()
     radius_max = radial_list_mm.max()
-    
+
     zero_boundary = int(xyz_mm_min-radius_max)+1
 
     if(zero_boundary<0):
         xyz_mm -= zero_boundary
+       
         #length of 3D vote map 
     length = int(xyz_mm.max())
-
-    print ("Length: " + str(length + int(radius_max)))
-    
+  
     VoteMap_3D = np.zeros((length+int(radius_max),length+int(radius_max),length+int(radius_max)))
 
     VoteMap_3D = fast_for(xyz_mm,radial_list_mm,VoteMap_3D)
                         
     center = np.argwhere(VoteMap_3D==VoteMap_3D.max())
+
+    print ('Max Vote: ' , VoteMap_3D.max())
+    print ('Center: ', center)
+
+
     if len(center) > 1:
         print("Multiple centers located.")
    # print("debug center raw: ",center)
@@ -604,20 +613,20 @@ def estimate_6d_pose_lm():
                     tic = time.time_ns()
                     
                     #Cpp backend
-                    # sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_cpp/score_' + str(count) +'.txt'
-                    # rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_cpp/score_rad_' + str(count) +'.txt'
-                    # radial_out = fileToTensor(rad_out_path)
-                    # sem_out = fileToTensor(sem_out_path)
-                    # sem_out = np.where(sem_out>0.8,1,0).squeeze(2).transpose(1,0)
-                    # radial_out = np.array(radial_out).squeeze(2).transpose(1,0)
+                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_cpp/score_' + str(count) +'.txt'
+                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_cpp/score_rad_' + str(count) +'.txt'
+                    radial_out = fileToTensor(rad_out_path)
+                    sem_out = fileToTensor(sem_out_path)
+                    sem_out = np.where(sem_out>0.8,1,0).squeeze(2).transpose(1,0)
+                    radial_out = np.array(radial_out).squeeze(2).transpose(1,0)
 
                     #Python backend      
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_py/score_' + str(count) +'.npy'
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_py/score_rad_' + str(count) +'.npy'
-                    sem_out = np.load(sem_out_path)
-                    radial_out = np.load(rad_out_path)
-                    sem_out = np.where(sem_out>0.8,1,0)
-                    radial_out = np.array(radial_out)
+                    #sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_py/score_' + str(count) +'.npy'
+                    #rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_py/score_rad_' + str(count) +'.npy'
+                    #sem_out = np.load(sem_out_path)
+                    #radial_out = np.load(rad_out_path)
+                    #sem_out = np.where(sem_out>0.8,1,0)
+                    #radial_out = np.array(radial_out)
 
                     toc = time.time_ns()
                     net_time += toc-tic
@@ -640,6 +649,7 @@ def estimate_6d_pose_lm():
                     
                     #gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
                     #gt_list = gt_list[pixel_coor]
+            
 
                     center_mm_s = Accumulator_3D(xyz, radial_list)
                     #gt_center = Accumulator_3D(xyz, gt_list)
@@ -654,7 +664,9 @@ def estimate_6d_pose_lm():
                     
                     estimated_center_mm = center_mm_s[0]
 
-                    
+                    print('Transformed gt center: ', transformed_gt_center_mm)
+                    print('Estimated center: ', estimated_center_mm)
+
                     center_off_mm = ((transformed_gt_center_mm[0]-estimated_center_mm[0])**2+
                                     (transformed_gt_center_mm[1]-estimated_center_mm[1])**2+
                                     (transformed_gt_center_mm[2]-estimated_center_mm[2])**2)**0.5
@@ -732,13 +744,12 @@ def estimate_6d_pose_lm():
                 if class_name in lm_syms:
                     if min_distance_bf_icp <= add_threshold[class_name]*1000:
                         bf_icp+=1
-                        print ('Correct Prediction within threshold')
-                        print("bf_icp: ", bf_icp)
+                        print ('Correct Prediction within threshold Before ICP')
+                        
                 else:
                     if distance_bf_icp <= add_threshold[class_name]*1000:
                         bf_icp+=1
-                        print ('Correct Prediction within threshold')
-                        print ("bf_icp: ", bf_icp)
+                        print ('Correct Prediction within threshold before ICP')
                 
                 trans_init = np.asarray([[1, 0, 0, 0],
                                         [0, 1, 0, 0],
@@ -768,6 +779,11 @@ def estimate_6d_pose_lm():
                         print('Correct match After ICP')
                         af_icp+=1                   
                 general_counter += 1
+
+                print ('\nBefore ICP: ', bf_icp)
+                print ('After ICP: ', af_icp)
+                print ('Current ADDs before ICP: ', bf_icp/general_counter)
+                print ('Current ADDs after ICP: ', af_icp/general_counter, '\n')
 
                 #Save data distances to file
                 with open('data/' + filename_without_ext + '.txt', 'a') as f:

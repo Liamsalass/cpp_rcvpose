@@ -62,7 +62,7 @@ Eigen::MatrixXd vectorToEigenMatrix(const vector<double>& vec) {
     int size = vec.size();
     Eigen::MatrixXd matrix(1, size);  
 
-    #pragma omp parallel for
+
     for (int i = 0; i < size; i++) {
         matrix(0, i) = vec[i];  
     }
@@ -75,7 +75,6 @@ Eigen::MatrixXd vectorOfVectorToEigenMatrix(const vector<vector<double>>& vec) {
     int cols = vec[0].size();
     Eigen::MatrixXd matrix(rows, cols);
 
-    #pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             matrix(i, j) = vec[i][j];
@@ -115,7 +114,6 @@ void project(const MatrixXd& xyz, const MatrixXd& K, const MatrixXd& RT, MatrixX
     actual_xyz =  xyz * (RT.block(0, 0, RT.rows(), 3).transpose());
     MatrixXd RTslice = RT.block(0, 3, RT.rows(), 1).transpose();
 
-    #pragma omp parallel for
     for (int i = 0; i < actual_xyz.rows(); i++){
         actual_xyz.row(i) += RTslice;
     }
@@ -126,7 +124,7 @@ void project(const MatrixXd& xyz, const MatrixXd& K, const MatrixXd& RT, MatrixX
 }
 
 
-open3d::geometry::PointCloud rgbd_to_point_cloud(const array<array<double, 3>, 3>& K, const cv::Mat& depth) {
+vector<Vertex> rgbd_to_point_cloud(const array<array<double, 3>, 3>& K, const cv::Mat& depth) {
     cv::Mat depth64F;
     depth.convertTo(depth64F, CV_64F);  // Convert depth image to CV_64F
 
@@ -137,35 +135,29 @@ open3d::geometry::PointCloud rgbd_to_point_cloud(const array<array<double, 3>, 3
     vector<double> xs(nonzeroPoints.size());
     vector<double> ys(nonzeroPoints.size());
 
-    #pragma omp parallel for
+
     for (int i = 0; i < nonzeroPoints.size(); i++) {
         int v, u;
-        #pragma omp critical
-        {
-            v = nonzeroPoints[i].y;
-            u = nonzeroPoints[i].x;
-        }
+        v = nonzeroPoints[i].y;
+        u = nonzeroPoints[i].x;
         zs[i] = depth64F.at<double>(v, u);
     }
 
-    #pragma omp parallel for
+    
     for (int i = 0; i < nonzeroPoints.size(); i++) {
         int v, u;
-        #pragma omp critical
-        {
-            v = nonzeroPoints[i].y;
-            u = nonzeroPoints[i].x;
-        }
+        v = nonzeroPoints[i].y;
+        u = nonzeroPoints[i].x;
         xs[i] = ((u - K[0][2]) * zs[i]) / K[0][0];
         ys[i] = ((v - K[1][2]) * zs[i]) / K[1][1];
     }
 
-    open3d::geometry::PointCloud pointCloud;
-    pointCloud.points_.resize(xs.size());
+    vector<Vertex> pointCloud(nonzeroPoints.size());
 
-    #pragma omp parallel for
     for (int i = 0; i < xs.size(); i++) {
-        pointCloud.points_[i] = Eigen::Vector3d(xs[i], ys[i], zs[i]);
+        pointCloud[i].x = xs[i];
+        pointCloud[i].y = ys[i];
+        pointCloud[i].z = zs[i];
     }
 
     return pointCloud;
@@ -222,139 +214,159 @@ void normalizeMat(cv::Mat& input, const bool& debug = false) {
 
 
 
+void fast_for(const vector<Vertex>& xyz_mm, const vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
+    const double factor = (pow(3, 0.5) / 4.0);
 
-void fast_for1(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list_mm, vector<vector<vector<double>>>& VoteMap_3D) {
-    double factor = (3.0 * sqrt(3.0)) / 4.0;
-    int vote_map_size_i = VoteMap_3D.size();
-    int vote_map_size_j = VoteMap_3D[0].size();
-    int vote_map_size_k = VoteMap_3D[0][0].size();
+    const int start = 0;
 
-    #pragma omp parallel
-    {
-    #pragma omp for collapse(2) schedule(static) nowait
-        for (int count = 0; count < xyz_mm.rows(); ++count) {
+    #pragma omp parallel for
+    for (int count = 0; count < xyz_mm.size(); ++count) {
 
-            Eigen::Vector3d xyz = xyz_mm.row(count);
-            double radius = round(radial_list_mm(count));
-            int i_start = max(0, static_cast<int>(xyz[0] - radius - 1));
-            int i_end = min(vote_map_size_i - 1, static_cast<int>(xyz[0] + radius + 1));
-            int j_start = max(0, static_cast<int>(xyz[1] - radius - 1));
-            int j_end = min(vote_map_size_j - 1, static_cast<int>(xyz[1] + radius + 1));
-            int k_start = max(0, static_cast<int>(xyz[2] - radius - 1));
-            int k_end = min(vote_map_size_k - 1, static_cast<int>(xyz[2] + radius + 1));
+        const Vertex xyz = xyz_mm[count];
+        const int radius = round(radial_list_mm[count]);
+        const double radius_sq = radius * radius;
 
-            for (int i = i_start; i <= i_end; ++i) {
-                for (int j = j_start; j <= j_end; ++j) {
-                    double y_diff = j - xyz[1];
-                    double y_diff_sq = y_diff * y_diff;
-                    for (int k = k_start; k <= k_end; ++k) {
-                        double distance_sq = pow(i - xyz[0], 2) + y_diff_sq + pow(k - xyz[2], 2);
-                        double radius_sq = radius * radius;
-                        if (radius_sq - distance_sq < factor && radius_sq - distance_sq > 0) {
-                            VoteMap_3D[i][j][k] += 1;
-                        }
+        for (int i = start; i < vote_map_size; i++) {
+            double x_diff = i - xyz.x;
+            double x_diff_sq = x_diff * x_diff;
+
+            for (int j = start; j < vote_map_size; j++) {
+                double y_diff = j - xyz.y;
+                double y_diff_sq = y_diff * y_diff;
+
+                for (int k = start; k < vote_map_size; k++) {
+                    double z_diff = k - xyz.z;
+                    double distance_sq = x_diff_sq + y_diff_sq + z_diff * z_diff;
+
+                    if (radius_sq - distance_sq < factor && radius_sq - distance_sq > 0) {
+                        int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
+
+                        #pragma omp atomic
+                        VoteMap_3D[index] += 1;
                     }
                 }
             }
-
         }
     }
-
 }
 
-void fast_for2(const Eigen::MatrixXd& xyz_mm, const Eigen::VectorXd& radial_list_mm, vector<vector<vector<double>>>& VoteMap_3D) {
-    double factor = (3.0 * sqrt(3.0)) / 4.0;
-    int vote_map_size_i = VoteMap_3D.size();
-    int vote_map_size_j = VoteMap_3D[0].size();
-    int vote_map_size_k = VoteMap_3D[0][0].size();
 
-    // Activate nested parallelism
-    omp_set_nested(1);
+void fast_for2(const std::vector<Vertex>& xyz_mm, const std::vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
+    const double factor = (std::pow(3, 0.5) / 4.0);
+    const int start = 0;
 
-    #pragma omp parallel
-    {
-    #pragma omp for collapse(2) schedule(dynamic) nowait
-        for (int count = 0; count < xyz_mm.rows(); ++count) {
+    #pragma omp parallel for
+    for (int count = 0; count < xyz_mm.size(); ++count) {
+        const Vertex xyz = xyz_mm[count];
+        const int radius = round(radial_list_mm[count]);
 
-            Eigen::Vector3d xyz = xyz_mm.row(count);
-            double radius = round(radial_list_mm(count));
-            double radius_sq = radius * radius;  
+        for (int i = start; i < vote_map_size; i++) {
+            double x_diff = i - xyz.x;
 
-            int i_start = max(0, static_cast<int>(xyz[0] - radius - 1));
-            int i_end = min(vote_map_size_i - 1, static_cast<int>(xyz[0] + radius + 1));
-            int j_start = max(0, static_cast<int>(xyz[1] - radius - 1));
-            int j_end = min(vote_map_size_j - 1, static_cast<int>(xyz[1] + radius + 1));
-            int k_start = max(0, static_cast<int>(xyz[2] - radius - 1));
-            int k_end = min(vote_map_size_k - 1, static_cast<int>(xyz[2] + radius + 1));
+            for (int j = start; j < vote_map_size; j++) {
+                double y_diff = j - xyz.y;
 
-            for (int i = i_start; i <= i_end; ++i) {
-                for (int j = j_start; j <= j_end; ++j) {
-                    double y_diff = j - xyz[1];
-                    double y_diff_sq = y_diff * y_diff;  
+                for (int k = start; k < vote_map_size; k++) {
+                    double z_diff = k - xyz.z;
+                    double distance = sqrt(x_diff * x_diff + y_diff * y_diff + z_diff * z_diff);
 
-                    #pragma omp parallel for  
-                    for (int k = k_start; k <= k_end; ++k) {
-                        double distance_sq = pow(i - xyz[0], 2) + y_diff_sq + pow(k - xyz[2], 2);
-                        if (radius_sq - distance_sq < factor && radius_sq - distance_sq > 0) {
-                            VoteMap_3D[i][j][k] += 1;
-                        }
+                    if (radius - distance < factor && radius - distance > 0) {
+                        int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
+                        VoteMap_3D[index] += 1;
                     }
                 }
             }
-
         }
     }
-
 }
 
 
 
-Vector3d Accumulator_3D(const geometry::PointCloud& xyz, const vector<double>& radial_list, const bool& use_cuda = true, const bool& debug = false) {
+
+Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const bool& use_cuda = true, const bool& debug = false) {
 
     double acc_unit = 5;
     // unit 5mm
-    Eigen::MatrixXd xyz_mm = Eigen::MatrixXd::Zero(xyz.points_.size(), 3);
+    vector<Vertex> xyz_mm(xyz.size());
 
-    #pragma omp parallel for
-    for (size_t i = 0; i < xyz.points_.size(); ++i) {
-        xyz_mm(i, 0) = xyz.points_[i].x() * 1000 / acc_unit;
-        xyz_mm(i, 1) = xyz.points_[i].y() * 1000 / acc_unit;
-        xyz_mm(i, 2) = xyz.points_[i].z() * 1000 / acc_unit;
+    for (int i = 0; i < xyz.size(); i++) {
+        xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
+        xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
+        xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
     }
  
-    double x_mean_mm = xyz_mm.col(0).mean();
-    double y_mean_mm = xyz_mm.col(1).mean();
-    double z_mean_mm = xyz_mm.col(2).mean();
+    double x_mean_mm = 0;
+    double y_mean_mm = 0;
+    double z_mean_mm = 0;
 
-    xyz_mm.col(0).array() -= x_mean_mm;
-    xyz_mm.col(1).array() -= y_mean_mm;
-    xyz_mm.col(2).array() -= z_mean_mm;
+    for (int i = 0; i < xyz_mm.size(); i++) {
+		x_mean_mm += xyz_mm[i].x;
+		y_mean_mm += xyz_mm[i].y;
+		z_mean_mm += xyz_mm[i].z;
+	}
 
-    VectorXd radial_list_mm(radial_list.size());
-    #pragma omp parallel for
-    for (size_t i = 0; i < radial_list.size(); ++i) {
-        radial_list_mm(i) = radial_list[i] * 100 / acc_unit;
+    x_mean_mm /= xyz_mm.size();
+    y_mean_mm /= xyz_mm.size();
+    z_mean_mm /= xyz_mm.size();
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        xyz_mm[i].x -= x_mean_mm;
+        xyz_mm[i].y -= y_mean_mm;
+        xyz_mm[i].z -= z_mean_mm;
     }
 
-    double xyz_mm_min = xyz_mm.minCoeff();
-    double xyz_mm_max = xyz_mm.maxCoeff();
-    double radius_max = radial_list_mm.maxCoeff();
+
+    vector<double> radial_list_mm(radial_list.size());
+
+    for (int i = 0; i < radial_list.size(); ++i) {
+        radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
+    }
+
+
+    double x_mm_min = xyz_mm[0].x;
+    double x_mm_max = xyz_mm[0].x;
+    double y_mm_min = xyz_mm[0].y;
+    double y_mm_max = xyz_mm[0].y;
+    double z_mm_min = xyz_mm[0].z;
+    double z_mm_max = xyz_mm[0].z;
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mm_min = min(x_mm_min, xyz_mm[i].x);
+        x_mm_max = max(x_mm_max, xyz_mm[i].x);
+        y_mm_min = min(y_mm_min, xyz_mm[i].y);
+        y_mm_max = max(y_mm_max, xyz_mm[i].y);
+        z_mm_min = min(z_mm_min, xyz_mm[i].z);
+        z_mm_max = max(z_mm_max, xyz_mm[i].z);
+    }
+
+    double xyz_mm_min = min(x_mm_min, min(y_mm_min, z_mm_min));
+    double xyz_mm_max = max(x_mm_max, max(y_mm_max, z_mm_max));
+    
+    double radius_max = radial_list_mm[0];
+    for (int i = 0; i < radial_list_mm.size(); i++) {
+        if (radius_max < radial_list_mm[i]) {
+            radius_max = radial_list_mm[i];
+        }
+    }
 
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
 
     if (zero_boundary < 0) {
-        xyz_mm.array() -= zero_boundary;
-    }
-    int length = static_cast<int>(xyz_mm.maxCoeff());
-
-    if (debug) {
-        //Print out size of the votemap3d
-        cout << "VoteMap_3D size: " << length + static_cast<int>(radius_max) << endl;
+        for (int i = 0; i < xyz_mm.size(); i++) {
+            xyz_mm[i].x -= zero_boundary;
+			xyz_mm[i].y -= zero_boundary;
+			xyz_mm[i].z -= zero_boundary;
+        }
     }
 
-    vector<vector<vector<double>>> VoteMap_3D(length + static_cast<int>(radius_max),vector<vector<double>>(length + static_cast<int>(radius_max),vector<double>(length + static_cast<int>(radius_max),0.0)));
+    
+    int length = static_cast<int>(xyz_mm_max);
 
-    chrono::steady_clock::time_point tic = chrono::steady_clock::now();
+    int vote_map_dim = length + static_cast<int>(radius_max);
+
+    int total_size = vote_map_dim * vote_map_dim * vote_map_dim;
+
+    int* VoteMap_3D = new int[total_size]();
  
 
     if (use_cuda && !debug) {
@@ -387,40 +399,49 @@ Vector3d Accumulator_3D(const geometry::PointCloud& xyz, const vector<double>& r
     }
     else {
         if (debug) {
-            cout << "Using CPU for fast_for" << endl;
+            cout << "\tUsing CPU for fast_for" << endl;
         }
-        fast_for1(xyz_mm, radial_list_mm, VoteMap_3D);
+        fast_for2(xyz_mm, radial_list_mm, VoteMap_3D, vote_map_dim);
     }    
 
-    chrono::steady_clock::time_point toc = chrono::steady_clock::now();
 
-    if (debug) {
-        cout << "Fast For performance: " << chrono::duration_cast<chrono::microseconds>(toc - tic).count() << " microseconds." << endl;
-    }
+    
+    vector<Eigen::Vector3i> centers;
 
+    int max_vote = 0;
 
-    Eigen::Vector3d center;
-    Eigen::Vector3i indices;
-
-
-    double max_vote = numeric_limits<double>::min();
-    for (size_t i = 0; i < VoteMap_3D.size(); ++i) {
-        for (size_t j = 0; j < VoteMap_3D[i].size(); ++j) {
-            for (size_t k = 0; k < VoteMap_3D[i][j].size(); ++k) {
-                if (VoteMap_3D[i][j][k] > max_vote) {
-                    max_vote = VoteMap_3D[i][j][k];
-                    indices[0] = static_cast<int>(i);
-                    indices[1] = static_cast<int>(j);
-                    indices[2] = static_cast<int>(k);
+    for (int i = 0; i < vote_map_dim; i++) {
+        for (int j = 0; j < vote_map_dim; j++) {
+            for (int k = 0; k < vote_map_dim; k++) {
+                int index = i * vote_map_dim * vote_map_dim + j * vote_map_dim + k;
+                int current_vote = VoteMap_3D[index];
+                if (current_vote > max_vote) {
+                    centers.clear(); 
+                    max_vote = current_vote;
+                    centers.push_back(Eigen::Vector3i(i, j, k));
+                }
+                else if (current_vote == max_vote) {
+                    centers.push_back(Eigen::Vector3i(i, j, k)); 
                 }
             }
         }
     }
 
-    if ((max_vote > 1) && debug) {
-        cout << "Multiple centers located." << endl;
-    }
-    center = indices.cast<double>();
+    delete[] VoteMap_3D;
+
+    //cout << "Centers: " << endl;
+    //for (auto center : centers) {
+    //    cout << "\t" << center << endl;
+    //}
+
+    cout << "\tMax vote: " << max_vote << endl;
+    cout << "\tCenter: " << centers[0][0] << " " << centers[0][1] << " "  << centers[0][2] << endl;
+
+    //if (centers.size() > 1) {
+    //    cout << centers.size() << " centers located." << endl;
+    //}
+
+    Eigen::Vector3d center = centers[0].cast<double>();
     if (zero_boundary < 0) {
         center.array() += zero_boundary;
     }

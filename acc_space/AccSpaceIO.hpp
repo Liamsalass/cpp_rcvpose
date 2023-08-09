@@ -54,14 +54,14 @@ matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
     {
         cout << "Data type: CV_8U" << endl;
         eigenMat.resize(height, width * channels);
-        #pragma omp parallel for collapse(3)
+  
         for (int row = 0; row < height; ++row)
         {
             for (int col = 0; col < width; ++col)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-                    #pragma omp critical
+                
                     eigenMat(row, col * channels + c) = static_cast<double>(mat.at<cv::Vec3b>(row, col)[c]);
                 }
             }
@@ -71,14 +71,14 @@ matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
     {
         cout << "Data type: CV_32F" << endl;
         eigenMat.resize(height, width * channels);
-        #pragma omp parallel for collapse(3)
+
         for (int row = 0; row < height; ++row)
         {
             for (int col = 0; col < width; ++col)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-                    #pragma omp critical
+                  
                     eigenMat(row, col * channels + c) = static_cast<double>(mat.at<cv::Vec3f>(row, col)[c]);
                 }
             }
@@ -88,14 +88,14 @@ matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
     {
         cout << "Data type: CV_64F" << endl;
         eigenMat.resize(height, width * channels);
-        #pragma omp parallel for collapse(3)
+
         for (int row = 0; row < height; ++row)
         {
             for (int col = 0; col < width; ++col)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-                    #pragma omp critical
+         
                     eigenMat(row, col * channels + c) = mat.at<cv::Vec3d>(row, col)[c];
                 }
             }
@@ -128,10 +128,8 @@ matrix torch_tensor_to_eigen(torch::Tensor tensor, const bool& debug = false) {
 
     auto tensor_accessor = tensor.accessor<double, 2>();
 
-    #pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; ++j) {
-            #pragma omp critical
             mat(i, j) = tensor_accessor[i][j];
         }
     }
@@ -156,10 +154,8 @@ pc_ptr read_point_cloud(string path, const bool& debug = false) {
     }
 
     matrix mat(rows, cols);
-    #pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; ++j) {
-            #pragma omp critical
             mat(i, j) = data[i * cols + j];
         }
     }
@@ -192,7 +188,6 @@ vector<vector<float>> read_float_npy(string path, const bool debug = false) {
 
     vector<vector<float>> mat(rows, vector<float>(cols));
 
-#pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; ++j) {
             mat[i][j] = data[i * cols + j];
@@ -218,7 +213,6 @@ vector<vector<double>> read_double_npy(string path, const bool debug = false) {
 
     vector<vector<double>> mat(rows, vector<double>(cols));
 
-#pragma omp parallel for collapse(2)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; ++j) {
             mat[i][j] = data[i * cols + j];
@@ -295,7 +289,6 @@ cv::Mat eigen_matrix_to_cv_mat(Eigen::MatrixXd matrix, const bool& debug = false
         cout << "Converting Eigen to CV Mat" << endl;
     }
 
-	#pragma omp parallel for collapse(2)
     for (int i = 0; i < matrix.rows(); i++) {
         for (int j = 0; j < matrix.cols(); ++j) {
 			mat.at<double>(i, j) = matrix(i, j);
@@ -348,7 +341,6 @@ Eigen::MatrixXd convertToEigenMatrix(const std::vector<Vertex>& vertices){
     int numVertices = vertices.size();
     Eigen::MatrixXd matrix(numVertices, 3);
 
-    #pragma omp parallel for 
     for (int i = 0; i < numVertices; i++)
     {
         matrix(i, 0) = vertices[i].x;
@@ -364,7 +356,6 @@ Eigen::MatrixXd convertToEigenMatrix(const std::array<std::array<double, 3>, 3>&
 {
     Eigen::MatrixXd matrix(3,3);
 
-    #pragma omp parallel for collapse(2)
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)

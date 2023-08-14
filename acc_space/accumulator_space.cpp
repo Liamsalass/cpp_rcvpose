@@ -125,9 +125,12 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             exit(EXIT_FAILURE);
         }
         
+        const int total_num_img = test_list.size();
         if (opts.verbose) {
-            cout << "Number of test images: " << test_list.size() << endl;
+            cout << "Number of test images: " << total_num_img << endl;
         }
+
+
 
         // Define path to load point cloud
         string pcv_load_path = "C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/pc_ape.npy";
@@ -237,9 +240,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
         auto acc_start = chrono::high_resolution_clock::now();
         // Loop through all images in the img_path
         for (auto test_img : test_list) {
-            
+
             int img_num = stoi(test_img);
-    
+
             // Record the current time using a high-resolution clock
             auto img_start = chrono::high_resolution_clock::now();
 
@@ -296,12 +299,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
             // Loop over each keypoint for estimation
             for (const auto& keypoint : keypoints) {
-
-                // Print a separator and the current keypoint count
                 if (opts.verbose) {
                     cout << string(50, '-') << endl;
                     cout << string(15, ' ') << "Keypoint Count: " << keypoint_count << endl;
                 }
+
                 // Get the current keypoint
                 auto keypoint = keypoints[keypoint_count];
 
@@ -332,29 +334,28 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 //CPP backend testing method
                 torch::Tensor semantic_output;
                 torch::Tensor radial_output;
-                
+
                 // Record the current time before executing the FCResBackbone
                 auto start = chrono::high_resolution_clock::now();
-                
+
                 // Execute the FCResBackbone model to get semantic and radial output
                 FCResBackbone(model_list.at(keypoint_count - 1), image_path, radial_output, semantic_output, device_type, false);
-                
+
                 // Record the current time after executing the FCResBackbone
                 auto end = chrono::high_resolution_clock::now();
-                
+
                 // Print the FCResBackbone speed, semantic output shape, and radial output shape if verbose option is enabled
                 if (opts.verbose) {
                     cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
                 }
-                
+
                 // Add the time taken to execute the FCResBackbone to the total network time
                 net_time += chrono::duration_cast<chrono::milliseconds>(end - start).count();
-                
+
 
                 // Convert the semantic and radial output tensors to OpenCV matrices
                 cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
                 cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_output);
-
 
                 // Define the depth image path
                 string depth_path = rootPath + "data/depth" + to_string(img_num) + ".dpt";
@@ -388,7 +389,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 depth_tmp.release();
                 sem_tmp.release();
 
-
+                //if (opts.demo_mode) {
+                //    cv::Mat rad_cv_show = rad_cv.clone();
+                //    cv::normalize(rad_cv_show, rad_cv_show, 0, 1, cv::NORM_MINMAX, CV_32F);
+                //    cv::imshow("Radial w Semantic " + to_string(keypoint_count), rad_cv_show);
+                //}
 
                 // Gather the pixel coordinates from the semantic output
                 vector<Vertex> pixel_coor;
@@ -418,7 +423,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     radial_list.push_back(static_cast<double>(rad_cv.at<float>(cord.x, cord.y)));
                 }
 
-             
+
 
                 // Convert the depth image to a pointcloud
                 vector<Vertex> xyz = rgbd_to_point_cloud(linemod_K, depth_cv);
@@ -430,30 +435,35 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     xyz[i].z = xyz[i].z / 1000;
                 }
 
+                if (xyz.size() == 0 || radial_list.size() == 0) {
+                    cout << "Error: xyz or radial list is empty" << endl;
+                    break;
+                }
+
                 // Define a vector for storing the transformed pointcloud
                 if (opts.verbose) {
                     cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
                     start = chrono::high_resolution_clock::now();
                 }
 
-                // Calculate the 3D vector center
-                Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list, false, opts.verbose);
+                //Calculate the estimated center in mm
+                Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list);
 
                 // Print the number of centers returned and the estimate if verbose option is enabled
                 if (opts.verbose) {
                     end = chrono::high_resolution_clock::now();
                     cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
                     cout << "\tEstimate: " << estimated_center_mm[0] << " " << estimated_center_mm[1] << " " << estimated_center_mm[2] << endl << endl;
-                    
+
                 }
-            
-           
+
+
                 // Define a vector for storing the transformed pointcloud
-                Vector3d transformed_gt_center_mm_vector(transformed_gt_center_mm(0, 0), transformed_gt_center_mm(0, 1),transformed_gt_center_mm(0, 2));
+                Vector3d transformed_gt_center_mm_vector(transformed_gt_center_mm(0, 0), transformed_gt_center_mm(0, 1), transformed_gt_center_mm(0, 2));
 
                 // Calculate the offset
                 Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
-   
+
 
                 double center_off_mm = diff.norm();
 
@@ -462,33 +472,14 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << "Estimated offset: " << center_off_mm << endl << endl;
                 }
 
-                // Save the estimation to the centers data
-                MatrixXd centers = MatrixXd::Zero(1, 9); // 1 row and 9 columns since Eigen doesn't support 3D structures directly.
 
-                centers(0, 0) = keypoint[0];
-                centers(0, 1) = keypoint[1];
-                centers(0, 2) = keypoint[2];
-                
-                transformed_gt_center_mm_vector *= 0.001;
-
-                centers(0, 3) = transformed_gt_center_mm_vector[0];
-                centers(0, 4) = transformed_gt_center_mm_vector[1];
-                centers(0, 5) = transformed_gt_center_mm_vector[2];
-
-                estimated_center_mm *= 0.001;
-
-                centers(0, 6) = estimated_center_mm[0];
-                centers(0, 7) = estimated_center_mm[1];
-                centers(0, 8) = estimated_center_mm[2];
-
-                // Save the estimation to the centers data
+                // Save the estimation to the centers 
                 for (int i = 0; i < 3; i++) {
-                    estimated_kpts[keypoint_count - 1][i] = estimated_center_mm[i] * 1000;
+                    estimated_kpts[keypoint_count - 1][i] = estimated_center_mm[i];
                 }
-                
-                // Save the estimation to the centers data
-                centers_list.push_back(centers);
-    
+
+
+
                 filename_list.push_back(test_img);
 
                 iteration_count++;
@@ -500,30 +491,37 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 }
             }
 
-            
-            const int num_keypoints = 3;  
-        
+
+            for (int i = 0; i < 3; i++){
+                for(int j = 0; j < 3; j++){
+                    if (estimated_kpts[i][j] == 0) {
+                        cout << "Error: estimated_kpts is empty" << endl;
+						break;
+                    }
+                }
+            }
+
+            const int num_keypoints = 3;
 
             double RT[4][4];
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 4; j++) {
-					RT[i][j] = 0;
-				}
-			}
-
-            double kpts[3][3];
-     
-            for (int i = 1; i < num_keypoints + 1; i++) {
-                for (int j = 0; j < 3; j++) {
-                    kpts[i][j] = keypoints[i][j];
+                    RT[i][j] = 0;
                 }
             }
+
+            double kpts[3][3];
+            for (int i = 0; i < num_keypoints; i++) {
+                for (int j = 0; j < 3; j++) {
+                    kpts[i][j] = keypoints[i + 1][j] * 1000;
+                }
+            }
+
  
 
             // Calculate the RT matrix
             lmshorn(kpts, estimated_kpts, num_keypoints, RT);
         
-
             
             MatrixXd RT_matrix = MatrixXd::Zero(3, 4);
 
@@ -537,20 +535,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
    
 
-            // Project the estimated position
+            // Project the estimated position 
             project(xyz_load_matrix * 1000, linemod_K_matrix, RT_matrix, xy, xyz_load_est_transformed);
-
-      
 
             // If in demo mode, display the estimated position
             if (opts.demo_mode) {
-                cout << "XY:" << endl;
-                cout << "\tXY Size: " << xy.rows() << " x " << xy.cols() << endl;
-                cout << "\tXY Data: " << endl;
-                for (int i = 0; i < 5; i++) {
-                    cout << "\t\t" << xy.row(i) << endl;
-                }
-                cout << endl << endl;
                 cout << "Displaying " << test_img << " with estimated position" << endl;
                 int out_of_range = 0;
                 cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
@@ -558,9 +547,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 img_only_points = cv::Mat::zeros(img.size(), CV_8UC3);
 
                 for (int i = 0; i < xy.rows(); i++) {
-                    int y = static_cast<int>(xy(i, 1) / 1000);
-                    int x = static_cast<int>(xy(i, 0) / 1000);
-                    if (0 <= y && y < xy.rows() && 0 <= x && x < xy.cols()) {
+                    int y = static_cast<int>(xy(i, 1));
+                    int x = static_cast<int>(xy(i, 0));
+                    if (0 <= y && y < img.rows && 0 <= x && x < img.cols) {
                         img.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255);
                         img_only_points.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255);
                     }
@@ -571,9 +560,16 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 cout << "Number of points out of image range: " << out_of_range << endl;
                 cv::imshow("Image with point overlay", img);
                 cv::imshow("Image with points", img_only_points);
+                cv::waitKey(0);
+            }
+
+            if (opts.verbose) {
+                cout << string(50, '-') << endl;
             }
 
             vector<Vector3d> pointsGT, pointsEst, pointEst_py, pointEst_gt;
+
+
 
             // Load the ground truth points
             for (int i = 0; i < xyz_load_transformed.rows(); ++i) {
@@ -591,11 +587,10 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             sceneGT.points_ = pointsGT;
             sceneEst.points_ = pointsEst;
 
-
             // Paint the point clouds
-            sceneGT.PaintUniformColor({ 0,0,1 });
-            sceneEst.PaintUniformColor({ 1,0,0 });
- 
+            //sceneGT.PaintUniformColor({ 0,0,1 });
+            ////This line throws errors in debug mode
+            //sceneEst.PaintUniformColor({ 1,0,0 }); 
 
             // Compute the distance between the ground truth and estimated point clouds
             auto distances = sceneGT.ComputePointCloudDistance(sceneEst);
@@ -617,6 +612,10 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
 
             // If the distance is less than the threshold, increment the number of correct matches
+            if (opts.verbose) {
+                cout << "Distance Threshold: " << add_threshold[class_name] * 1000 << endl;
+                cout << "Distance: " << distance_bf_icp << endl;
+            }
             if (distance_bf_icp <= add_threshold[class_name] * 1000) {
                 bf_icp += 1;
                 if (opts.verbose) {
@@ -663,18 +662,20 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             af_icp_median_distances.push_back(median_distance_af_icp);
             af_icp_std_deviations.push_back(standard_deviation_af_icp);
 
-
+            if (opts.verbose) {
+                cout << "Distance after ICP: " << distance_af_icp << endl;
+            }
             // If the distance is less than the threshold, increment the number of correct matches
             if (distance_af_icp <= add_threshold[class_name] * 1000) {
                 af_icp += 1;
                 if (opts.verbose) {
-                    cout << "\tCorrect match!" << endl;
+                    cout << "\tCorrect match after ICP" << endl;
                 }
 
             }
             else {
                 if (opts.verbose) {
-                    cout << "\tIncorrect match!" << endl;
+                    cout << "\tIncorrect match after ICP" << endl;
                 }
             }
 
@@ -685,128 +686,126 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             auto sec = (img_duration.count() / 1000.0) - (img_duration.count() % 1000) / 1000.0;
             auto ms = img_duration.count() % 1000;
 
-            double avg_distance_bf_icp = 0;
-            double avg_distance_af_icp = 0;
-            double avg_min_distance_bf_icp = 0;
-            double avg_min_distance_af_icp = 0;
-            double avg_max_distance_bf_icp = 0;
-            double avg_max_distance_af_icp = 0;
-            double avg_median_distance_bf_icp = 0;
-            double avg_median_distance_af_icp = 0;
-            double avg_std_deviation_bf_icp = 0;
-            double avg_std_deviation_af_icp = 0;
-
-            for (double dist : bf_icp_distances) {
-                avg_distance_bf_icp += dist;
-            }
-            avg_distance_bf_icp = avg_distance_bf_icp / bf_icp_distances.size();
-
-            for (double dist : af_icp_distances) {
-                avg_distance_af_icp += dist;
-            }
-            avg_distance_af_icp = avg_distance_af_icp / af_icp_distances.size();
-
-            for (double dist : bf_icp_min_distances) {
-				avg_min_distance_bf_icp += dist;
-			}
-            avg_min_distance_bf_icp = avg_min_distance_bf_icp / bf_icp_min_distances.size();
-
-            for (double dist : af_icp_min_distances) {
-                                				avg_min_distance_af_icp += dist;
-			}
-            avg_min_distance_af_icp = avg_min_distance_af_icp / af_icp_min_distances.size();
-            for (double dist : bf_icp_max_distances) {
-				avg_max_distance_bf_icp += dist;
-			}
-            avg_max_distance_bf_icp = avg_max_distance_bf_icp / bf_icp_max_distances.size();
-            for (double dist : af_icp_max_distances) {
-				avg_max_distance_af_icp += dist;
-			}
-            avg_max_distance_af_icp = avg_max_distance_af_icp / af_icp_max_distances.size();
-            for (double dist : bf_icp_median_distances) {
-				avg_median_distance_bf_icp += dist;
-			}
-            avg_median_distance_bf_icp = avg_median_distance_bf_icp / bf_icp_median_distances.size();
-            for (double dist : af_icp_median_distances) {
-				avg_median_distance_af_icp += dist;
-			}
-            avg_median_distance_af_icp = avg_median_distance_af_icp / af_icp_median_distances.size();
-            for (double dist : bf_icp_std_deviations) {
-				avg_std_deviation_bf_icp += dist;
-			}
-            avg_std_deviation_bf_icp = avg_std_deviation_bf_icp / bf_icp_std_deviations.size();
-            for (double dist : af_icp_std_deviations) {
-				avg_std_deviation_af_icp += dist;
-			}
-            avg_std_deviation_af_icp = avg_std_deviation_af_icp / af_icp_std_deviations.size();
-
-            // Write to file
-            ofstream myfile;
-            string save_path = "data/img_" + test_img + ".txt";
-            myfile.open(save_path, ios::app);
-            myfile << "Image number " << test_img << " took " << sec << " seconds and " << ms << " miliseconds to calculate offset." << endl;
-            myfile << "Image Count: " << general_counter << endl;
-            myfile << "--------------------------------------------" << endl;
-            myfile << "Before ICP Count " << bf_icp << endl;
-            myfile << "After ICP Count " << af_icp << endl;
-            myfile << "Distances: " << endl;
-            myfile << "\tBF ICP: " << distance_bf_icp << "\tAF ICP: " << distance_af_icp << endl;
-            myfile << "Min Distances: " << endl;
-            myfile << "\tBF ICP: " << min_distance_bf_icp << "\tAF ICP: " << min_distance_af_icp << endl;
-            myfile << "Max Distances: " << endl;
-            myfile << "\tBF ICP: " << max_distance_bf_icp << "\tAF ICP: " << max_distance_af_icp << endl;
-            myfile << "Median Distances: " << endl;
-            myfile << "\tBF ICP: " << median_distance_bf_icp << "\tAF ICP: " << median_distance_af_icp << endl;
-            myfile << "Standard Deviation Distances: " << endl;
-            myfile << "\tBF ICP: " << standard_deviation_bf_icp << "\tAF ICP: " << standard_deviation_af_icp << endl;
-            myfile << "---------------------------------------------" << endl;
-            myfile << "\t\t\tCurrent Averages : " << endl;
-            myfile << "\tBefore ICP: " << endl;
-            myfile << "\tCurrent Avg Mean Distance before ICP: " << avg_distance_bf_icp << endl;
-            myfile << "\tCurrent Avg Median Distance before ICP: " << avg_median_distance_bf_icp << endl;
-            myfile << "\tCurrent Avg Min Distance before ICP: " << avg_min_distance_bf_icp << endl;
-            myfile << "\tCurrent Avg Max Distance before ICP: " << avg_max_distance_bf_icp << endl;
-            myfile << "\tCurrent Avg Standard Deviation Distance before ICP: " << avg_std_deviation_bf_icp << endl;
-            myfile << "\tAfter ICP: " << endl;
-            myfile << "\tCurrent Avg Mean Distance after ICP: " << avg_distance_af_icp << endl;
-            myfile << "\tCurrent Avg Median Distance after ICP: " << avg_median_distance_af_icp << endl;
-            myfile << "\tCurrent Avg Min Distance after ICP: " << avg_min_distance_af_icp << endl;
-            myfile << "\tCurrent Avg Max Distance after ICP: " << avg_max_distance_af_icp << endl;
-            myfile << "\tCurrent Avg Standard Deviation Distance after ICP: " << avg_std_deviation_af_icp << endl;
-            myfile << "---------------------------------------------" << endl;
-           
-
-            myfile.close();
-
-            double adds_bf_icp = 0, adds_af_icp = 0;
-            adds_bf_icp = bf_icp / general_counter;
-            adds_af_icp = af_icp / general_counter;
-
-
             if (opts.verbose) {
-                cout << "Image number " << test_img << " took " << sec << " seconds and " << ms << " miliseconds to calculate offset." << endl;
-                cout << "Image Count: " << general_counter << endl;
-                cout << "--------------------------------------------" << endl;
-                cout << "Before ICP Count " << bf_icp << endl;
-                cout << "After ICP Count " << af_icp << endl;
-                cout << "Before ICP ADDs " << adds_bf_icp << endl;
-                cout << "After ICP ADDs " << adds_af_icp << endl << endl;
-                cout << "---------------------------------------------" << endl;
-                cout << "Average Distances before ICP: " << avg_distance_bf_icp << endl;
-                cout << "Average Distances after ICP: " << avg_distance_af_icp << endl;
-                cout << "---------------------------------------------" << endl;
+                double avg_distance_bf_icp = 0;
+                double avg_distance_af_icp = 0;
+                double avg_min_distance_bf_icp = 0;
+                double avg_min_distance_af_icp = 0;
+                double avg_max_distance_bf_icp = 0;
+                double avg_max_distance_af_icp = 0;
+                double avg_median_distance_bf_icp = 0;
+                double avg_median_distance_af_icp = 0;
+                double avg_std_deviation_bf_icp = 0;
+                double avg_std_deviation_af_icp = 0;
+
+                for (double dist : bf_icp_distances) {
+                    avg_distance_bf_icp += dist;
+                }
+                avg_distance_bf_icp = avg_distance_bf_icp / bf_icp_distances.size();
+
+                for (double dist : af_icp_distances) {
+                    avg_distance_af_icp += dist;
+                }
+                avg_distance_af_icp = avg_distance_af_icp / af_icp_distances.size();
+
+                for (double dist : bf_icp_min_distances) {
+                    avg_min_distance_bf_icp += dist;
+                }
+                avg_min_distance_bf_icp = avg_min_distance_bf_icp / bf_icp_min_distances.size();
+
+                for (double dist : af_icp_min_distances) {
+                    avg_min_distance_af_icp += dist;
+                }
+                avg_min_distance_af_icp = avg_min_distance_af_icp / af_icp_min_distances.size();
+                for (double dist : bf_icp_max_distances) {
+                    avg_max_distance_bf_icp += dist;
+                }
+                avg_max_distance_bf_icp = avg_max_distance_bf_icp / bf_icp_max_distances.size();
+                for (double dist : af_icp_max_distances) {
+                    avg_max_distance_af_icp += dist;
+                }
+                avg_max_distance_af_icp = avg_max_distance_af_icp / af_icp_max_distances.size();
+                for (double dist : bf_icp_median_distances) {
+                    avg_median_distance_bf_icp += dist;
+                }
+                avg_median_distance_bf_icp = avg_median_distance_bf_icp / bf_icp_median_distances.size();
+                for (double dist : af_icp_median_distances) {
+                    avg_median_distance_af_icp += dist;
+                }
+                avg_median_distance_af_icp = avg_median_distance_af_icp / af_icp_median_distances.size();
+                for (double dist : bf_icp_std_deviations) {
+                    avg_std_deviation_bf_icp += dist;
+                }
+                avg_std_deviation_bf_icp = avg_std_deviation_bf_icp / bf_icp_std_deviations.size();
+                for (double dist : af_icp_std_deviations) {
+                    avg_std_deviation_af_icp += dist;
+                }
+                avg_std_deviation_af_icp = avg_std_deviation_af_icp / af_icp_std_deviations.size();
+        
+                ofstream myfile;
+                string save_path = "data/img_" + test_img + ".txt";
+                myfile.open(save_path, ios::app);
+                myfile << "Image number " << test_img << " took " << sec << " seconds and " << ms << " miliseconds to calculate offset." << endl;
+                myfile << "Image Count: " << general_counter << endl;
+                myfile << "--------------------------------------------" << endl;
+                myfile << "Before ICP Count " << bf_icp << endl;
+                myfile << "After ICP Count " << af_icp << endl;
+                myfile << "Distances: " << endl;
+                myfile << "\tBF ICP: " << distance_bf_icp << "\tAF ICP: " << distance_af_icp << endl;
+                myfile << "Min Distances: " << endl;
+                myfile << "\tBF ICP: " << min_distance_bf_icp << "\tAF ICP: " << min_distance_af_icp << endl;
+                myfile << "Max Distances: " << endl;
+                myfile << "\tBF ICP: " << max_distance_bf_icp << "\tAF ICP: " << max_distance_af_icp << endl;
+                myfile << "Median Distances: " << endl;
+                myfile << "\tBF ICP: " << median_distance_bf_icp << "\tAF ICP: " << median_distance_af_icp << endl;
+                myfile << "Standard Deviation Distances: " << endl;
+                myfile << "\tBF ICP: " << standard_deviation_bf_icp << "\tAF ICP: " << standard_deviation_af_icp << endl;
+                myfile << "---------------------------------------------" << endl;
+                myfile << "\t\t\tCurrent Averages : " << endl;
+                myfile << "\tBefore ICP: " << endl;
+                myfile << "\tCurrent Avg Mean Distance before ICP: " << avg_distance_bf_icp << endl;
+                myfile << "\tCurrent Avg Median Distance before ICP: " << avg_median_distance_bf_icp << endl;
+                myfile << "\tCurrent Avg Min Distance before ICP: " << avg_min_distance_bf_icp << endl;
+                myfile << "\tCurrent Avg Max Distance before ICP: " << avg_max_distance_bf_icp << endl;
+                myfile << "\tCurrent Avg Standard Deviation Distance before ICP: " << avg_std_deviation_bf_icp << endl;
+                myfile << "\tAfter ICP: " << endl;
+                myfile << "\tCurrent Avg Mean Distance after ICP: " << avg_distance_af_icp << endl;
+                myfile << "\tCurrent Avg Median Distance after ICP: " << avg_median_distance_af_icp << endl;
+                myfile << "\tCurrent Avg Min Distance after ICP: " << avg_min_distance_af_icp << endl;
+                myfile << "\tCurrent Avg Max Distance after ICP: " << avg_max_distance_af_icp << endl;
+                myfile << "\tCurrent Avg Standard Deviation Distance after ICP: " << avg_std_deviation_af_icp << endl;
+                myfile << "---------------------------------------------" << endl;
+
+
+                myfile.close();
+                cout << string(75, '-') << endl;
             }
 
-            if (opts.demo_mode) {
-                cout << "Press any key to continue..." << endl;
-                cin.get();
-            }
+            double avg_correct_bf_icp, avg_correct_af_icp, percent_processed;
+
+            avg_correct_bf_icp = (bf_icp / static_cast<double>(general_counter))* 100;
+            avg_correct_af_icp = (af_icp / static_cast<double>(general_counter)) * 100;
+            percent_processed = (static_cast<double>(general_counter) / static_cast<double>(total_num_img)) * 100;
+
+            cout << "Image Count: " << general_counter << endl;
+            cout << "Image number " << test_img << " took " << sec << " seconds and " << ms << " miliseconds to calculate offset." << endl;
+            cout << "Before ICP Count " << bf_icp << endl;
+            cout << "After ICP Count " << af_icp << endl;
+            cout << "Before ICP ADDs " << avg_correct_bf_icp << "%" << endl;
+            cout << "After ICP ADDs " << avg_correct_af_icp << "%" << endl;
+            cout << "Processed: " << percent_processed << "%" << endl;
         }
+
+
+        double total_avg_correct_bf_icp, total_avg_correct_af_icp;
+
+        total_avg_correct_bf_icp = bf_icp / static_cast<double>(general_counter) * 100;
+        total_avg_correct_af_icp = af_icp / static_cast<double>(general_counter) * 100;
 
         auto acc_end = chrono::high_resolution_clock::now();
         
-        cout << "ADD(s) of " << class_name << " before ICP: " << bf_icp / general_counter << endl;
-        cout << "ADD(s) of " << class_name << " after ICP: " << af_icp / general_counter << endl;
+        cout << "ADD(s) of " << class_name << " before ICP: " << total_avg_correct_bf_icp << endl;
+        cout << "ADD(s) of " << class_name << " after ICP: " << total_avg_correct_af_icp << endl;
         cout << "Accumulator time: " << acc_time / general_counter << endl;
         auto duration = chrono::duration_cast<chrono::seconds>(acc_end - acc_start);
         auto hours = duration.count() / 3600;

@@ -27,17 +27,12 @@ public:
 		const std::string& root,
 		const std::string& dname,
 		const std::string& set,
-		const std::string& obj_name,
-		const int kpt_num
+		const std::string& obj_name
 	);
 
 	//RData transform function inherited from RMapDataset
-	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(cv::Mat& img, cv::Mat& target) override;
+	std::vector<torch::Tensor> transform(cv::Mat& img, cv::Mat& gt1, cv::Mat& gt2, cv::Mat& gt3) override;
 
-	// Gets an image for testing if loader works
-	// If failed, returns black img
-	cv::Mat get_img(const int idx);
-	cv::Mat get_target(const int idx);
 };
 
 

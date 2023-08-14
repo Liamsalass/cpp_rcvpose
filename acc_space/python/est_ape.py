@@ -368,7 +368,7 @@ def fast_for_cuda(xyz_mm,radial_list_mm,VoteMap_3D):
     blockspergrid = (blockspergrid_w, blockspergrid_x, blockspergrid_y, blockspergrid_z)
     cuda_internal1[blockspergrid, threadsperblock](VoteMap_3D,xyz_mm,radial_list_mm)
 
-def Accumulator_3D(xyz, radial_list):
+def Accumulator_3D(xyz, radial_list, kpt_count):
     acc_unit = 5
     # unit 5mm 
 
@@ -392,8 +392,6 @@ def Accumulator_3D(xyz, radial_list):
     y_mean_mm = np.mean(xyz_mm[:,1])
     z_mean_mm = np.mean(xyz_mm[:,2])
 
-  
-
     xyz_mm[:,0] -= x_mean_mm
     xyz_mm[:,1] -= y_mean_mm
     xyz_mm[:,2] -= z_mean_mm
@@ -412,16 +410,14 @@ def Accumulator_3D(xyz, radial_list):
        
         #length of 3D vote map 
     length = int(xyz_mm.max())
+
+
   
     VoteMap_3D = np.zeros((length+int(radius_max),length+int(radius_max),length+int(radius_max)))
 
     VoteMap_3D = fast_for(xyz_mm,radial_list_mm,VoteMap_3D)
                         
     center = np.argwhere(VoteMap_3D==VoteMap_3D.max())
-
-    print ('Max Vote: ' , VoteMap_3D.max())
-    print ('Center: ', center)
-
 
     if len(center) > 1:
         print("Multiple centers located.")
@@ -596,7 +592,7 @@ def estimate_6d_pose_lm():
                 for keypoint in keypoints:
                     print("Kpt count: ", keypoint_count)
                     keypoint=keypoints[keypoint_count]
-                   
+
                     
                     iter_count = 0
                     centers_list = []
@@ -648,30 +644,23 @@ def estimate_6d_pose_lm():
                     tic = time.time_ns()
                     
                     #gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
-                    #gt_list = gt_list[pixel_coor]
-            
+                    #gt_list = gt_list[pixel_coor]         
 
-                    center_mm_s = Accumulator_3D(xyz, radial_list)
+                    center_mm_s = Accumulator_3D(xyz, radial_list, keypoint_count)
                     #gt_center = Accumulator_3D(xyz, gt_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
                     acc_time += toc-tic
                     #print acc time in ms
-                    print("Accumulator time consumption: ", (toc-tic)/1000000, " ms")
+                    #print("Accumulator time consumption: ", (toc-tic)/1000000, " ms")
                     
-              
                     pre_center_off_mm = math.inf
                     
                     estimated_center_mm = center_mm_s[0]
 
-                    print('Transformed gt center: ', transformed_gt_center_mm)
-                    print('Estimated center: ', estimated_center_mm)
-
                     center_off_mm = ((transformed_gt_center_mm[0]-estimated_center_mm[0])**2+
                                     (transformed_gt_center_mm[1]-estimated_center_mm[1])**2+
                                     (transformed_gt_center_mm[2]-estimated_center_mm[2])**2)**0.5
-                    
-                    print("estimated offset: ", center_off_mm)
                     
                     #save estimations
                     '''
@@ -683,6 +672,7 @@ def estimate_6d_pose_lm():
                     centers[0,0] = keypoint
                     centers[0,1] = transformed_gt_center_mm*0.001
                     centers[0,2] = estimated_center_mm*0.001
+                    
                     estimated_kpts[keypoint_count - 1] = estimated_center_mm
                     
                     if(iter_count==0):
@@ -708,9 +698,7 @@ def estimate_6d_pose_lm():
                 kpts = keypoints[1:4,:]*1000
                 RT = np.zeros((4, 4))
 
-
                 horn.lmshorn(kpts, estimated_kpts, 3, RT)
-
 
                 dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
            
@@ -740,16 +728,14 @@ def estimate_6d_pose_lm():
                 median_distance_bf_icp = np.median(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
                 std_dev_distance_bf_icp = np.std(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
 
-
+         
                 if class_name in lm_syms:
                     if min_distance_bf_icp <= add_threshold[class_name]*1000:
-                        bf_icp+=1
-                        print ('Correct Prediction within threshold Before ICP')
-                        
+                        bf_icp+=1   
                 else:
                     if distance_bf_icp <= add_threshold[class_name]*1000:
                         bf_icp+=1
-                        print ('Correct Prediction within threshold before ICP')
+                     
                 
                 trans_init = np.asarray([[1, 0, 0, 0],
                                         [0, 1, 0, 0],
@@ -772,15 +758,13 @@ def estimate_6d_pose_lm():
                 #print('ADD(s) point distance after ICP: ', distance)
                 if class_name in lm_syms:
                     if min_distance_af_icp <= add_threshold[class_name]*1000:
-                        print('Correct match After ICP')
                         af_icp+=1
                 else:
                     if distance_af_icp <= add_threshold[class_name]*1000:
-                        print('Correct match After ICP')
                         af_icp+=1                   
                 general_counter += 1
 
-                print ('\nBefore ICP: ', bf_icp)
+                print ('Before ICP: ', bf_icp)
                 print ('After ICP: ', af_icp)
                 print ('Current ADDs before ICP: ', bf_icp/general_counter)
                 print ('Current ADDs after ICP: ', af_icp/general_counter, '\n')

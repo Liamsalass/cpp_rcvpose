@@ -8,18 +8,18 @@ RMapDataset::RMapDataset(
 	const std::string& root,
 	const std::string& dname,
 	const std::string& set,
-	const std::string& obj_name,
-	const int& kpt_num
+	const std::string& obj_name
 ) :
 	root_(root),
 	dname_(dname),
 	set_(set),
-	obj_name_(obj_name),
-	kpt_num_(kpt_num)
+	obj_name_(obj_name)
 {
 	if (dname_ == "lm") {
 		imgpath_ = root_ + "/LINEMOD/" + obj_name + "/JPEGImages/";
-		radialpath_ = root_ + "/LINEMOD/" + obj_name + "/Out_pt" + std::to_string(kpt_num_) + "_dm/";
+		radialpath1_ = root_ + "/LINEMOD/" + obj_name + "/Out_pt1_dm/";
+		radialpath2_ = root_ + "/LINEMOD/" + obj_name + "/Out_pt2_dm/";
+		radialpath3_ = root_ + "/LINEMOD/" + obj_name + "/Out_pt3_dm/";
 		imgsetpath_ = root_ + "/LINEMOD/" + obj_name + "/Split/%s.txt";
 	}
 	else if (dname == "ycb") {
@@ -63,80 +63,51 @@ CustomExample RMapDataset::get(size_t index) {
 
 	// TODO:
 	// Check type of data and shape stored in radial .npy (may not be float)
-	std::vector<double> data;
-	std::vector<unsigned long> shape;
-	bool fortran_order;
-
-	cv::Mat img, target;
-
-	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> img_data;
-
-	if (dname_ == "lm") {
-		try {
-			// Read in image and radial distance map 
-			img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
-
-			std::string npy_path = radialpath_ + img_id + ".npy";
-			npy::LoadArrayFromNumpy(npy_path, shape, fortran_order, data);
-			// Check implementation (What is fortran_order?)
-			int rows = static_cast<int>(shape[0]);
-			int cols = static_cast<int>(shape[1]);
-			cv::Mat target_test(rows, cols, CV_64F);
 
 
-			// Assign the data to the cv::Mat object based on the fortran_order
-			if (fortran_order) {
-			#pragma omp parallel for collapse(2)
-				for (int i = 0; i < rows; ++i) {
-					for (int j = 0; j < cols; ++j) {
-						target_test.at<double>(i, j) = data[i + j * rows];
-					}
-				}
-			}
-			else {
-				#pragma omp parallel for collapse(2)
-				for (int i = 0; i < rows; ++i) {
-					for (int j = 0; j < cols; ++j) {
-						target_test.at<double>(i, j) = data[i * cols + j];
-					}
-				}
-			}
-			// Divide all values in target_test by the greatest value in target_test
-			//double max_val;
-			//cv::minMaxLoc(target_test, NULL, &max_val);
-			//target_test = target_test / max_val;
+	cv::Mat img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
 
-			target = target_test;
-			
-			//// Show target_test
+	cv::Mat radial_kpt1 = read_npy(radialpath1_ + img_id + ".npy");
+	cv::Mat radial_kpt2 = read_npy(radialpath2_ + img_id + ".npy");
+	cv::Mat radial_kpt3 = read_npy(radialpath3_ + img_id + ".npy");
 
-			//cv::imshow("target_test", target_test);
-			//cv::waitKey(0);
-		}
-		catch (const std::exception& e) {
-			std::cout << "Error reading in image: " << imgpath_ + img_id + ".jpg" << std::endl;
-			std::cout << "Error reading in radial distance map: " << radialpath_ + img_id + ".npy" << std::endl;
-			std::cout << e.what() << std::endl;
-		}
-	}
-	else {
-		std::cout << "couldn't find dataset named: " << dname_ << std::endl;
-		return CustomExample(torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})));
-	}
-
-	try {
-		img_data = transform(img, target);
-	}
-	catch (const std::exception& e) {
-		std::cout << "Error occurred during transform: " << e.what() << std::endl;
-		return CustomExample (torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})), torch::Tensor(torch::empty({})));
-	}
-	return CustomExample(std::get<0>(img_data), std::get<1>(img_data), std::get<2>(img_data));
+	std::vector<torch::Tensor> transfromed_data = transform(img, radial_kpt1, radial_kpt2, radial_kpt3);
+		
+	return CustomExample(transfromed_data[0], transfromed_data[1], transfromed_data[2], transfromed_data[3], transfromed_data[4]);
 }
 
 
 c10::optional<size_t> RMapDataset::size() const {
 	return ids_.size();
+}
+
+cv::Mat RMapDataset::read_npy(const std::string& path)
+{
+	std::vector<double> data;
+	std::vector<unsigned long> shape;
+	bool fortran_order;
+
+	npy::LoadArrayFromNumpy(path, shape, fortran_order, data);
+
+	int rows = static_cast<int>(shape[0]);
+	int cols = static_cast<int>(shape[1]);
+	cv::Mat mat(rows, cols, CV_64F);
+
+	if (fortran_order) {
+		for (int i = 0; i < rows; ++i) {
+			for (int j = 0; j < cols; ++j) {
+				mat.at<double>(i, j) = data[i + j * rows];
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < rows; ++i) {
+			for (int j = 0; j < cols; ++j) {
+				mat.at<double>(i, j) = data[i * cols + j];
+			}
+		}
+	}
+	return mat;
 }
 
 

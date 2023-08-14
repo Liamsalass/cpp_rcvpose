@@ -63,7 +63,6 @@ public:
         //TODO, load current LR values and store them
         optim_ = new torch::optim::Adam(model_->parameters(), torch::optim::AdamOptions(0.0001));
         optim_->load(optimArchive);
-        std::cout << "Succesfully loaded model from: " << path << std::endl;
     }
 
     // Getter methods to retrieve loaded information

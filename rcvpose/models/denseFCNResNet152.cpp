@@ -1,4 +1,3 @@
-
 #include "denseFCNResNet152.h"
 
 namespace nn = torch::nn;
@@ -118,7 +117,7 @@ DenseFCNResNet152Impl::DenseFCNResNet152Impl(int input_channels, int output_chan
 	register_module("conv8", conv8);
 }
 
-std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::Tensor x)
+torch::Tensor DenseFCNResNet152Impl::forward(torch::Tensor x)
 {
 	x = conv1->forward(x);
 	x = bn1->forward(x);
@@ -145,34 +144,27 @@ std::tuple<torch::Tensor, torch::Tensor> DenseFCNResNet152Impl::forward(torch::T
 	auto cat_input = torch::cat({ x32s, x16s }, 1);
 	auto up = conv_up5->forward(cat_input);
 
-	//std::cout << "Input to up5: " << up.sizes() << std::endl;
-	//Invalid upscale factor causing invalid vector subscript
-	//up = up5->forward(up);
+
 	up = torch::upsample_bilinear2d(up, torch::IntArrayRef({ up.size(2) * 2, up.size(3) * 2 }), true);
 
 	up = conv_up4->forward(torch::cat({ up, x8s }, 1));
 	up = torch::upsample_bilinear2d(up, torch::IntArrayRef({ up.size(2) * 2, up.size(3) * 2 }), true);
-	//up = up4->forward(up);
+
 
 	up = conv_up3->forward(torch::cat({ up, x4s }, 1));
 	up = torch::upsample_bilinear2d(up, torch::IntArrayRef({ up.size(2) * 2, up.size(3) * 2 }), true);
-	//up = up3->forward(up);
+
 
 	up = conv_up2->forward(torch::cat({ up, x2s }, 1));
 	up = torch::upsample_bilinear2d(up, torch::IntArrayRef({ up.size(2) * 2, up.size(3) * 2 }), true);
-	//up = up2->forward(up);
 
 	up = conv_up1->forward(torch::cat({ up, x }, 1));
 	up = torch::upsample_bilinear2d(up, torch::IntArrayRef({ up.size(2) * 2, up.size(3) * 2 }), true);
-	//up = up1->forward(up);
 
 	up = conv7->forward(up);
 
 	auto out = conv8->forward(up);
 
-	auto seg_pred = out.index({ torch::indexing::Slice(), torch::indexing::Slice(0,1), torch::indexing::Slice(), torch::indexing::Slice()});	
-	auto radial_pred = out.index({ torch::indexing::Slice(),torch::indexing::Slice(1),torch::indexing::Slice(),torch::indexing::Slice()});
-  
-	return std::make_tuple(seg_pred, radial_pred);
+	return out;
 }
 

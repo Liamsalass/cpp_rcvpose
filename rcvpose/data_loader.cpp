@@ -4,27 +4,39 @@ RData::RData(
 	const std::string& root = "../datasets/",
 	const std::string& dname = "lm",
 	const std::string& set = "train",
-	const std::string& obj_name = "ape",
-	const int kpt_num = 1
+	const std::string& obj_name = "ape"
 ) :
-	RMapDataset(root, dname, set, obj_name, kpt_num) { }
+	RMapDataset(root, dname, set, obj_name) { }
 
 
-std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& target) {
+std::vector<torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& gt1, cv::Mat& gt2, cv::Mat& gt3) {
 	const std::vector<double> mean = { 0.485, 0.456, 0.406 };
 	const std::vector<double> std = { 0.229, 0.224, 0.225 };
 
 	img.convertTo(img, CV_32FC3);
 	img /= 255.0;
 
-	target.convertTo(target, CV_32FC3);
+	gt1.convertTo(gt1, CV_32FC3);
+	gt2.convertTo(gt2, CV_32FC3);
+	gt3.convertTo(gt3, CV_32FC3);
 
-	if (target.channels() == 2) {
+	if (gt1.channels() == 2) {
 		cv::Mat expandedLbl;
-		cv::cvtColor(target, expandedLbl, cv::COLOR_GRAY2BGR);
-		target = expandedLbl.reshape(1, 1); 
+		cv::cvtColor(gt1, expandedLbl, cv::COLOR_GRAY2BGR);
+		gt1 = expandedLbl.reshape(1, 1); 
 	}
 
+	if (gt2.channels() == 2) {
+		cv::Mat expandedLbl;
+		cv::cvtColor(gt2, expandedLbl, cv::COLOR_GRAY2BGR);
+		gt2 = expandedLbl.reshape(1, 1);
+	}
+
+	if (gt3.channels() == 2) {
+		cv::Mat expandedLbl;
+		cv::cvtColor(gt3, expandedLbl, cv::COLOR_GRAY2BGR);
+		gt3 = expandedLbl.reshape(1, 1);
+	}
 
 	for (int i = 0; i < 3; i++) {
 		cv::Mat channel(img.size(), CV_32FC1);
@@ -40,89 +52,21 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> RData::transform(cv::Mat
 
 
 	cv::Mat imgTransposed = img.t();
-	cv::Mat targetTransposed = target.t();
+	cv::Mat gt1Transposed = gt1.t();
+	cv::Mat gt2Transposed = gt2.t();
+	cv::Mat gt3Transposed = gt3.t();
 
-
-	//cv::Mat test_target = targetTransposed.clone();
-	//double min, max;
-	//cv::minMaxLoc(test_target, &min, &max);
-	//test_target /= max;
-	//
-	//cv::imshow("Image", imgTransposed);
-	//cv::imshow("Target", test_target);
-	//cv::waitKey();
 
 	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
 	imgTensor = imgTensor.permute({ 2, 0, 1 });
-	torch::Tensor targetTensor = torch::from_blob(targetTransposed.data, { targetTransposed.channels(), targetTransposed.rows, targetTransposed.cols }, torch::kFloat32).clone();
-	torch::Tensor semLblTensor = torch::where(targetTensor > 0, torch::ones_like(targetTensor), -torch::ones_like(targetTensor));
+	torch::Tensor gt1Tensor = torch::from_blob(gt1Transposed.data, { gt1Transposed.channels(), gt1Transposed.rows, gt1Transposed.cols }, torch::kFloat32).clone();
+	torch::Tensor gt2Tensor = torch::from_blob(gt2Transposed.data, { gt2Transposed.channels(), gt2Transposed.rows, gt2Transposed.cols }, torch::kFloat32).clone();
+	torch::Tensor gt3Tensor = torch::from_blob(gt3Transposed.data, { gt3Transposed.channels(), gt3Transposed.rows, gt3Transposed.cols }, torch::kFloat32).clone();
+	torch::Tensor semTensor = torch::where(gt1Tensor > 0, torch::ones_like(gt1Tensor), -torch::ones_like(gt1Tensor));
 
-	return std::make_tuple(imgTensor, targetTensor, semLblTensor);
+	std::vector<torch::Tensor> tensors = { imgTensor, gt1Tensor, gt2Tensor, gt3Tensor, semTensor };
+	return tensors;
 }
 
 
 
-
-cv::Mat RData::get_img(const int idx)
-{
-	if (ids_.empty()) {
-		std::cout << "No Images in ids_" << std::endl;
-		return cv::Mat::zeros(1, 1, CV_8UC3); // return black image
-	}
-
-	const std::string img = imgpath_ + ids_[idx] + ".jpg";
-	std::cout << "Image Path: " << img << std::endl;
-
-	cv::Mat img_mat = cv::imread(img, cv::IMREAD_COLOR);
-	return img_mat;
-}
-
-
-cv::Mat RData::get_target(const int idx)
-{
-	// Check if ids_ is empty
-	if (ids_.empty()) {
-		std::cout << "No Images in ids_" << std::endl;
-		return cv::Mat::zeros(1, 1, CV_8UC3); // Return a black image if ids_ is empty
-	}
-
-	std::vector<double> data;
-	std::vector<unsigned long> shape;
-	bool fortran_order;
-
-	const std::string img = radialpath_ + ids_[idx] + ".npy";
-	std::cout << "Radial Path: " << img << std::endl;
-
-	try {
-		std::string npy_path = img;
-		npy::LoadArrayFromNumpy(npy_path, shape, fortran_order, data);
-	}
-	catch (const std::runtime_error& error) {
-		std::cout << "ERROR: Failed to load radial data" << std::endl;
-		std::cout << error.what() << std::endl;
-		throw error; // Throw an error if loading the data fails
-	}
-
-	// Convert the loaded data to a cv::Mat object
-	int rows = static_cast<int>(shape[0]);
-	int cols = static_cast<int>(shape[1]);
-	cv::Mat target(rows, cols, CV_64F);
-
-	// Assign the data to the cv::Mat object based on the fortran_order
-	if (fortran_order) {
-		for (int i = 0; i < rows; ++i) {
-			for (int j = 0; j < cols; ++j) {
-				target.at<double>(i, j) = data[i + j * rows];
-			}
-		}
-	}
-	else {
-		for (int i = 0; i < rows; ++i) {
-			for (int j = 0; j < cols; ++j) {
-				target.at<double>(i, j) = data[i * cols + j];
-			}
-		}
-	}
-
-	return target; // Return the converted cv::Mat object
-}

@@ -22,28 +22,25 @@
 
 class Trainer {
 public:
-	Trainer(Options& options, const int kpt_);
+	Trainer(const Options& opts, DenseFCNResNet152& model);
 	
-	void train();
+	void train(Options& opts, DenseFCNResNet152& model);
 	void test();
 	
 
 private:
-	int kpt;
 	// Have to nest train_epoch function within train function due to instantiation of dataloaders
 	// This means resume training isn't currently functioning
 	//void train_epoch();
 	//void validate();
 
 	torch::Tensor compute_r_loss(torch::Tensor pred, torch::Tensor gt);
-	Options& opts;
+	void printProgressBar(int current, int total, int width);
 	DenseFCNResNet152 model;
 	torch::optim::Optimizer* optim;
 	torch::nn::L1Loss loss_radial;
 	torch::nn::L1Loss loss_sem;
 	torch::DeviceType device_type;
-
-	void printProgressBar(int current, int total, int width);
 
 	int epoch;
 	int epochs_without_improvement;

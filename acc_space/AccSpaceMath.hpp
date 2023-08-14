@@ -214,44 +214,8 @@ void normalizeMat(cv::Mat& input, const bool& debug = false) {
 
 
 
-void fast_for(const vector<Vertex>& xyz_mm, const vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
-    const double factor = (pow(3, 0.5) / 4.0);
-
-    const int start = 0;
-
-    #pragma omp parallel for
-    for (int count = 0; count < xyz_mm.size(); ++count) {
-
-        const Vertex xyz = xyz_mm[count];
-        const int radius = round(radial_list_mm[count]);
-        const double radius_sq = radius * radius;
-
-        for (int i = start; i < vote_map_size; i++) {
-            double x_diff = i - xyz.x;
-            double x_diff_sq = x_diff * x_diff;
-
-            for (int j = start; j < vote_map_size; j++) {
-                double y_diff = j - xyz.y;
-                double y_diff_sq = y_diff * y_diff;
-
-                for (int k = start; k < vote_map_size; k++) {
-                    double z_diff = k - xyz.z;
-                    double distance_sq = x_diff_sq + y_diff_sq + z_diff * z_diff;
-
-                    if (radius_sq - distance_sq < factor && radius_sq - distance_sq > 0) {
-                        int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
-
-                        #pragma omp atomic
-                        VoteMap_3D[index] += 1;
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-void fast_for2(const std::vector<Vertex>& xyz_mm, const std::vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
+//TODO :: Check if racecondition affects performance
+void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
     const double factor = (std::pow(3, 0.5) / 4.0);
     const int start = 0;
 
@@ -272,6 +236,7 @@ void fast_for2(const std::vector<Vertex>& xyz_mm, const std::vector<double>& rad
 
                     if (radius - distance < factor && radius - distance > 0) {
                         int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
+                        //Possible race condition, check if the accuracy decreases here
                         VoteMap_3D[index] += 1;
                     }
                 }
@@ -283,11 +248,13 @@ void fast_for2(const std::vector<Vertex>& xyz_mm, const std::vector<double>& rad
 
 
 
-Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const bool& use_cuda = true, const bool& debug = false) {
+Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const bool& debug = false) {
 
     double acc_unit = 5;
     // unit 5mm
     vector<Vertex> xyz_mm(xyz.size());
+
+    
 
     for (int i = 0; i < xyz.size(); i++) {
         xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
@@ -309,6 +276,7 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     y_mean_mm /= xyz_mm.size();
     z_mean_mm /= xyz_mm.size();
 
+
     for (int i = 0; i < xyz_mm.size(); i++) {
         xyz_mm[i].x -= x_mean_mm;
         xyz_mm[i].y -= y_mean_mm;
@@ -323,26 +291,20 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     }
 
 
-    double x_mm_min = xyz_mm[0].x;
-    double x_mm_max = xyz_mm[0].x;
-    double y_mm_min = xyz_mm[0].y;
-    double y_mm_max = xyz_mm[0].y;
-    double z_mm_min = xyz_mm[0].z;
-    double z_mm_max = xyz_mm[0].z;
+    double x_mm_min = 0;
+    double y_mm_min = 0;
+    double z_mm_min = 0;
 
     for (int i = 0; i < xyz_mm.size(); i++) {
         x_mm_min = min(x_mm_min, xyz_mm[i].x);
-        x_mm_max = max(x_mm_max, xyz_mm[i].x);
         y_mm_min = min(y_mm_min, xyz_mm[i].y);
-        y_mm_max = max(y_mm_max, xyz_mm[i].y);
         z_mm_min = min(z_mm_min, xyz_mm[i].z);
-        z_mm_max = max(z_mm_max, xyz_mm[i].z);
     }
 
     double xyz_mm_min = min(x_mm_min, min(y_mm_min, z_mm_min));
-    double xyz_mm_max = max(x_mm_max, max(y_mm_max, z_mm_max));
     
     double radius_max = radial_list_mm[0];
+
     for (int i = 0; i < radial_list_mm.size(); i++) {
         if (radius_max < radial_list_mm[i]) {
             radius_max = radial_list_mm[i];
@@ -350,6 +312,8 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     }
 
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
+
+
 
     if (zero_boundary < 0) {
         for (int i = 0; i < xyz_mm.size(); i++) {
@@ -359,6 +323,17 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         }
     }
 
+    double x_mm_max = 0;
+    double y_mm_max = 0;
+    double z_mm_max = 0;
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mm_max = max(x_mm_max, xyz_mm[i].x);
+        y_mm_max = max(y_mm_max, xyz_mm[i].y);
+        z_mm_max = max(z_mm_max, xyz_mm[i].z);
+    }
+
+    double xyz_mm_max = max(x_mm_max, max(y_mm_max, z_mm_max));
     
     int length = static_cast<int>(xyz_mm_max);
 
@@ -369,7 +344,7 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     int* VoteMap_3D = new int[total_size]();
  
 
-    if (use_cuda && !debug) {
+    //if (use_cuda && !debug) {
         //cout << "Using GPU for fast_for" << endl;
         ////Initialize fast for on GPU
         //double* device_xyz_mm;
@@ -396,16 +371,13 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         //cudaFree(device_xyz_mm);
         //cudaFree(device_radial_list_mm);
         //cudaFree(device_VoteMap_3D);
+    //}
+
+    if (debug) {
+        cout << "\tUsing CPU for fast_for" << endl;
     }
-    else {
-        if (debug) {
-            cout << "\tUsing CPU for fast_for" << endl;
-        }
-        fast_for2(xyz_mm, radial_list_mm, VoteMap_3D, vote_map_dim);
-    }    
+    fast_for_cpu(xyz_mm, radial_list_mm, VoteMap_3D, vote_map_dim);
 
-
-    
     vector<Eigen::Vector3i> centers;
 
     int max_vote = 0;
@@ -434,8 +406,10 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     //    cout << "\t" << center << endl;
     //}
 
-    cout << "\tMax vote: " << max_vote << endl;
-    cout << "\tCenter: " << centers[0][0] << " " << centers[0][1] << " "  << centers[0][2] << endl;
+    if (debug) {
+        cout << "\tMax vote: " << max_vote << endl;
+        cout << "\tCenter: " << centers[0][0] << " " << centers[0][1] << " " << centers[0][2] << endl;
+    }
 
     //if (centers.size() > 1) {
     //    cout << centers.size() << " centers located." << endl;

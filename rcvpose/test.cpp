@@ -13,8 +13,8 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/rcvpose/test_out/";
-    opts.resume_train = false;
+    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/rcvpose/test_out/ape/";
+    opts.resume_train = true;
     opts.optim = "adam";
     opts.batch_size = 2;
     opts.class_name = "ape";
@@ -30,7 +30,10 @@ Options testing_options() {
 int main(int argc, char* args[])
 {
     Options opts = testing_options();
+  
     RCVpose rcv(opts);
     rcv.train();
+    
+
     return 0;    
 }

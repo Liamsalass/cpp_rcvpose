@@ -1,0 +1,4 @@
+ADD(s) of ape before ICP: 88.5714
+ADD(s) of ape after ICP: 100
+Accumulator time: 0
+Total Accumulator time: 2 hours, 36 minutes, and 35 seconds.

@@ -31,15 +31,17 @@
 
 class CustomExample : public torch::data::Example<> {
 public:
-    CustomExample(torch::Tensor data, torch::Tensor target, torch::Tensor sem_target)
-        : data_(data), target_(target), sem_target_(sem_target) {}
+    CustomExample(torch::Tensor data, torch::Tensor rad1, torch::Tensor rad2, torch::Tensor rad3, torch::Tensor sem_target)
+        : data_(data), rad1_(rad1), rad2_(rad2), rad3_(rad3), sem_target_(sem_target) {}
 
     torch::Tensor data() const  { return data_; }
-    torch::Tensor target() const  { return target_; }
+    torch::Tensor rad1() const  { return rad1_; }
+    torch::Tensor rad2() const  { return rad2_; }
+    torch::Tensor rad3() const  { return rad3_; }
     torch::Tensor sem_target() const { return sem_target_; }
 
 private:
-    torch::Tensor data_, target_, sem_target_;
+    torch::Tensor data_, rad1_, rad2_, rad3_, sem_target_;
 };
 
 class RMapDataset : public torch::data::datasets::Dataset<RMapDataset, CustomExample> {
@@ -48,22 +50,24 @@ public:
         const std::string& root,
         const std::string& dname,
         const std::string& set,
-        const std::string& obj_name,
-        const int& kpt_num
+        const std::string& obj_name
     );
 
+    
 
     // Override get() function to return three tensors at index, the lbl, sem_lbl, and img
     CustomExample get(size_t index) override;
 
     c10::optional<size_t> size() const override final;
 
-    virtual std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> transform(cv::Mat& img, cv::Mat& target) = 0;
+    virtual std::vector<torch::Tensor> transform(cv::Mat& img, cv::Mat& kpt1, cv::Mat& kpt2, cv::Mat& kpt3) = 0;
 
     std::vector<std::string> ids_;
     std::string h5path_;
     std::string imgpath_;
-    std::string radialpath_;
+    std::string radialpath1_;
+    std::string radialpath2_;
+    std::string radialpath3_;
     std::string imgsetpath_;
 
 private:
@@ -71,8 +75,8 @@ private:
     const std::string set_;
     const std::string obj_name_;
     const std::string dname_;
-    const int kpt_num_;
-    //h5::File h5f_;
+
+    cv::Mat read_npy(const std::string& path);
 };
 
 

@@ -11,6 +11,8 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
+
+set(CMAKE_PREFIX_PATH "~/libs/libtorch/")
 # set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
 # set(TORCH_DIR "C:/libtorch_release/libtorch")
 
@@ -29,8 +31,8 @@ find_package(OpenMP)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-find_package(Open3D REQUIRED)
-include_directories(${Open3D_INCLUDE_DIRS})
+# find_package(Open3D REQUIRED)
+# include_directories(${Open3D_INCLUDE_DIRS})
 
 find_package(Torch REQUIRED)
 include_directories(${TORCH_INCLUDE_DIRS})
@@ -53,14 +55,6 @@ set(SOURCE_FILES
     "models/denseFCNResNet152.cpp"
     "models/resFCNResNet152.h"
     "models/resFCNResNet152.cpp"
-    "JACOBI.h"
-    "JACOBI.c"
-    "lmshorn.c"
-    "lmshorn.h"
-    "AccSpaceIO.hpp"
-    "AccSpaceMath.hpp"
-    "accumulator_space.h"
-    "accumulator_space.cpp"
     "npy.hpp"
 )
 #  "accumulator_space.h"
@@ -81,8 +75,9 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(${TARGET_NAME} PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${OpenCV_LIBS}  ${Open3D_LIBRARIES})
+# target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${OpenCV_LIBS}  ${Open3D_LIBRARIES})
 
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${OpenCV_LIBS} )
 
 if(MSVC)
     file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")

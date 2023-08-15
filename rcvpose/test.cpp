@@ -13,8 +13,8 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113/";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "/models/";
-    opts.resume_train = false;
+    opts.model_dir = "/home/19lhs4/cpp_rcvpose/models/";
+    opts.resume_train = true;
     opts.optim = "adam";
     opts.batch_size = 18;
     opts.class_name = "ape";

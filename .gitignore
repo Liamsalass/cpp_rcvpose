@@ -444,3 +444,4 @@ rcvpose/test_out/model_best/info.pt
 rcvpose/test_out/model_best/model.pt
 rcvpose/test_out/model_best/optim.pt
 rcvpose/release/
+models/

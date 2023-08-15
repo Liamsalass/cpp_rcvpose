@@ -144,7 +144,7 @@ RCVpose::RCVpose(Options& options)
             //    }
             //}
 
-            CheckpointLoader loader(out, true);
+            CheckpointLoader loader(out, false);
 
             model = loader.getModel();
 

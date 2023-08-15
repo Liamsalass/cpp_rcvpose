@@ -45,7 +45,7 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "train_kpt2";
+    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/gpu_models";
     opts.resume_train = false;
     opts.optim = "adam";
     opts.batch_size = 2;
@@ -54,7 +54,7 @@ Options testing_options() {
     opts.reduce_on_plateau = false;
     opts.kpt_num = 1;
     opts.demo_mode = false;
-    opts.verbose = false;
+    opts.verbose = true;
     opts.test_occ = false;
     return opts;
 }

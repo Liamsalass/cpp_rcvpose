@@ -2,9 +2,6 @@
 #ifndef TRAINER_H
 #define TRAINER_H
 
-#include "options.hpp"
-#include "data_loader.h"
-#include "utils.hpp"
 #include <iostream>
 #include <filesystem>
 #include <torch/nn.h>
@@ -13,11 +10,15 @@
 #include <torch/script.h>
 #include <torch/nn/parallel/data_parallel.h>
 #include <torch/serialize.h>
-#include "models/denseFCNResNet152.h"
 #include <iostream>
 #include <omp.h>
 #include <iomanip>
 #include <chrono>
+#include "options.hpp"
+#include "data_loader.h"
+#include "utils.hpp"
+#include "models/denseFCNResNet152.h"
+
 
 
 class Trainer {
@@ -36,6 +37,8 @@ private:
 
 	torch::Tensor compute_r_loss(torch::Tensor pred, torch::Tensor gt);
 	void printProgressBar(int current, int total, int width);
+	void printGPUmem();
+	cv::Mat tensor_to_mat(torch::Tensor tensor);
 	DenseFCNResNet152 model;
 	torch::optim::Optimizer* optim;
 	torch::nn::L1Loss loss_radial;

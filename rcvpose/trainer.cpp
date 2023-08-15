@@ -205,13 +205,14 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
     cout << "Max Epochs : " << max_epoch << endl;
     
+    int session_iterations = 0;
 
     auto total_train_start = std::chrono::steady_clock::now();
     while (epoch < max_epoch) {
         auto epoch_start_time = std::chrono::steady_clock::now();
-        
 
-        if(opts.verbose){
+
+        if (opts.verbose) {
             cout << string(100, '-') << endl;
             cout << string(43, ' ') << "Epoch " << epoch << endl;
             cout << "Training Epoch" << endl;
@@ -228,9 +229,9 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             if (opts.verbose) {
                 printProgressBar(count, train_size.value(), 75);
             }
-            count = batch.size() + count;
 
-       
+
+
 
             iteration = batch.size() + iteration;
 
@@ -242,10 +243,32 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
             for (const auto& example : batch) {
                 batch_data.push_back(example.data());
-                batch_radial_1.push_back(example.rad1());
-                batch_radial_2.push_back(example.rad2());
-                batch_radial_3.push_back(example.rad3());
+                batch_radial_1.push_back(example.rad_1());
+                batch_radial_2.push_back(example.rad_2());
+                batch_radial_3.push_back(example.rad_3());
                 batch_sem_target.push_back(example.sem_target());
+
+                //torch::Tensor tmp_rad_1 = example.rad_1().index({ 0, torch::indexing::Slice(),torch::indexing::Slice() });
+                //torch::Tensor tmp_rad_2 = example.rad_2().index({ 0, torch::indexing::Slice(), torch::indexing::Slice() });
+                //torch::Tensor tmp_rad_3 = example.rad_3().index({ 0, torch::indexing::Slice(), torch::indexing::Slice() });
+                //torch::Tensor tmp_sem = example.sem_target().index({0, torch::indexing::Slice(), torch::indexing::Slice() });
+                //
+                //
+                //cv::Mat rad1_mat = tensor_to_mat(tmp_rad_1);
+                //cv::Mat rad2_mat = tensor_to_mat(tmp_rad_2);
+                //cv::Mat rad3_mat = tensor_to_mat(tmp_rad_3);
+                //cv::Mat sem_mat = tensor_to_mat(tmp_sem);
+                //
+                //cv::normalize(rad1_mat, rad1_mat, 0, 1, cv::NORM_MINMAX);
+                //cv::normalize(rad2_mat, rad2_mat, 0, 1, cv::NORM_MINMAX);
+                //cv::normalize(rad3_mat, rad3_mat, 0, 1, cv::NORM_MINMAX);
+                //cv::normalize(sem_mat, sem_mat, 0, 1, cv::NORM_MINMAX);
+                //
+                //cv::imshow("Radial 1", rad1_mat);
+                //cv::imshow("Radial 2", rad2_mat);
+                //cv::imshow("Radial 3", rad3_mat);
+                //cv::imshow("Semantic", sem_mat);
+                //cv::waitKey(0);
             }
 
             optim->zero_grad();
@@ -256,16 +279,28 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             auto rad_3 = torch::stack(batch_radial_3, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
+            if ((session_iterations == 0) && (opts.verbose) && (count == 0) && (device == torch::kCUDA)) {
+                cout << "\r" << string(100, ' ') << "\r";
+                cout << "Training GPU memory usage" << endl;
+                printGPUmem();
+            }
+
+
             torch::Tensor scores = model->forward(data);
 
-            auto score_rad_1 = scores.index({ torch::indexing::Slice(), 0}).unsqueeze(1);
-            auto score_rad_2 = scores.index({ torch::indexing::Slice(), 1}).unsqueeze(1);
-            auto score_rad_3 = scores.index({ torch::indexing::Slice(), 2}).unsqueeze(1);
+
+
+            auto score_rad_1 = scores.index({ torch::indexing::Slice(), 0 }).unsqueeze(1);
+            auto score_rad_2 = scores.index({ torch::indexing::Slice(), 1 }).unsqueeze(1);
+            auto score_rad_3 = scores.index({ torch::indexing::Slice(), 2 }).unsqueeze(1);
             auto score_sem = scores.index({ torch::indexing::Slice(), 3 }).unsqueeze(1);
+
 
             score_rad_1 = (score_rad_1.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 }));
             score_rad_2 = (score_rad_2.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 }));
             score_rad_3 = (score_rad_3.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 }));
+
+
 
 
             score_rad_1 = score_rad_1.permute({ 1, 0, 2, 3 });
@@ -290,170 +325,197 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
             if (np_loss.numel() == 0)
                 std::runtime_error("Loss is empty");
+            count = batch.size() + count;
         }
-    
+
 
         auto train_end = std::chrono::steady_clock::now();
         auto train_duration = std::chrono::duration_cast<std::chrono::seconds>(train_end - train_start);
         if (opts.verbose) {
             cout << "\r" << string(80, ' ') << "\r\r";
             cout << "Training Time: " << train_duration.count() << " s" << endl;
-            cout << "Validation Epoch" << endl;
         }
 
         // ========================================================================================== \\
         //                                  Validation Epoch 									       \\
 
-        model->eval();
-        float val_loss = 0;
-        count = 0;
-        torch::NoGradGuard no_grad;
-        auto val_start = std::chrono::steady_clock::now();
-
-        int val_count = 0;
-
-        for (const auto& batch : *val_loader) {
+        if ((epoch % 3 == 0) && (epoch != 0)) {
             if (opts.verbose) {
-                printProgressBar(count, val_size.value(), 75);
+                cout << "Validation Epoch" << endl;
             }
-            count = batch.size() + count;
-            iteration_val = batch.size() + iteration_val;
-          
+            model->eval();
+            float val_loss = 0;
+            float sem_loss = 0;
+            float r_loss = 0;
+            count = 0;
+            torch::NoGradGuard no_grad;
+            auto val_start = std::chrono::steady_clock::now();
 
-            std::vector<torch::Tensor> batch_data;
-            std::vector<torch::Tensor> batch_radial_1;
-            std::vector<torch::Tensor> batch_radial_2;
-            std::vector<torch::Tensor> batch_radial_3;
-            std::vector<torch::Tensor> batch_sem_target;
+            int val_count = 0;
 
-            for (const auto& example : batch) {
-                batch_data.push_back(example.data());
-                batch_radial_1.push_back(example.rad1());
-                batch_radial_2.push_back(example.rad2());
-                batch_radial_3.push_back(example.rad3());
-                batch_sem_target.push_back(example.sem_target());
-            }
-
-
-            auto img = torch::stack(batch_data, 0);
-            auto rad_1 = torch::stack(batch_radial_1, 0);
-            auto rad_2 = torch::stack(batch_radial_2, 0);
-            auto rad_3 = torch::stack(batch_radial_3, 0);
-            auto sem_target = torch::stack(batch_sem_target, 0);
-
-
-            img = img.to(device);
-            rad_1 = rad_1.to(device);
-            rad_2 = rad_2.to(device);
-            rad_3 = rad_3.to(device);
-            sem_target = sem_target.to(device);
-
-            torch::Tensor output = model->forward(img);
-
-            auto score_rad_1 = output.index({ torch::indexing::Slice(), 0, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-            auto score_rad_2 = output.index({ torch::indexing::Slice(), 1, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-            auto score_rad_3 = output.index({ torch::indexing::Slice(), 2, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-            auto score_sem = output.index({ torch::indexing::Slice(), 3, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-         
-            val_count++;
-
-            auto loss_s = loss_sem(score_sem, sem_target);
-            auto loss_r = compute_r_loss(score_rad_1, rad_1);
-            loss_r += compute_r_loss(score_rad_2, rad_2);
-            loss_r += compute_r_loss(score_rad_3, rad_3);
-
-            auto loss = loss_r + loss_s;
-
-            //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
-
-            if (loss.numel() == 0)
-                std::runtime_error("Loss is empty");
-
-            val_loss += loss.item<float>();
-          
-
-        }
-
-
-        auto val_end = std::chrono::steady_clock::now();
-        auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
-
-        if (opts.verbose) {
-            cout << "\r" << string(80, ' ') << "\r";
-            cout << "Validation Time: " << val_duration.count() << " s" << endl;
-        }
-
-        val_loss /= val_size.value();
-        float mean_acc = val_loss;
-
-        if (!opts.verbose) {
-            cout << "Epoch : " << epoch << endl;
-        }
-
-        cout << "Mean Loss: " << mean_acc << endl;
-        bool is_best = mean_acc < best_acc_mean;
-        
-        if (is_best) {
-            best_acc_mean = mean_acc;
-            epochs_without_improvement = 0;
-        } else {
-            epochs_without_improvement++;
-        }
-        if (opts.verbose) {
-            cout << "Iterations: " << iteration << endl;
-            cout << "Epochs without improvement: " << epochs_without_improvement << endl;
-        }
-
-        //================================================================\\
-        //                  Save Model and Optimizer                      \\
-        
-        
-        try {
-            std::string save_location;
-            if (is_best) {
+            for (const auto& batch : *val_loader) {
                 if (opts.verbose) {
-                    cout << "Saving New Best Model" << endl;
+                    printProgressBar(count, val_size.value(), 75);
                 }
-                save_location = out + "/model_best";
+                count = batch.size() + count;
+                iteration_val = batch.size() + iteration_val;
+
+
+                std::vector<torch::Tensor> batch_data;
+                std::vector<torch::Tensor> batch_radial_1;
+                std::vector<torch::Tensor> batch_radial_2;
+                std::vector<torch::Tensor> batch_radial_3;
+                std::vector<torch::Tensor> batch_sem_target;
+
+                for (const auto& example : batch) {
+                    batch_data.push_back(example.data());
+                    batch_radial_1.push_back(example.rad_1());
+                    batch_radial_2.push_back(example.rad_2());
+                    batch_radial_3.push_back(example.rad_3());
+                    batch_sem_target.push_back(example.sem_target());
+
+                }
+
+
+                auto img = torch::stack(batch_data, 0);
+                auto rad_1 = torch::stack(batch_radial_1, 0);
+                auto rad_2 = torch::stack(batch_radial_2, 0);
+                auto rad_3 = torch::stack(batch_radial_3, 0);
+                auto sem_target = torch::stack(batch_sem_target, 0);
+
+
+                img = img.to(device);
+                rad_1 = rad_1.to(device);
+                rad_2 = rad_2.to(device);
+                rad_3 = rad_3.to(device);
+                sem_target = sem_target.to(device);
+
+                torch::Tensor output = model->forward(img);
+
+                if ((val_count == 0) && (opts.verbose) && (session_iterations < 2) && (device == torch::kCUDA)) {
+                    cout << "\r" << string(100, ' ') << "\r";
+                    if (session_iterations == 0) {
+                        cout << "Validation Training GPU memory profile before backpropigation and gradients loaded: " << endl;
+                    }
+                    else {
+						cout << "Validation Training GPU memory profile with backpropigation and gradients loaded: " << endl;
+					}
+                    printGPUmem();
+                }
+
+                auto score_rad_1 = output.index({ torch::indexing::Slice(), 0, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+                auto score_rad_2 = output.index({ torch::indexing::Slice(), 1, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+                auto score_rad_3 = output.index({ torch::indexing::Slice(), 2, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+                auto score_sem = output.index({ torch::indexing::Slice(), 3, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+
+                val_count++;
+
+                auto loss_s = loss_sem(score_sem, sem_target);
+                auto loss_r = compute_r_loss(score_rad_1, rad_1);
+                loss_r += compute_r_loss(score_rad_2, rad_2);
+                loss_r += compute_r_loss(score_rad_3, rad_3);
+
+                auto loss = loss_r + loss_s;
+
+                //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
+
+                if (loss.numel() == 0)
+                    std::runtime_error("Loss is empty");
+
+                val_loss += loss.item<float>();
+                sem_loss += loss_s.item<float>();
+                r_loss += loss_r.item<float>();
+            }
+
+
+            auto val_end = std::chrono::steady_clock::now();
+            auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
+
+            if (opts.verbose) {
+                cout << "\r" << string(80, ' ') << "\r";
+                cout << "Validation Time: " << val_duration.count() << " s" << endl;
+            }
+
+            val_loss /= val_size.value();
+            sem_loss /= val_size.value();
+            r_loss /= val_size.value();
+            float mean_acc = val_loss;
+
+            if (!opts.verbose) {
+                cout << "Epoch : " << epoch << endl;
+            }
+
+            cout << "Mean Loss: " << mean_acc << endl;
+            if (opts.verbose) {
+                cout << "\tSemantic Loss: " << sem_loss << endl;
+                cout << "\tRadial Loss: " << r_loss << endl;
+            }
+            bool is_best = mean_acc < best_acc_mean;
+
+            if (is_best) {
+                best_acc_mean = mean_acc;
+                epochs_without_improvement = 0;
             }
             else {
-                if (opts.verbose) {
-                    cout << "Saving Current Model" << endl;
+                epochs_without_improvement++;
+            }
+            if (opts.verbose) {
+                cout << "Iterations: " << iteration << endl;
+                if (epochs_without_improvement > 7) {
+                    cout << "Epochs without improvement: " << epochs_without_improvement << endl;
                 }
-                save_location = out + "/current";
             }
 
-            if (!std::filesystem::is_directory(save_location))
-                std::filesystem::create_directory(save_location);
 
-            torch::serialize::OutputArchive output_model_info;
-            output_model_info.write("epoch", epoch);
-            output_model_info.write("iteration", iteration);
-            output_model_info.write("arch", model->name());
-            output_model_info.write("best_acc_mean", best_acc_mean);
-            output_model_info.write("loss", val_loss);
-            output_model_info.write("optimizer", opts.optim);
-            output_model_info.write("lr", current_lr);
-
-            output_model_info.save_to(save_location + "/info.pt");
-
-            torch::serialize::OutputArchive output_model_archive;
-            model->to(torch::kCPU);
-            model->save(output_model_archive);
-            model->to(device);
-            output_model_archive.save_to(save_location + "/model.pt");
-
-
-            torch::serialize::OutputArchive output_optim_archive;
-            optim->save(output_optim_archive);
-            output_optim_archive.save_to(save_location + "/optim.pt");
-        }
-        catch (std::exception& e) {
-            std::cout << "Error saving model: " << e.what() << std::endl;
-        }
-        
+            //================================================================\\
+            //                  Save Model and Optimizer                      \\
             
 
+            try {
+                std::string save_location;
+                if (is_best) {
+                    if (opts.verbose) {
+                        cout << "Saving New Best Model" << endl;
+                    }
+                    save_location = out + "/model_best";
+                }
+                else {
+                    if (opts.verbose) {
+                        cout << "Saving Current Model" << endl;
+                    }
+                    save_location = out + "/current";
+                }
+
+                if (!std::filesystem::is_directory(save_location))
+                    std::filesystem::create_directory(save_location);
+
+                torch::serialize::OutputArchive output_model_info;
+                output_model_info.write("epoch", epoch);
+                output_model_info.write("iteration", iteration);
+                output_model_info.write("arch", model->name());
+                output_model_info.write("best_acc_mean", best_acc_mean);
+                output_model_info.write("loss", val_loss);
+                output_model_info.write("optimizer", opts.optim);
+                output_model_info.write("lr", current_lr);
+
+                output_model_info.save_to(save_location + "/info.pt");
+
+                torch::serialize::OutputArchive output_model_archive;
+                model->to(torch::kCPU);
+                model->save(output_model_archive);
+                model->to(device);
+                output_model_archive.save_to(save_location + "/model.pt");
+
+
+                torch::serialize::OutputArchive output_optim_archive;
+                optim->save(output_optim_archive);
+                output_optim_archive.save_to(save_location + "/optim.pt");
+            }
+            catch (std::exception& e) {
+                std::cout << "Error saving model: " << e.what() << std::endl;
+            }
+        }
+        
         // Reduce learning rate every 70 epoch
         if (opts.reduce_on_plateau = false){
             if (epoch % 70 == 0 && epoch != 0) {
@@ -512,7 +574,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
   
         if (opts.verbose) {
             cout << "Epoch Training Time: " << epoch_total_time.count() << " s" << endl;
-            cout << "Average Time pe6r Epoch: " << average_epoch_time << " s" << endl;
+            cout << "Average Time per Epoch: " << average_epoch_time << " s" << endl;
         }
         else {
             if (epoch % 10 == 0) {
@@ -523,6 +585,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
 
         epoch++;
+        session_iterations++;
     }
 }
 
@@ -556,3 +619,23 @@ void Trainer::printProgressBar(int current, int total, int width)
 
 
 
+void Trainer::printGPUmem() {
+    size_t free_memory, total_memory;
+    cudaMemGetInfo(&free_memory, &total_memory);
+    size_t used_memory = total_memory - free_memory;
+    cout << "\tUsed GPU memory: " << used_memory / (1024 * 1024 * 1024) << " GB, "
+        << (used_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+        << used_memory % (1024 * 1024) << " bytes" << endl;
+
+    cout << "\tFree GPU memory: " << free_memory / (1024 * 1024 * 1024) << " GB, "
+        << (free_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+        << free_memory % (1024 * 1024) << " bytes" << endl;
+}
+
+
+cv::Mat Trainer::tensor_to_mat(torch::Tensor tensor) {
+    int rows = tensor.size(0);
+    int cols = tensor.size(1);
+    cv::Mat mat(rows, cols, CV_32FC1, tensor.data_ptr<float>());
+    return mat.clone();
+}

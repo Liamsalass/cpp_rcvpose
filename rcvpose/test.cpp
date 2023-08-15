@@ -13,8 +13,8 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/rcvpose/test_out/ape/";
-    opts.resume_train = true;
+    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/rcvpose/test_out/";
+    opts.resume_train = false;
     opts.optim = "adam";
     opts.batch_size = 2;
     opts.class_name = "ape";

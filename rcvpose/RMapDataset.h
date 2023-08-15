@@ -35,9 +35,9 @@ public:
         : data_(data), rad1_(rad1), rad2_(rad2), rad3_(rad3), sem_target_(sem_target) {}
 
     torch::Tensor data() const  { return data_; }
-    torch::Tensor rad1() const  { return rad1_; }
-    torch::Tensor rad2() const  { return rad2_; }
-    torch::Tensor rad3() const  { return rad3_; }
+    torch::Tensor rad_1() const  { return rad1_; }
+    torch::Tensor rad_2() const  { return rad2_; }
+    torch::Tensor rad_3() const  { return rad3_; }
     torch::Tensor sem_target() const { return sem_target_; }
 
 private:

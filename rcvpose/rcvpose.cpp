@@ -122,6 +122,28 @@ RCVpose::RCVpose(Options& options)
             }
 
             model = DenseFCNResNet152(3, 4);
+            model->to(device);
+
+            if ((device == torch::kCUDA) && (opts.verbose)) {
+                size_t free_memory, total_memory;
+                cudaMemGetInfo(&free_memory, &total_memory);
+
+                size_t used_memory = total_memory - free_memory;
+
+                cout << "Total GPU memory: " << total_memory / (1024 * 1024 * 1024) << " GB, "
+                    << (total_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+                    << total_memory % (1024 * 1024) << " bytes" << endl;
+
+                cout << "Memory Profile of Empty Model" << endl;
+                cout << "\tUsed GPU memory: " << used_memory / (1024 * 1024 * 1024) << " GB, "
+                    << (used_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+                    << used_memory % (1024 * 1024) << " bytes" << endl;
+
+                cout << "\tFree GPU memory: " << free_memory / (1024 * 1024 * 1024) << " GB, "
+                    << (free_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+                    << free_memory % (1024 * 1024) << " bytes" << endl;
+            }
+
 
         }
         catch (const torch::Error& e) {
@@ -148,14 +170,33 @@ RCVpose::RCVpose(Options& options)
 
             model = loader.getModel();
 
-            model->to(torch::kCPU);
-      
+            model->to(device);
 
-            torch::Tensor dummy_input = torch::randn({ 2, 3, 640, 480 });
+
+            torch::Tensor dummy_input = torch::randn({ 2, 3, 640, 480 }, device);
+
+            if ((device == torch::kCUDA) && (opts.verbose)) {
+                size_t free_memory, total_memory;
+                cudaMemGetInfo(&free_memory, &total_memory);
+
+                size_t used_memory = total_memory - free_memory;
+
+                cout << "Total GPU memory: " << total_memory / (1024 * 1024 * 1024) << " GB, "
+                    << (total_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+                    << total_memory % (1024 * 1024) << " bytes" << endl;
+
+                cout << "Memory Profile with dummy tensor and model on GPU" << endl;
+                cout << "\tUsed GPU memory: " << used_memory / (1024 * 1024 * 1024) << " GB, "
+                    << (used_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+                    << used_memory % (1024 * 1024) << " bytes" << endl;
+
+                cout << "\tFree GPU memory: " << free_memory / (1024 * 1024 * 1024) << " GB, "
+                    << (free_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+                    << free_memory % (1024 * 1024) << " bytes" << endl;
+            }
 
             auto out = model->forward(dummy_input);
 
-            cout << "Model loaded and forwarded successfully" << endl;
         }
         catch (const torch::Error& e) {
             cout << "Cannot Resume model from checkpoint" << endl;
@@ -170,7 +211,6 @@ RCVpose::RCVpose(Options& options)
     cout << endl;
     cout << string(100, '=') << endl;
     cout << string(45, ' ') << "Summary" << endl << endl;
-    cout << "Name: " << typeid(*this).name() << endl;
     cout << "Device: " << device << endl;
     cout << "dname: " << opts.dname << endl;
     cout << "root_dataset: " << opts.root_dataset << endl;

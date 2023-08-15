@@ -56,6 +56,21 @@ std::vector<torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& gt1, cv::Mat&
 	cv::Mat gt2Transposed = gt2.t();
 	cv::Mat gt3Transposed = gt3.t();
 
+	//cv::imshow("Image", imgTransposed);
+	//
+	//cv::Mat gt1_norm = gt1Transposed.clone();
+	//cv::Mat gt2_norm = gt2Transposed.clone();
+	//cv::Mat gt3_norm = gt3Transposed.clone();
+	//
+	//cv::normalize(gt1_norm, gt1_norm, 0, 1, cv::NORM_MINMAX);
+	//cv::normalize(gt2_norm, gt2_norm, 0, 1, cv::NORM_MINMAX);
+	//cv::normalize(gt3_norm, gt3_norm, 0, 1, cv::NORM_MINMAX);
+	//
+	//cv::imshow("GT1", gt1_norm);
+	//cv::imshow("GT2", gt2_norm);
+	//cv::imshow("GT3", gt3_norm);
+	//cv::waitKey(0);
+
 
 	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
 	imgTensor = imgTensor.permute({ 2, 0, 1 });

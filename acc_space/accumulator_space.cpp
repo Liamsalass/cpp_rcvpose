@@ -14,14 +14,13 @@ const vector<double> standard = { 0.229, 0.224, 0.225 };
 
 
 
-void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Tensor& radial_output, torch::Tensor& semantic_output, const torch::DeviceType device_type, const bool& debug) {
+void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Tensor& semantic_output, torch::Tensor& radial_output1, torch::Tensor& radial_output2, torch::Tensor& radial_output3, const torch::DeviceType device_type, const bool& debug) {
 
-    torch::Device device(torch::kCPU);
 
     if (debug) {
         cout << "Loading image from path: \n\t" << input_path << endl << endl;
     }
-    model->to(device);
+    torch::Device device(device_type);
 
     cv::Mat img = cv::imread(input_path);
     img.convertTo(img, CV_32FC3);
@@ -47,22 +46,21 @@ void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Te
 
     auto output = model->forward(img_batch);
 
-    auto sem_out = get<0>(output).to(torch::kCPU);
-    auto rad_out = get<1>(output).to(torch::kCPU);
+    radial_output1 = output.index({ torch::indexing::Slice(), 0 }).to(torch::kCPU);
+    radial_output2 = output.index({ torch::indexing::Slice(), 1 }).to(torch::kCPU);
+    radial_output3 = output.index({ torch::indexing::Slice(), 2 }).to(torch::kCPU);
+    semantic_output = output.index({ torch::indexing::Slice(), 3 }).to(torch::kCPU);
 
-    auto sem_out_vec = torch::unbind(sem_out, 0);
-    auto rad_out_vec = torch::unbind(rad_out, 0);
-
-    semantic_output = sem_out_vec[0];
-    radial_output = rad_out_vec[0];
-
+    radial_output1 = radial_output1.permute({ 1,2,0 });
+    radial_output2 = radial_output2.permute({ 1,2,0 });
+    radial_output3 = radial_output3.permute({ 1,2,0 });
     semantic_output = semantic_output.permute({ 1,2,0 });
-    radial_output = radial_output.permute({ 1,2,0 });
 
-    model->to(torch::kCPU);
-
-    //semantic_output = semantic_output.squeeze(2);
-    //radial_output = radial_output.squeeze(2);
+    radial_output1 = radial_output1.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
+    radial_output2 = radial_output2.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
+    radial_output3 = radial_output3.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
+    semantic_output = semantic_output.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
+    
 }
 
 // Function for estimating 6D pose for LINEMOD
@@ -162,32 +160,21 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
         vector<string> filename_list;
 
         // List to hold models
-        vector<DenseFCNResNet152> model_list;
+        DenseFCNResNet152 model;
         
         // Print loading message
-        cout << endl << "Loading Models" << endl;
+        cout << endl << "Loading Model" << endl;
         
-        // Load all models
-        for (int i = 1; i < 4; i++) {
+        // Instantiate loader
+        CheckpointLoader loader(opts.model_dir, true);
         
-            // Define directory of model
-            string model_dir = "kpt" + to_string(i);
+        // Load the model
+        model = loader.getModel();
         
-            // Instantiate model
-            DenseFCNResNet152 model;
-        
-            // Instantiate loader
-            CheckpointLoader loader(model_dir, true);
-        
-            // Load the model
-            model = loader.getModel();
-        
-            // Put the model in evaluation mode
-            model->eval();
-        
-            // Add the model to the model list
-            model_list.push_back(model);
-        }
+        // Put the model in evaluation mode
+        model->eval();
+
+        model->to(device);
 
         // Print an extra line if verbose
         if (opts.verbose) {
@@ -297,6 +284,45 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             // Project the point cloud data onto the image plane
             project(xyz_load_matrix, linemod_K_matrix, RTGT_matrix, dump, xyz_load_transformed);
 
+            torch::Tensor semantic_output;
+            torch::Tensor radial_output1;
+            torch::Tensor radial_output2;
+            torch::Tensor radial_output3;
+
+            // Record the current time before executing the FCResBackbone
+            auto start = chrono::high_resolution_clock::now();
+
+            // Execute the FCResBackbone model to get semantic and radial output
+            FCResBackbone(model, image_path, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
+
+            // Record the current time after executing the FCResBackbone
+            auto end = chrono::high_resolution_clock::now();
+
+            cv::Mat semantic = torch_tensor_to_cv_mat(semantic_output);
+            cv::Mat radial1 = torch_tensor_to_cv_mat(radial_output1);
+            cv::Mat radial2 = torch_tensor_to_cv_mat(radial_output2);
+            cv::Mat radial3 = torch_tensor_to_cv_mat(radial_output3);
+
+            cv::transpose(semantic, semantic);
+            cv::transpose(radial1, radial1);
+            cv::transpose(radial2, radial2);
+            cv::transpose(radial3, radial3);
+
+            cv::imshow("Semantic", semantic);
+            cv::imshow("Radial1", radial1);
+            cv::imshow("Radial2", radial2);
+            cv::imshow("Radial3", radial3);
+            cv::waitKey(0);
+
+
+
+            vector<torch::Tensor> radial_outputs = { radial_output1, radial_output2, radial_output3 };
+
+            // Print the FCResBackbone speed, semantic output shape, and radial output shape if verbose option is enabled
+            if (opts.verbose) {
+                cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
+            }
+
             // Loop over each keypoint for estimation
             for (const auto& keypoint : keypoints) {
                 if (opts.verbose) {
@@ -331,31 +357,16 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << transformed_gt_center_mm << endl << endl;
                 }
 
-                //CPP backend testing method
-                torch::Tensor semantic_output;
-                torch::Tensor radial_output;
-
-                // Record the current time before executing the FCResBackbone
-                auto start = chrono::high_resolution_clock::now();
-
-                // Execute the FCResBackbone model to get semantic and radial output
-                FCResBackbone(model_list.at(keypoint_count - 1), image_path, radial_output, semantic_output, device_type, false);
-
-                // Record the current time after executing the FCResBackbone
-                auto end = chrono::high_resolution_clock::now();
-
-                // Print the FCResBackbone speed, semantic output shape, and radial output shape if verbose option is enabled
-                if (opts.verbose) {
-                    cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
-                }
+   
 
                 // Add the time taken to execute the FCResBackbone to the total network time
                 net_time += chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
-
                 // Convert the semantic and radial output tensors to OpenCV matrices
                 cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
-                cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_output);
+                cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
+
+               
 
                 // Define the depth image path
                 string depth_path = rootPath + "data/depth" + to_string(img_num) + ".dpt";
@@ -389,6 +400,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 depth_tmp.release();
                 sem_tmp.release();
 
+              
                 //if (opts.demo_mode) {
                 //    cv::Mat rad_cv_show = rad_cv.clone();
                 //    cv::normalize(rad_cv_show, rad_cv_show, 0, 1, cv::NORM_MINMAX, CV_32F);

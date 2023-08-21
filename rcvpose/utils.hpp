@@ -45,7 +45,6 @@ public:
     }
 
     CheckpointLoader(const std::string& checkpointPath, bool get_best_ckpt, bool load_model, bool load_optimizer) {
-        std::string path;
         if (get_best_ckpt) {
             path = checkpointPath + "/model_best";
         }
@@ -67,24 +66,13 @@ public:
             torch::serialize::InputArchive modelArchive;
             modelArchive.load_from(path + "/model.pt");
             model_->load(modelArchive);
-
-            if (load_optimizer) {
-                // Load optimizer
-                torch::serialize::InputArchive optimArchive;
-                optimArchive.load_from(path + "/optim.pt");
-                //TODO, load current LR values and store them
-                optim_ = new torch::optim::Adam(model_->parameters(), torch::optim::AdamOptions(0.0001));
-                optim_->load(optimArchive);
-            }
-            else {
-                optim_ = nullptr;
-            }
         }
 		else {
 			model_ = nullptr;
-            optim_ = nullptr;
 		}
+        optim_ = nullptr;
 
+  
     }
 
 
@@ -116,6 +104,15 @@ public:
     }
 
     torch::optim::Optimizer* getOptimizer() {
+        if (!model_) {
+            throw std::runtime_error("Model was not loaded");
+        }
+        torch::serialize::InputArchive optimArchive;
+        optimArchive.load_from(path + "/optim.pt");
+        //TODO, load current LR values and store them
+        optim_ = new torch::optim::Adam(model_->parameters(), torch::optim::AdamOptions(0.0001));
+        optim_->load(optimArchive);
+
         if (!optim_) {
             throw std::runtime_error("Optimizer was not loaded");
         }
@@ -135,6 +132,7 @@ private:
     c10::IValue epoch_, iteration_, modelName_, bestAccuracy_, loss_, optimizerName_, lr_;
     DenseFCNResNet152 model_;
     torch::optim::Optimizer* optim_;
+    std::string path;
 };
 
 

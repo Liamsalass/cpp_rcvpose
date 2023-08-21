@@ -60,8 +60,6 @@ private:
     void inference();
     cv::Mat img;
     cv::Mat depth;
-    CheckpointLoader model_loader;
-
 };
 
 

@@ -12,7 +12,7 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "C:/Users/User/.cw/work/datasets/test";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/ape_test";
+    opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/ape";
     opts.resume_train = true;
     opts.optim = "adam";
     opts.batch_size = 2;
@@ -30,49 +30,72 @@ Options testing_options() {
 
 int main(int argc, char* args[])
 {
-    //Options opts = testing_options();
+    bool train = false;
+    bool validate = false;
+    bool estimate = false;
+
+    if(argc > 1){
+        if (args[1] == "train"){
+            train = true;
+        } 
+        else if (args[1] == "validate"){
+            validate = true;
+        }
+        else if (args[1] == "estimate"){
+            estimate = true;
+        }
+        else {
+            cout << "Usage: " << args[0] << " <train/validate/estimate>" << endl;
+            return 0;
+        }
+    } else {
+        cout << "Usage: " << args[0] << " <train/validate/estimate>" << endl;
+        cout << "Defaulting to validating" << endl;
+        validate = true;
+    }
+
     Options opts;
-    if ((argc > 1) &&(argc < 14)) {
+    if ((argc > 2) &&(argc < 15)) {
         try {
-            opts.dname = args[1];
+            opts.dname = args[2];
 
-            opts.root_dataset = args[2];
+            opts.root_dataset = args[3];
 
-            opts.model_dir = args[3];
+            opts.model_dir = args[4];
 
-            if (args[4] == "true") {
+            if (args[5] == "true") {
                 opts.resume_train = true;
             }
             else {
                 opts.resume_train = false;
             }
-            opts.optim = args[5];
+            opts.optim = args[6];
 
-            opts.batch_size = stoi(args[6]);
+            opts.batch_size = stoi(args[7]);
 
-            opts.class_name = args[7];
+            opts.class_name = args[8];
 
-            opts.initial_lr = stod(args[8]);
-            if (args[9] == "true") {
+            opts.initial_lr = stod(args[9]);
+            if (args[10] == "true") {
                 opts.reduce_on_plateau = true;
             }
             else {
                 opts.reduce_on_plateau = false;
             }
-            opts.patience = stoi(args[10]);
-            if (args[11] == "true") {
+            opts.patience = stoi(args[12]);
+            if (args[12] == "true") {
                 opts.demo_mode = true;
             }
             else {
                 opts.demo_mode = false;
             }
-            if (args[12] == "true") {
+            if (args[13] == "true") {
                 opts.verbose = true;
             }
             else {
                 opts.verbose = false;
             }
-            if (args[13] == "true") {
+            if (args[14] == "true") {
                 opts.test_occ = true;
             }
             else {
@@ -94,26 +117,26 @@ int main(int argc, char* args[])
 
     RCVpose rcv(opts);
     //Trains the model with the given parameters, if resume if true, will resume training from previous saved state
-    rcv.train();
+    if (train)
+        rcv.train();
 
     // Runs through the entire test dataset and prints the ADD before and after ICP as well as time taken
-    rcv.validate();
+    if (validate)
+        rcv.validate();
 
     // Estimates the pose of a single input RGBD image and prints the estimated pose as well as time taken 
-    //rcv.estimate_pose();
+    if(estimate){
+        for (int i = 0; i < 100; i++) {
+            string img_num_str = to_string(i);  
 
+            string padded_img_num = string(6 - img_num_str.length(), '0') + img_num_str;
 
- 
-    for (int i = 0; i < 100; i++) {
-        string img_num_str = to_string(i);  
-    
-        string padded_img_num = string(6 - img_num_str.length(), '0') + img_num_str;
-    
-        string img_path = "C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/JPEGImages/" + padded_img_num + ".jpg";
-        string depth_path = "C:/Users/User/.cw/work/datasets/test/LINEMOD_ORIG/ape/data/depth" + img_num_str + ".dpt";
-        rcv.estimate_pose(img_path, depth_path);
+            string img_path = "C:/Users/User/.cw/work/datasets/test/LINEMOD/ape/JPEGImages/" + padded_img_num + ".jpg";
+            string depth_path = "C:/Users/User/.cw/work/datasets/test/LINEMOD_ORIG/ape/data/depth" + img_num_str + ".dpt";
+            rcv.estimate_pose(img_path, depth_path);
+        }
+        return 0;
     }
-  
 
     return 0;
 }

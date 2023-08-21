@@ -384,7 +384,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
 
             // Define the depth image path
-            string depth_path = rootPath + "data/depth" + to_string(img_num) + ".dpt";
+            string depth_path = rootpvPath + "data/depth" + to_string(img_num) + ".dpt";
 
             // Load the depth image
             cv::Mat depth_cv = read_depth_to_cv(depth_path, false);

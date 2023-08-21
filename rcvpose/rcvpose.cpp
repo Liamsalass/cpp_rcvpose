@@ -7,8 +7,8 @@ RCVpose::RCVpose(Options& options)
    
     opts = options;
     
-    cout << string(100, '=') << endl;
-    cout << string(34, ' ') << "Initializing RCVpose" << endl << endl;
+    cout << string(75, '=') << endl;
+    cout << string(26, ' ') << "Initializing RCVpose" << endl << endl;
     
 
     bool can_run = true;
@@ -75,7 +75,7 @@ RCVpose::RCVpose(Options& options)
     torch::manual_seed(0);
 
     //Set device type
-    if (opts.gpu_id >= 0 && torch::cuda::is_available()) {
+    if (torch::cuda::is_available()) {
         device_type = torch::kCUDA;
     }
     else {
@@ -166,12 +166,15 @@ RCVpose::RCVpose(Options& options)
             //    }
             //}
 
-            CheckpointLoader loader(out, true);
+             model_loader = CheckpointLoader(out, true, true, false);
 
-            model = loader.getModel();
+            model = model_loader.getModel();
 
             model->to(device);
 
+            model->eval();
+
+            torch::NoGradGuard no_grad;
 
             torch::Tensor dummy_input = torch::randn({ 2, 3, 640, 480 }, device);
 
@@ -209,8 +212,8 @@ RCVpose::RCVpose(Options& options)
 
     //Print params
     cout << endl;
-    cout << string(100, '=') << endl;
-    cout << string(45, ' ') << "Summary" << endl << endl;
+    cout << string(75, '=') << endl;
+    cout << string(28, ' ') << "Summary" << endl << endl;
     cout << "Device: " << device << endl;
     cout << "dname: " << opts.dname << endl;
     cout << "root_dataset: " << opts.root_dataset << endl;
@@ -218,6 +221,14 @@ RCVpose::RCVpose(Options& options)
     cout << "optim: " << opts.optim << endl;
     cout << "batch_size: " << opts.batch_size << endl;
     cout << "class_name: " << opts.class_name << endl;
+    cout << "Reduce Learning Rate on Plateau: ";
+    if (opts.reduce_on_plateau) {
+        cout << "True" << endl;
+        cout << "\tPatience: " << opts.patience << endl;
+    }
+    else {
+		cout << "False" << endl;
+	}
     cout << "initial_lr: " << opts.initial_lr << endl;
     cout << "model_dir: " << opts.model_dir << endl;
     cout << "demo_mode: " << opts.demo_mode << endl;
@@ -238,6 +249,8 @@ RCVpose::RCVpose(Options& options)
 
 
 
+
+
 void RCVpose::train()
 {
     Trainer trainer(opts, model);
@@ -246,12 +259,167 @@ void RCVpose::train()
 
 
 void RCVpose::validate() {
-    // Implementation for evaluating the model
+    estimate_6d_pose_lm(opts, model);
+}
+
+void RCVpose::estimate_pose(cv::Mat img_with_depth_channel)
+{
+    //Img must have the shape (height, width, 4)
+	cv::Mat img_(img_with_depth_channel.rows, img_with_depth_channel.cols, CV_8UC3);
+	cv::cvtColor(img_with_depth_channel, img_, cv::COLOR_BGRA2BGR);
+	cv::Mat depth_(img_with_depth_channel.rows, img_with_depth_channel.cols, CV_8UC1);
+	cv::extractChannel(img_with_depth_channel, depth_, 3);
+	estimate_pose(img_, depth_);
+}
+
+void RCVpose::estimate_pose(double* img, double* depth, const int height, const int width)
+{
+    //Img must have the shape (height, width, 3)
+    //Depth must have the shape (height, width, 1)
+    cv::Mat img_(height, width, CV_8UC3, img);
+    cv::Mat depth_(height, width, CV_8UC1, depth);
+    estimate_pose(img_, depth_);
+}
+
+void RCVpose::estimate_pose(cv::Mat img_, cv::Mat depth_)
+{
+    if (img.data)
+        img.release();
+    if (depth.data)
+        depth.release();
+
+    img = img_.clone();
+    depth = depth_.clone();
+
+    inference();
+
+}
+
+void RCVpose::estimate_pose(const std::string& img_path, const std::string& depth_path)
+{
+    if (img.data)
+		img.release();
+    if (depth.data)
+        depth.release();
+
+    try {
+        img = cv::imread(img_path);
+        depth = read_depth_to_cv(depth_path, false);
+    }
+    catch (const std::exception& e) {
+		cout << "Error: " << e.what() << endl;
+		exit(1);
+	}
+
+    inference();
+
+
 }
 
 
-void RCVpose::demo() {
-    // Implementation for running the model in demo mode
+void RCVpose::inference()
+{
+    string rootPath = opts.root_dataset + "/LINEMOD/" + opts.class_name + "/";
+
+    string keypoints_path = rootPath + "Outside9.npy";
+
+    vector<vector<double>> keypoints = read_double_npy(keypoints_path, false);
+
+    string pcv_load_path = rootPath + "pc_" + opts.class_name + ".npy";
+
+    vector<Vertex> orig_point_cloud = read_point_cloud(pcv_load_path);
+
+    estimate_6d_pose(opts, model, img, depth, keypoints, orig_point_cloud);
+}
+
+
+void RCVpose::save_all_test_tensors() {
+    cout << string(50, '-') << endl;
+    
+    // Forward pass all the test images through the model and save the ouput tensors to path
+    const vector<double> mean = { 0.485, 0.456, 0.406 };
+    const vector<double> standard = { 0.229, 0.224, 0.225 };
+
+
+    ifstream test_file(opts.root_dataset + "/LINEMOD/" + opts.class_name + "/Split/val.txt");
+    vector<string> test_list;
+    string line;
+
+    model->eval();
+
+    // Read lines from test file
+    if (test_file.is_open()) {
+        while (getline(test_file, line)) {
+            line.erase(line.find_last_not_of("\n\r\t") + 1);
+            test_list.push_back(line);
+        }
+        test_file.close();
+    }
+    else {
+        cerr << "Unable to open file containing test data" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    const int total_num_img = test_list.size();
+    const string path = opts.model_dir + "/test_tensors/";
+
+    cout << "Saving all " << total_num_img << " test tensors to " << path << endl;
+
+    int count = 0;
+    auto start_save = chrono::high_resolution_clock::now();
+
+    
+
+    for (auto test_img : test_list) {
+        string image_path = opts.root_dataset + "/LINEMOD/" + opts.class_name + "/JPEGImages/" + test_img + ".jpg";
+        cv::Mat img = cv::imread(image_path);
+        torch::Device device(device_type);
+
+        img.convertTo(img, CV_32FC3);
+        img /= 255.0;
+
+        for (int i = 0; i < 3; i++) {
+            cv::Mat channel(img.size(), CV_32FC1);
+            cv::extractChannel(img, channel, i);
+            channel = (channel - mean[i]) / standard[i];
+            cv::insertChannel(channel, img, i);
+        }
+        if (img.rows % 2 != 0)
+            img = img.rowRange(0, img.rows - 1);
+        if (img.cols % 2 != 0)
+            img = img.colRange(0, img.cols - 1);
+        cv::Mat imgTransposed = img.t();
+
+        torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
+        imgTensor = imgTensor.permute({ 2, 0, 1 });
+
+
+        auto img_batch = torch::stack(imgTensor, 0).to(device);
+
+        //torch::NoGradGuard no_grad;
+
+
+        auto output = model->forward(img_batch);
+
+        output = output.to(torch::kCPU);
+
+        auto radial_output1 = output[0][0];
+        auto radial_output2 = output[0][1];
+        auto radial_output3 = output[0][2];
+        auto semantic_output = output[0][3];
+
+        saveTensorToFile(radial_output1, path + "/radial1/" + test_img + ".txt");
+        saveTensorToFile(radial_output2, path + "/radial2/" + test_img + ".txt");
+        saveTensorToFile(radial_output3, path + "/radial3/" + test_img + ".txt");
+        saveTensorToFile(semantic_output, path + "/semantic/" + test_img + ".txt");
+
+        printProgressBar(count, total_num_img, 50);
+        count++;
+    }
+    cout << endl;
+
+    auto end_save = chrono::high_resolution_clock::now();
+    cout << "Saved all test tensors to " << path << " in " << chrono::duration_cast<chrono::seconds>(end_save - start_save).count() << " seconds" << endl << endl;
 }
 
 

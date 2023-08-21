@@ -57,15 +57,14 @@ set(SOURCE_FILES
     "JACOBI.c"
     "lmshorn.c"
     "lmshorn.h"
-    "AccSpaceIO.hpp"
-    "AccSpaceMath.hpp"
     "accumulator_space.h"
     "accumulator_space.cpp"
     "npy.hpp"
+    "AccSpaceMath.h" 
+    "AccSpaceMath.cpp"
+    "AccSpaceIO.h" 
+    "AccSpaceIO.cpp"
 )
-#  "accumulator_space.h"
-#    "accumulator_space.cpp"
-
 
 option(BUILD_DLL "Build DLL" OFF)
 # Conditionally include the test.cpp file based on BUILD_DLL variable.

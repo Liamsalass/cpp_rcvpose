@@ -24,7 +24,6 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
         if (opts.verbose) {
             cout << "Setting up optimizer" << endl;
         }
-        // Instantiate the optimizer
         try {
             if (opts.optim == "adam") {
                 optim  = new torch::optim::Adam(model->parameters(), torch::optim::AdamOptions(opts.initial_lr));
@@ -59,9 +58,9 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
     } 
     else {
         try {
-            // Load model from checkpoint
             cout << "Loading model from checkpoint" << endl;
-            CheckpointLoader loader(out, true);
+            CheckpointLoader loader(out, true, true, true);
+            model = loader.getModel();
             epoch = loader.getEpoch();
             starting_epoch = epoch;
             if (opts.verbose) {
@@ -107,11 +106,8 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
         cout << "Setting up loss function" << endl;
     }
 
-    // Instantiate the loss function
     try {
         loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
-        //loss_radial->to(torch::kCPU);
-
         loss_radial->to(device);
     }
     catch (const torch::Error& e) {
@@ -119,9 +115,7 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
         return;
     }
     try {
-       
         loss_sem = torch::nn::L1Loss();
-        //loss_sem->to(torch::kCPU);
         loss_sem->to(device);
     }
     catch (const torch::Error& e) {
@@ -162,21 +156,18 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
     cout << string(24, ' ') << "Begining Training Initialization" << endl << endl;
     
 
-    //Select device base on opts.gpu_id
-
     torch::Device device(device_type);
     if (opts.verbose) {
         cout << "Setting up dataset loader" << endl;
     }
-    // Instantiate the training dataset
-    // Can use .map(torch::data::transforms::Stack<>()) to stack batches into a single tensor
+ 
     auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name);
     torch::optional<size_t> train_size = train_dataset.size();
 
     auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name);
     torch::optional<size_t> val_size = val_dataset.size();
 
-    // Check if dataset is empty
+ 
     if (train_size.value() == 0 || !train_size.has_value()) {
         cout << "Error: Could not get size of training dataset" << endl;
         return;
@@ -191,7 +182,6 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
     max_epoch = static_cast<int>(std::ceil(1.0 * max_iteration / train_size.value()));
 
-    // Instantiate the dataloaders 
 
     auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
         std::move(train_dataset),
@@ -220,7 +210,8 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
         // ========================================================================================== \\
         // ====================================== Training ========================================== \\
-
+        
+        
         int count = 0;
         model->train();
 
@@ -230,54 +221,26 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 printProgressBar(count, train_size.value(), 75);
             }
 
-
-
-
             iteration = batch.size() + iteration;
 
-            std::vector<torch::Tensor> batch_data;
-            std::vector<torch::Tensor> batch_radial_1;
-            std::vector<torch::Tensor> batch_radial_2;
-            std::vector<torch::Tensor> batch_radial_3;
-            std::vector<torch::Tensor> batch_sem_target;
+            std::vector<std::vector<torch::Tensor>> batches(5);
 
             for (const auto& example : batch) {
-                batch_data.push_back(example.data());
-                batch_radial_1.push_back(example.rad_1());
-                batch_radial_2.push_back(example.rad_2());
-                batch_radial_3.push_back(example.rad_3());
-                batch_sem_target.push_back(example.sem_target());
-
-                //torch::Tensor tmp_rad_1 = example.rad_1().index({ 0, torch::indexing::Slice(),torch::indexing::Slice() });
-                //torch::Tensor tmp_rad_2 = example.rad_2().index({ 0, torch::indexing::Slice(), torch::indexing::Slice() });
-                //torch::Tensor tmp_rad_3 = example.rad_3().index({ 0, torch::indexing::Slice(), torch::indexing::Slice() });
-                //torch::Tensor tmp_sem = example.sem_target().index({0, torch::indexing::Slice(), torch::indexing::Slice() });
-                //
-                //
-                //cv::Mat rad1_mat = tensor_to_mat(tmp_rad_1);
-                //cv::Mat rad2_mat = tensor_to_mat(tmp_rad_2);
-                //cv::Mat rad3_mat = tensor_to_mat(tmp_rad_3);
-                //cv::Mat sem_mat = tensor_to_mat(tmp_sem);
-                //
-                //cv::normalize(rad1_mat, rad1_mat, 0, 1, cv::NORM_MINMAX);
-                //cv::normalize(rad2_mat, rad2_mat, 0, 1, cv::NORM_MINMAX);
-                //cv::normalize(rad3_mat, rad3_mat, 0, 1, cv::NORM_MINMAX);
-                //cv::normalize(sem_mat, sem_mat, 0, 1, cv::NORM_MINMAX);
-                //
-                //cv::imshow("Radial 1", rad1_mat);
-                //cv::imshow("Radial 2", rad2_mat);
-                //cv::imshow("Radial 3", rad3_mat);
-                //cv::imshow("Semantic", sem_mat);
-                //cv::waitKey(0);
+                batches[0].push_back(example.data());
+                batches[1].push_back(example.rad_1());
+                batches[2].push_back(example.rad_2());
+                batches[3].push_back(example.rad_3());
+                batches[4].push_back(example.sem_target());
             }
 
-            optim->zero_grad();
+            auto data = torch::stack(batches[0], 0).to(device);
+            auto rad_1 = torch::stack(batches[1], 0).to(device);
+            auto rad_2 = torch::stack(batches[2], 0).to(device);
+            auto rad_3 = torch::stack(batches[3], 0).to(device);
+            auto sem_target = torch::stack(batches[4], 0).to(device);
+            auto sem_target_permuted = sem_target.permute({ 1, 0, 2, 3 });
 
-            auto data = torch::stack(batch_data, 0).to(device);
-            auto rad_1 = torch::stack(batch_radial_1, 0).to(device);
-            auto rad_2 = torch::stack(batch_radial_2, 0).to(device);
-            auto rad_3 = torch::stack(batch_radial_3, 0).to(device);
-            auto sem_target = torch::stack(batch_sem_target, 0).to(device);
+            optim->zero_grad();
 
             if ((session_iterations == 0) && (opts.verbose) && (count == 0) && (device == torch::kCUDA)) {
                 cout << "\r" << string(100, ' ') << "\r";
@@ -285,10 +248,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 printGPUmem();
             }
 
-
             torch::Tensor scores = model->forward(data);
-
-
 
             auto score_rad_1 = scores.index({ torch::indexing::Slice(), 0 }).unsqueeze(1);
             auto score_rad_2 = scores.index({ torch::indexing::Slice(), 1 }).unsqueeze(1);
@@ -300,9 +260,6 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             score_rad_2 = (score_rad_2.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 }));
             score_rad_3 = (score_rad_3.permute({ 1, 0, 2, 3 }) * sem_target.permute({ 1, 0, 2, 3 }));
 
-
-
-
             score_rad_1 = score_rad_1.permute({ 1, 0, 2, 3 });
             score_rad_2 = score_rad_2.permute({ 1, 0, 2, 3 });
             score_rad_3 = score_rad_3.permute({ 1, 0, 2, 3 });
@@ -313,6 +270,8 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             loss_r += compute_r_loss(score_rad_2, rad_2);
             loss_r += compute_r_loss(score_rad_3, rad_3);
 
+        
+            // Look into different weigthings for loss
             torch::Tensor loss = loss_r + loss_s;
 
             //cout << "Radial Loss: " << loss_r.item<float>() << " Semantic Loss: " << loss_s.item<float>() << " Total Loss: " << loss.item<float>() << "\r";
@@ -335,6 +294,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             cout << "\r" << string(80, ' ') << "\r\r";
             cout << "Training Time: " << train_duration.count() << " s" << endl;
         }
+        
 
         // ========================================================================================== \\
         //                                  Validation Epoch 									       \\
@@ -347,7 +307,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             float val_loss = 0;
             float sem_loss = 0;
             float r_loss = 0;
-            count = 0;
+            int count = 0;
             torch::NoGradGuard no_grad;
             auto val_start = std::chrono::steady_clock::now();
 
@@ -357,9 +317,8 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 if (opts.verbose) {
                     printProgressBar(count, val_size.value(), 75);
                 }
-                count = batch.size() + count;
+             
                 iteration_val = batch.size() + iteration_val;
-
 
                 std::vector<torch::Tensor> batch_data;
                 std::vector<torch::Tensor> batch_radial_1;
@@ -376,13 +335,11 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
                 }
 
-
                 auto img = torch::stack(batch_data, 0);
                 auto rad_1 = torch::stack(batch_radial_1, 0);
                 auto rad_2 = torch::stack(batch_radial_2, 0);
                 auto rad_3 = torch::stack(batch_radial_3, 0);
                 auto sem_target = torch::stack(batch_sem_target, 0);
-
 
                 img = img.to(device);
                 rad_1 = rad_1.to(device);
@@ -403,6 +360,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                     printGPUmem();
                 }
 
+
                 auto score_rad_1 = output.index({ torch::indexing::Slice(), 0, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
                 auto score_rad_2 = output.index({ torch::indexing::Slice(), 1, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
                 auto score_rad_3 = output.index({ torch::indexing::Slice(), 2, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
@@ -419,6 +377,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
                 //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
 
+                count = batch.size() + count;
                 if (loss.numel() == 0)
                     std::runtime_error("Loss is empty");
 
@@ -470,7 +429,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             //================================================================\\
             //                  Save Model and Optimizer                      \\
             
-
+            
             try {
                 std::string save_location;
                 if (is_best) {
@@ -514,6 +473,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             catch (std::exception& e) {
                 std::cout << "Error saving model: " << e.what() << std::endl;
             }
+            
         }
         
         // Reduce learning rate every 70 epoch
@@ -600,23 +560,6 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
 
     return loss;
 }
-
-
-void Trainer::printProgressBar(int current, int total, int width)
-{
-    float progress = float(current) / float(total);
-    int barWidth = width - 7;
-    cout << "[";
-    int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) cout << "=";
-        else if (i == pos) cout << ">";
-        else cout << " ";
-    }
-    cout << "] " << int(progress * 100.0) << " %\r";
-    cout.flush();
-}
-
 
 
 void Trainer::printGPUmem() {

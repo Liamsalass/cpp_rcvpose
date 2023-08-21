@@ -1,30 +1,4 @@
-#pragma once
-
-#include "utils.hpp"
-#include "options.hpp"
-#include "FastFor.cu"
-#include <chrono>
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <cmath>
-#include <iostream>
-#include <fstream>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <Open3D/Geometry/PointCloud.h>
-#include <open3d/io/PointCloudIO.h>
-#include <open3d/Open3D.h>
-#include <open3d/utility/FileSystem.h>
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
-#include <cuda_runtime.h>
-#include <cuda.h>
-#include <device_launch_parameters.h>
-#include <omp.h> 
-#include <atomic>
-#include <mutex>
-#include <iomanip>
+#include "AccSpaceMath.h"
 
 using namespace std;
 using namespace open3d;
@@ -33,38 +7,15 @@ using namespace Eigen;
 typedef shared_ptr<geometry::PointCloud> pc_ptr;
 typedef geometry::PointCloud pc;
 
-//vector<string> lm_cls_names = {"ape", "cam", "can", "cat", "driller", "duck", "eggbox", "glue", "holepuncher", "iron", "lamp"};
-vector<string> lm_cls_names = { "ape" };
-
-unordered_map<string, double> add_threshold = {
-    {"eggbox", 0.019735770122546523},
-    {"ape", 0.01421240983190395},
-    {"cat", 0.018594838977253875},
-    {"cam", 0.02222763033276377},
-    {"duck", 0.015569664208967385},
-    {"glue", 0.01930723067998101},
-    {"can", 0.028415044264086586},
-    {"driller", 0.031877906042},
-    {"holepuncher", 0.019606109985}
-};
-
-array<array<double, 3>, 3> linemod_K {{
-    {572.4114, 0.0, 325.2611},
-    { 0.0, 573.57043, 242.04899 },
-    { 0.0, 0.0, 1.0 }
-    }};
-
-atomic<int> progress(0);
-mutex mtx;
 
 
 Eigen::MatrixXd vectorToEigenMatrix(const vector<double>& vec) {
     int size = vec.size();
-    Eigen::MatrixXd matrix(1, size);  
+    Eigen::MatrixXd matrix(1, size);
 
 
     for (int i = 0; i < size; i++) {
-        matrix(0, i) = vec[i];  
+        matrix(0, i) = vec[i];
     }
 
     return matrix;
@@ -111,10 +62,10 @@ void project(const MatrixXd& xyz, const MatrixXd& K, const MatrixXd& RT, MatrixX
     RT: [3, 4]
     */
 
-    actual_xyz =  xyz * (RT.block(0, 0, RT.rows(), 3).transpose());
+    actual_xyz = xyz * (RT.block(0, 0, RT.rows(), 3).transpose());
     MatrixXd RTslice = RT.block(0, 3, RT.rows(), 1).transpose();
 
-    for (int i = 0; i < actual_xyz.rows(); i++){
+    for (int i = 0; i < actual_xyz.rows(); i++) {
         actual_xyz.row(i) += RTslice;
     }
 
@@ -143,7 +94,7 @@ vector<Vertex> rgbd_to_point_cloud(const array<array<double, 3>, 3>& K, const cv
         zs[i] = depth64F.at<double>(v, u);
     }
 
-    
+
     for (int i = 0; i < nonzeroPoints.size(); i++) {
         int v, u;
         v = nonzeroPoints[i].y;
@@ -219,7 +170,7 @@ void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& 
     const double factor = (std::pow(3, 0.5) / 4.0);
     const int start = 0;
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int count = 0; count < xyz_mm.size(); ++count) {
         const Vertex xyz = xyz_mm[count];
         const int radius = round(radial_list_mm[count]);
@@ -254,23 +205,23 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     // unit 5mm
     vector<Vertex> xyz_mm(xyz.size());
 
-    
+
 
     for (int i = 0; i < xyz.size(); i++) {
         xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
         xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
         xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
     }
- 
+
     double x_mean_mm = 0;
     double y_mean_mm = 0;
     double z_mean_mm = 0;
 
     for (int i = 0; i < xyz_mm.size(); i++) {
-		x_mean_mm += xyz_mm[i].x;
-		y_mean_mm += xyz_mm[i].y;
-		z_mean_mm += xyz_mm[i].z;
-	}
+        x_mean_mm += xyz_mm[i].x;
+        y_mean_mm += xyz_mm[i].y;
+        z_mean_mm += xyz_mm[i].z;
+    }
 
     x_mean_mm /= xyz_mm.size();
     y_mean_mm /= xyz_mm.size();
@@ -302,7 +253,7 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     }
 
     double xyz_mm_min = min(x_mm_min, min(y_mm_min, z_mm_min));
-    
+
     double radius_max = radial_list_mm[0];
 
     for (int i = 0; i < radial_list_mm.size(); i++) {
@@ -318,8 +269,8 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     if (zero_boundary < 0) {
         for (int i = 0; i < xyz_mm.size(); i++) {
             xyz_mm[i].x -= zero_boundary;
-			xyz_mm[i].y -= zero_boundary;
-			xyz_mm[i].z -= zero_boundary;
+            xyz_mm[i].y -= zero_boundary;
+            xyz_mm[i].z -= zero_boundary;
         }
     }
 
@@ -334,7 +285,7 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     }
 
     double xyz_mm_max = max(x_mm_max, max(y_mm_max, z_mm_max));
-    
+
     int length = static_cast<int>(xyz_mm_max);
 
     int vote_map_dim = length + static_cast<int>(radius_max);
@@ -342,7 +293,7 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     int total_size = vote_map_dim * vote_map_dim * vote_map_dim;
 
     int* VoteMap_3D = new int[total_size]();
- 
+
 
     //if (use_cuda && !debug) {
         //cout << "Using GPU for fast_for" << endl;
@@ -373,9 +324,6 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         //cudaFree(device_VoteMap_3D);
     //}
 
-    if (debug) {
-        cout << "\tUsing CPU for fast_for" << endl;
-    }
     fast_for_cpu(xyz_mm, radial_list_mm, VoteMap_3D, vote_map_dim);
 
     vector<Eigen::Vector3i> centers;
@@ -388,12 +336,12 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
                 int index = i * vote_map_dim * vote_map_dim + j * vote_map_dim + k;
                 int current_vote = VoteMap_3D[index];
                 if (current_vote > max_vote) {
-                    centers.clear(); 
+                    centers.clear();
                     max_vote = current_vote;
                     centers.push_back(Eigen::Vector3i(i, j, k));
                 }
                 else if (current_vote == max_vote) {
-                    centers.push_back(Eigen::Vector3i(i, j, k)); 
+                    centers.push_back(Eigen::Vector3i(i, j, k));
                 }
             }
         }

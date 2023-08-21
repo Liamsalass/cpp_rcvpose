@@ -6,8 +6,6 @@
 
 
 struct Options {
-    // GPU ID to use
-    int gpu_id = -1; // -1 = CPU
     // Dataset name ("lm" = LINEMOD, "ycbv", "tless")
     std::string dname;
     // Root dataset directory
@@ -31,10 +29,15 @@ struct Options {
     std::string model_dir;
     // Run in Demo mode display images
     bool demo_mode = false;
-    // Print out debugging information 
+    // Print out debugging information, useful if code is failing and need to find where
     bool verbose = false;
     // Run in Test Occ mode
     bool test_occ = false;
+    // Masking threshold used when masking the semantic output
+    // Value must be betwee 0 - 1
+    // Smaller values decrease speed and increase accuracy wihtin the range of 0.78 to 0.82. 
+    // Any larger or smaller reduces accuracy significantly or decreases speed exponentially
+    float mask_threshold = 0.8;
     // Configs
     std::map<std::string, std::vector<float>> cfg;
 };

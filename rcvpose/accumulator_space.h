@@ -1,13 +1,12 @@
 #pragma once
-#include "AccSpaceIO.hpp"
-#include "AccSpaceMath.hpp"
+#include "AccSpaceIO.h"
+#include "AccSpaceMath.h"
 #include "lmshorn.h"
 #include "npy.hpp"
-#include "happly.h"
 #include "models/denseFCNResNet152.h"
 #include "utils.hpp"
-#include "npy_reader.hpp"
 #include "options.hpp"
+
 #include <chrono>
 #include <string>
 #include <unordered_map>
@@ -27,4 +26,6 @@
 
 
 
-void estimate_6d_pose_lm(const Options opts);
+void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model);
+
+void estimate_6d_pose(const Options& opts, DenseFCNResNet152& model, cv::Mat& img, cv::Mat& depth, const std::vector<std::vector<double>>& keypoints, const std::vector<Vertex>& orig_point_cloud);

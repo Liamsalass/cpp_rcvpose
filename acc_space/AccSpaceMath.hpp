@@ -214,7 +214,6 @@ void normalizeMat(cv::Mat& input, const bool& debug = false) {
 
 
 
-//TODO :: Check if racecondition affects performance
 void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
     const double factor = (std::pow(3, 0.5) / 4.0);
     const int start = 0;
@@ -236,7 +235,6 @@ void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& 
 
                     if (radius - distance < factor && radius - distance > 0) {
                         int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
-                        //Possible race condition, check if the accuracy decreases here
                         VoteMap_3D[index] += 1;
                     }
                 }
@@ -411,9 +409,10 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         cout << "\tCenter: " << centers[0][0] << " " << centers[0][1] << " " << centers[0][2] << endl;
     }
 
-    //if (centers.size() > 1) {
-    //    cout << centers.size() << " centers located." << endl;
-    //}
+    if (centers.size() > 1) {
+        cout << "Multiple Centers Located" << endl;
+        cout << "\t" << centers.size() << " centers located." << endl;
+    }
 
     Eigen::Vector3d center = centers[0].cast<double>();
     if (zero_boundary < 0) {

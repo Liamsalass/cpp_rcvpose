@@ -13,21 +13,11 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include "npy.hpp"
 #include <utility>
 #include <omp.h>
 #include <filesystem>
-#include <omp.h>
+#include "npy.hpp"
 
-
-
-//Figure out how to include hdf5
-//#include <hdf5.h>
-//#include <npy.hpp>
-
-
-//Do I need?
-// #include <glob.h>
 
 class CustomExample : public torch::data::Example<> {
 public:

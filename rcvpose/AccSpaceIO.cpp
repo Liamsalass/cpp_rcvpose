@@ -1,27 +1,4 @@
-#pragma once
-#include "npy.hpp"
-#include "utils.hpp"
-#include "npy_reader.hpp"
-#include "options.hpp"
-#include "utils.hpp"
-#include <chrono>
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <cmath>
-#include <iostream>
-#include <filesystem>
-#include <fstream>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-#include <Open3D/Geometry/PointCloud.h>
-#include <open3d/io/PointCloudIO.h>
-#include <open3d/Open3D.h>
-#include <open3d/utility/FileSystem.h>
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
-
-
+#include "AccSpaceIO.h"
 
 using namespace std;
 using namespace open3d;
@@ -54,14 +31,14 @@ matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
     {
         cout << "Data type: CV_8U" << endl;
         eigenMat.resize(height, width * channels);
-  
+
         for (int row = 0; row < height; ++row)
         {
             for (int col = 0; col < width; ++col)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-                
+
                     eigenMat(row, col * channels + c) = static_cast<double>(mat.at<cv::Vec3b>(row, col)[c]);
                 }
             }
@@ -78,7 +55,7 @@ matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-                  
+
                     eigenMat(row, col * channels + c) = static_cast<double>(mat.at<cv::Vec3f>(row, col)[c]);
                 }
             }
@@ -95,7 +72,7 @@ matrix cvmat_to_eigen(const cv::Mat& mat, const bool& debug = false)
             {
                 for (int c = 0; c < channels; ++c)
                 {
-         
+
                     eigenMat(row, col * channels + c) = mat.at<cv::Vec3d>(row, col)[c];
                 }
             }
@@ -164,12 +141,32 @@ pc_ptr read_point_cloud(string path, const bool& debug = false) {
         pcv->points_.push_back(e::Vector3d(mat(i, 0), mat(i, 1), mat(i, 2)));
     }
 
-    //for (int i = 0; i < 10; i++) {
-    //	cout << "x: " << pcv->points_[i].x() << " y: " << pcv->points_[i].y() << " z: " << pcv->points_[i].z() << endl;
-    //}
-
     return pcv;
 }
+
+vector<Vertex> read_point_cloud(const string& path) {
+    vector<double> data;
+    vector<unsigned long> shape;
+    bool fortran_order;
+
+    npy::LoadArrayFromNumpy(path, shape, fortran_order, data);
+
+    int rows = static_cast<int>(shape[0]);
+    int cols = static_cast<int>(shape[1]);
+
+    vector<Vertex> pc;
+    for (int i = 0; i < rows; i++) {
+        Vertex v;
+        v.x = data[i * cols];
+        v.y = data[i * cols + 1];
+        v.z = data[i * cols + 2];
+        pc.push_back(v);
+	}
+
+    return pc;
+
+}
+
 
 
 vector<vector<float>> read_float_npy(string path, const bool debug = false) {
@@ -255,31 +252,31 @@ Eigen::MatrixXd read_depth_to_matrix(const string& path, const bool& debug = fal
 
     if (path.substr(path.length() - 3) == "dpt") {
         if (debug) {
-			cout << "Reading in depth file manually " << endl;
-		}
-		std::ifstream file(path, std::ios::binary);
+            cout << "Reading in depth file manually " << endl;
+        }
+        std::ifstream file(path, std::ios::binary);
 
         if (file) {
-			uint32_t h, w;
-			file.read(reinterpret_cast<char*>(&h), sizeof(h));
-			file.read(reinterpret_cast<char*>(&w), sizeof(w));
+            uint32_t h, w;
+            file.read(reinterpret_cast<char*>(&h), sizeof(h));
+            file.read(reinterpret_cast<char*>(&w), sizeof(w));
 
-			Eigen::MatrixXd data(h, w);
-			file.read(reinterpret_cast<char*>(data.data()), h * w * sizeof(double));
+            Eigen::MatrixXd data(h, w);
+            file.read(reinterpret_cast<char*>(data.data()), h * w * sizeof(double));
 
-			depth_image = data;
-		}
+            depth_image = data;
+        }
 
-		file.close();
-	}
-    
+        file.close();
+    }
+
     depth_image.transpose();
-    
+
     if (debug) {
         cout << "Depth size: " << depth_image.rows() << " x " << depth_image.cols() << endl;
     }
 
-	return depth_image;
+    return depth_image;
 }
 
 cv::Mat eigen_matrix_to_cv_mat(Eigen::MatrixXd matrix, const bool& debug = false) {
@@ -291,11 +288,11 @@ cv::Mat eigen_matrix_to_cv_mat(Eigen::MatrixXd matrix, const bool& debug = false
 
     for (int i = 0; i < matrix.rows(); i++) {
         for (int j = 0; j < matrix.cols(); ++j) {
-			mat.at<double>(i, j) = matrix(i, j);
-		}
-	}
+            mat.at<double>(i, j) = matrix(i, j);
+        }
+    }
 
-	return mat;
+    return mat;
 
 }
 
@@ -337,7 +334,7 @@ cv::Mat read_depth_to_cv(const std::string& path, const bool& debug = false) {
 
 
 
-Eigen::MatrixXd convertToEigenMatrix(const std::vector<Vertex>& vertices){
+Eigen::MatrixXd convertToEigenMatrix(const std::vector<Vertex>& vertices) {
     int numVertices = vertices.size();
     Eigen::MatrixXd matrix(numVertices, 3);
 
@@ -354,7 +351,7 @@ Eigen::MatrixXd convertToEigenMatrix(const std::vector<Vertex>& vertices){
 
 Eigen::MatrixXd convertToEigenMatrix(const std::array<std::array<double, 3>, 3>& inputArray)
 {
-    Eigen::MatrixXd matrix(3,3);
+    Eigen::MatrixXd matrix(3, 3);
 
     for (int i = 0; i < 3; i++)
     {

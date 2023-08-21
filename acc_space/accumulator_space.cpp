@@ -12,8 +12,6 @@ const vector<double> mean = { 0.485, 0.456, 0.406 };
 const vector<double> standard = { 0.229, 0.224, 0.225 };
 
 
-
-
 void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Tensor& semantic_output, torch::Tensor& radial_output1, torch::Tensor& radial_output2, torch::Tensor& radial_output3, const torch::DeviceType device_type, const bool& debug) {
 
 
@@ -36,7 +34,7 @@ void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Te
     if (img.cols % 2 != 0)
         img = img.colRange(0, img.cols - 1);
     cv::Mat imgTransposed = img.t();
-   
+
     torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
     imgTensor = imgTensor.permute({ 2, 0, 1 });
 
@@ -46,21 +44,11 @@ void FCResBackbone(DenseFCNResNet152& model, const string& input_path, torch::Te
 
     auto output = model->forward(img_batch);
 
-    radial_output1 = output.index({ torch::indexing::Slice(), 0 }).to(torch::kCPU);
-    radial_output2 = output.index({ torch::indexing::Slice(), 1 }).to(torch::kCPU);
-    radial_output3 = output.index({ torch::indexing::Slice(), 2 }).to(torch::kCPU);
-    semantic_output = output.index({ torch::indexing::Slice(), 3 }).to(torch::kCPU);
-
-    radial_output1 = radial_output1.permute({ 1,2,0 });
-    radial_output2 = radial_output2.permute({ 1,2,0 });
-    radial_output3 = radial_output3.permute({ 1,2,0 });
-    semantic_output = semantic_output.permute({ 1,2,0 });
-
-    radial_output1 = radial_output1.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
-    radial_output2 = radial_output2.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
-    radial_output3 = radial_output3.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
-    semantic_output = semantic_output.index({ torch::indexing::Slice(), torch::indexing::Slice(), 0 });
-    
+    radial_output1 = output[0][0].to(torch::kCPU);
+    radial_output2 = output[0][1].to(torch::kCPU);
+    radial_output3 = output[0][2].to(torch::kCPU);
+    semantic_output = output[0][3].to(torch::kCPU);  
+   	
 }
 
 // Function for estimating 6D pose for LINEMOD
@@ -131,7 +119,7 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
 
         // Define path to load point cloud
-        string pcv_load_path = "C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/pc_ape.npy";
+        string pcv_load_path = rootpvPath + "pc_ape.npy";
 
         // Log path if verbose
         if (opts.verbose) {
@@ -161,20 +149,46 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
         // List to hold models
         DenseFCNResNet152 model;
-        
+        cout << "Loading model" << endl;
         // Print loading message
-        cout << endl << "Loading Model" << endl;
+        if (opts.verbose) {
+            cout << endl << "Loading Model from " << opts.model_dir << endl;
+        }
         
         // Instantiate loader
         CheckpointLoader loader(opts.model_dir, true);
         
         // Load the model
         model = loader.getModel();
+
+        if (opts.verbose) {
+            cout << "Model Accuracy: " << loader.getBestAccuracy() << endl;
+        }
         
         // Put the model in evaluation mode
         model->eval();
 
         model->to(device);
+
+        //Pass the model a dummy tensor
+        try {
+            if (opts.verbose) {
+                cout << "Testing model with dummy tensor" << endl;
+            }
+            torch::Tensor dummy_tensor = torch::randn({ 1, 3, 640, 480 });
+            dummy_tensor = dummy_tensor.to(device);
+
+            auto dummy_output = model->forward(dummy_tensor);
+            if (opts.verbose) {
+                cout << "Model test successful" << endl;
+            }
+        }
+        catch (const c10::Error& e) {
+			cerr << "Error loading model" << endl;
+			exit(EXIT_FAILURE);
+		}
+        
+
 
         // Print an extra line if verbose
         if (opts.verbose) {
@@ -227,6 +241,11 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
         auto acc_start = chrono::high_resolution_clock::now();
         // Loop through all images in the img_path
         for (auto test_img : test_list) {
+
+            //if (general_counter < 346) {
+            //    general_counter++;
+            //    continue;
+            //}
 
             int img_num = stoi(test_img);
 
@@ -298,24 +317,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
             // Record the current time after executing the FCResBackbone
             auto end = chrono::high_resolution_clock::now();
 
-            cv::Mat semantic = torch_tensor_to_cv_mat(semantic_output);
-            cv::Mat radial1 = torch_tensor_to_cv_mat(radial_output1);
-            cv::Mat radial2 = torch_tensor_to_cv_mat(radial_output2);
-            cv::Mat radial3 = torch_tensor_to_cv_mat(radial_output3);
-
-            cv::transpose(semantic, semantic);
-            cv::transpose(radial1, radial1);
-            cv::transpose(radial2, radial2);
-            cv::transpose(radial3, radial3);
-
-            cv::imshow("Semantic", semantic);
-            cv::imshow("Radial1", radial1);
-            cv::imshow("Radial2", radial2);
-            cv::imshow("Radial3", radial3);
-            cv::waitKey(0);
-
-
-
             vector<torch::Tensor> radial_outputs = { radial_output1, radial_output2, radial_output3 };
 
             // Print the FCResBackbone speed, semantic output shape, and radial output shape if verbose option is enabled
@@ -357,16 +358,12 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                     cout << transformed_gt_center_mm << endl << endl;
                 }
 
-   
-
                 // Add the time taken to execute the FCResBackbone to the total network time
                 net_time += chrono::duration_cast<chrono::milliseconds>(end - start).count();
 
                 // Convert the semantic and radial output tensors to OpenCV matrices
                 cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
                 cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
-
-               
 
                 // Define the depth image path
                 string depth_path = rootPath + "data/depth" + to_string(img_num) + ".dpt";
@@ -378,6 +375,9 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 cv::transpose(sem_cv, sem_cv);
                 cv::transpose(rad_cv, rad_cv);
 
+                cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
+
+           
                 cv::Mat thresholded;
                 cv::threshold(sem_cv, thresholded, 0.8, 1, cv::THRESH_BINARY);
                 thresholded.convertTo(sem_cv, sem_cv.type());
@@ -399,13 +399,12 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
                 rad_tmp.release();
                 depth_tmp.release();
                 sem_tmp.release();
-
               
-                //if (opts.demo_mode) {
-                //    cv::Mat rad_cv_show = rad_cv.clone();
-                //    cv::normalize(rad_cv_show, rad_cv_show, 0, 1, cv::NORM_MINMAX, CV_32F);
-                //    cv::imshow("Radial w Semantic " + to_string(keypoint_count), rad_cv_show);
-                //}
+                if (opts.demo_mode) {
+                    cv::Mat rad_cv_show = rad_cv.clone();
+                    cv::normalize(rad_cv_show, rad_cv_show, 0, 1, cv::NORM_MINMAX, CV_32F);
+                    cv::imshow("Radial w Semantic " + to_string(keypoint_count), rad_cv_show);
+                }
 
                 // Gather the pixel coordinates from the semantic output
                 vector<Vertex> pixel_coor;
@@ -449,7 +448,6 @@ void estimate_6d_pose_lm(const Options opts = testing_options())
 
                 if (xyz.size() == 0 || radial_list.size() == 0) {
                     cout << "Error: xyz or radial list is empty" << endl;
-                    break;
                 }
 
                 // Define a vector for storing the transformed pointcloud

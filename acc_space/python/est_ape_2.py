@@ -322,6 +322,7 @@ def parallel_for(count,xyz_mm,radial_list_mm,VoteMap_3D):
 #@jit(parallel=True)     
 def fast_for(xyz_mm,radial_list_mm,VoteMap_3D):  
     factor = (3**0.5)/4
+    #print ('XYZ shape' , xyz_mm.shape[0])
     for count in prange(xyz_mm.shape[0]):
         xyz = xyz_mm[count]
         radius = radial_list_mm[count]
@@ -331,6 +332,7 @@ def fast_for(xyz_mm,radial_list_mm,VoteMap_3D):
             for j in prange(VoteMap_3D.shape[1]):
                 for k in prange(VoteMap_3D.shape[2]):
                     distance = ((i-xyz[0])**2+(j-xyz[1])**2+(k-xyz[2])**2)**0.5
+                    #print ('Count: ',count,' Distance: ',distance,' Radius: ',radius,' Factor: ',factor,' VoteMap: ',VoteMap_3D[i,j,k],' i: ',i,' j: ',j,' k: ',k,' xyz: ',xyz)
                     if radius - distance < factor and radius - distance>0:
                         VoteMap_3D[i,j,k]+=1
         
@@ -366,43 +368,57 @@ def fast_for_cuda(xyz_mm,radial_list_mm,VoteMap_3D):
     blockspergrid = (blockspergrid_w, blockspergrid_x, blockspergrid_y, blockspergrid_z)
     cuda_internal1[blockspergrid, threadsperblock](VoteMap_3D,xyz_mm,radial_list_mm)
 
-def Accumulator_3D(xyz, radial_list):
+def Accumulator_3D(xyz, radial_list, kpt_count):
     acc_unit = 5
     # unit 5mm 
+
+    #print('Input data: ')
+    #print('xyz shape: ', xyz.shape)
+    #for i in range(20):
+    #    print('xyz[',i,']',xyz[i])
+    #print('radial_list shape: ', radial_list.shape)
+    #for i in range(20):
+    #    print('radial_list[',i,']',radial_list[i])
+
     xyz_mm = xyz*1000/acc_unit #point cloud is in meter
 
+    #print('xyz_mm shape: ', xyz_mm.shape)
+    #for i in range(20):
+    #    print('xyz_mm[',i,']',xyz_mm[i])
+
     #print(xyz_mm.shape)
-    
     #recenter the point cloud
     x_mean_mm = np.mean(xyz_mm[:,0])
     y_mean_mm = np.mean(xyz_mm[:,1])
     z_mean_mm = np.mean(xyz_mm[:,2])
+
     xyz_mm[:,0] -= x_mean_mm
     xyz_mm[:,1] -= y_mean_mm
     xyz_mm[:,2] -= z_mean_mm
-    xyz_mm[:,0] -= x_mean_mm
-    xyz_mm[:,1] -= y_mean_mm
-    xyz_mm[:,2] -= z_mean_mm
-    
+
+
     radial_list_mm = radial_list*100/acc_unit  #radius map is in decimetre for training purpose
-    
+
     xyz_mm_min = xyz_mm.min()
     xyz_mm_max = xyz_mm.max()
     radius_max = radial_list_mm.max()
-    
+
     zero_boundary = int(xyz_mm_min-radius_max)+1
-    
+
     if(zero_boundary<0):
         xyz_mm -= zero_boundary
+       
         #length of 3D vote map 
     length = int(xyz_mm.max())
-    
+
+
+  
     VoteMap_3D = np.zeros((length+int(radius_max),length+int(radius_max),length+int(radius_max)))
-    tic = time.perf_counter()
+
     VoteMap_3D = fast_for(xyz_mm,radial_list_mm,VoteMap_3D)
-    toc = time.perf_counter()
                         
     center = np.argwhere(VoteMap_3D==VoteMap_3D.max())
+
     if len(center) > 1:
         print("Multiple centers located.")
    # print("debug center raw: ",center)
@@ -542,11 +558,6 @@ def estimate_6d_pose_lm():
     filenameList = []
     
     xyz_load = np.asarray(pcd_load.points)
-
-    print('XYZ_load head')
-    for i in range(5):
-        print(xyz_load[i])
-
     #print(xyz_load.shape)
     
     keypoints=np.load(root_dataset + "LINEMOD/"+class_name+"/"+"Outside9.npy")
@@ -554,98 +565,115 @@ def estimate_6d_pose_lm():
     
     dataPath = rootpvPath + 'JPEGImages/'
 
-
+    img_avg_time = 0
         
     for filename in os.listdir(dataPath):
+        # Only 25 first images
+        count = 0
+
 
         if filename.endswith(".jpg"):
             filename_without_ext = os.path.splitext(filename)[0]
 
             if filename_without_ext not in test_list:
-                print('Not in test list: ', filename_without_ext)
                 continue
 
             if filename_without_ext in test_list:
-                print(filename, '\n')
+                print(filename)
+
+                img_start_timer = time.time_ns()
 
                 estimated_kpts = np.zeros((3,3))
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
+             
 
-                print('RTGT: ',RTGT , '\n')
 
                 keypoint_count = 1
 
                 for keypoint in keypoints:
-                    print("Kpt count: ", keypoint_count)
                     keypoint=keypoints[keypoint_count]
 
                     
                     iter_count = 0
                     centers_list = []
                     
-                    GTRadiusPath = rootPath+'Out_pt'+str(keypoint_count)+'_dm/'
-                    transformed_gt_center_mm = (np.dot(keypoint, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
-                    print('Transformed GT center: ')
-                    for i in range (5):
-                        print(transformed_gt_center_mm[i])
-                    print('\n')
+                    GTRadiusPath = rootpvPath+'Out_pt'+str(keypoint_count)+'_dm/'
+
+                    transformed_gt_center_mm = (np.dot(keypoints, RTGT[:, :3].T) + RTGT[:, 3:].T)*1000
+
+                    transformed_gt_center_mm = transformed_gt_center_mm[keypoint_count]
 
                     input_path = dataPath +filename
 
                     normalized_depth = []
                     tic = time.time_ns()
                     
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_py/score_' + str(count) +'.npy'
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_py/score_rad_' + str(count) +'.npy'
-    
-                    sem_out = np.load(sem_out_path)
-                    radial_out = np.load(rad_out_path)
-                    
+                    #Cpp backend
+                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/semantic/' + filename_without_ext + '.txt'
+                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/radial' + str(keypoint_count) + '/' + filename_without_ext + '.txt'
+                    radial_out = fileToTensor(rad_out_path)
+                    sem_out = fileToTensor(sem_out_path)
+
+                    sem_out = (sem_out - sem_out.min()) / (sem_out.max() - sem_out.min())
+
+                    sem_out = np.where(sem_out>0.8,1,0).transpose(1,0)
+                    radial_out = np.array(radial_out).transpose(1,0)
+
+
+                    #Python backend      
+                    #sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_py/score_' + str(count) +'.npy'
+                    #rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_py/score_rad_' + str(count) +'.npy'
+                    #sem_out = np.load(sem_out_path)
+                    #radial_out = np.load(rad_out_path)
+                    #sem_out = np.where(sem_out>0.8,1,0)
+                    #radial_out = np.array(radial_out)
+
                     toc = time.time_ns()
                     net_time += toc-tic
                     #print("Network time consumption: ", network_time_single)
                     depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
-
-                    sem_out = np.where(sem_out>0.8,1,0)
-                    radial_out = np.array(radial_out)
-
-                    depth_map = depth_map1*sem_out/1000   
-
-                    print('Head of depth map after read depth')
-                    for i in range(5):
-                        print(depth_map[i])
-                    print('\n')
+   
+                    depth_map = depth_map1*sem_out 
 
                     pixel_coor = np.where(sem_out==1)
-                    
-                    radial_list = radial_out[pixel_coor]
 
-                    xyz = rgbd_to_point_cloud(linemod_K,depth_map)
-                    
-                    print('Head of XYZ after RGBD to point cloud')
-                    for i in range(5):
-                        print(xyz[i])
+                    radial_list = radial_out[pixel_coor]
+      
+                    xyz_mm = rgbd_to_point_cloud(linemod_K,depth_map)
+                    xyz = xyz_mm/1000   
+
 
                     dump, xyz_load_transformed=project(xyz_load, linemod_K, RTGT)
+
                     tic = time.time_ns()
+                    
+                    #gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
+                    #gt_list = gt_list[pixel_coor]         
+
+                    # if the radial_list or xyz is empty then skip
+                    if (len(radial_list) == 0 or len(xyz) == 0):
+                        print("Empty Prediction for keypoint: ", keypoint_count)
+                        keypoint_count+=1
+                        if (keypoint_count == 4):
+                            break
+                        continue
 
 
-                    center_mm_s = Accumulator_3D(xyz, radial_list)
+                    center_mm_s = Accumulator_3D(xyz, radial_list, keypoint_count)
+                    #gt_center = Accumulator_3D(xyz, gt_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
                     acc_time += toc-tic
-                    #print("acc space: ", toc-tic)
-                    
-                    print("estimated: ", center_mm_s)
+                    #print acc time in ms
+                    #print("Accumulator time consumption: ", (toc-tic)/1000000, " ms")
                     
                     pre_center_off_mm = math.inf
                     
                     estimated_center_mm = center_mm_s[0]
-                    
-                    center_off_mm = ((transformed_gt_center_mm[0,0]-estimated_center_mm[0])**2+
-                                    (transformed_gt_center_mm[0,1]-estimated_center_mm[1])**2+
-                                    (transformed_gt_center_mm[0,2]-estimated_center_mm[2])**2)**0.5
-                    print("estimated offset: ", center_off_mm)
+
+                    center_off_mm = ((transformed_gt_center_mm[0]-estimated_center_mm[0])**2+
+                                    (transformed_gt_center_mm[1]-estimated_center_mm[1])**2+
+                                    (transformed_gt_center_mm[2]-estimated_center_mm[2])**2)**0.5
                     
                     #save estimations
                     '''
@@ -657,7 +685,8 @@ def estimate_6d_pose_lm():
                     centers[0,0] = keypoint
                     centers[0,1] = transformed_gt_center_mm*0.001
                     centers[0,2] = estimated_center_mm*0.001
-                    estimated_kpts[keypoint_count] = estimated_center_mm
+                    
+                    estimated_kpts[keypoint_count - 1] = estimated_center_mm
                     
                     if(iter_count==0):
                         centers_list = centers
@@ -678,70 +707,36 @@ def estimate_6d_pose_lm():
                     if (keypoint_count == 4):
                         break
                     
-
-                kpts = keypoints[0:3,:]*1000
+                
+                kpts = keypoints[1:4,:]*1000
                 RT = np.zeros((4, 4))
+
                 horn.lmshorn(kpts, estimated_kpts, 3, RT)
+
                 dump, xyz_load_est_transformed=project(xyz_load*1000, linemod_K, RT[0:3,:])
-                
-                # input_image = np.asarray(Image.open(input_path).convert('RGB'))
-                # input_image_copy = np.copy(input_image)
+           
 
-                # for coor in dump:
-                #     y, x = int(coor[1]), int(coor[0])
-                #     if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
-                #         input_image_copy[y, x] = [255, 0, 0]
+                input_image = np.asarray(Image.open(input_path).convert('RGB'))
+                input_image_copy = np.copy(input_image)
 
-                sceneGT = o3d.geometry.PointCloud()
-                sceneEst = o3d.geometry.PointCloud()
-                sceneGT.points=o3d.utility.Vector3dVector(xyz_load_transformed*1000)
-                sceneEst.points=o3d.utility.Vector3dVector(xyz_load_est_transformed)
-                sceneGT.paint_uniform_color(np.array([0,0,1]))
-                sceneEst.paint_uniform_color(np.array([1,0,0]))
+                for coor in dump:
+                    y, x = int(coor[1]), int(coor[0])
+                    if 0 <= y < input_image_copy.shape[0] and 0 <= x < input_image_copy.shape[1]:
+                        input_image_copy[y, x] = [255, 0, 0]
             
-                #o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est before icp')
-                distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
-                min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
-                #print('ADD(s) point distance before ICP: ', distance)
-                if class_name in lm_syms:
-                    if min_distance <= add_threshold[class_name]*1000:
-                        bf_icp+=1
-                        print('Before ICP ADD(s) pass')
-                else:
-                    if distance <= add_threshold[class_name]*1000:
-                        bf_icp+=1
-                        print('Before ICP ADD(s) pass')
-
-                print('Before ICP ADD(s) point distance: ', distance)
-                print('Before ICP ADD(s) min point distance: ', min_distance)
-                
-                trans_init = np.asarray([[1, 0, 0, 0],
-                                        [0, 1, 0, 0],
-                                        [0, 0, 1, 0], 
-                                        [0, 0, 0, 1]])
-                threshold = distance
-                criteria = o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2000000)
-                reg_p2p = o3d.pipelines.registration.registration_icp(
-                    sceneGT, sceneEst,  threshold, trans_init,
-                    o3d.pipelines.registration.TransformationEstimationPointToPoint(),
-                    criteria)
-                sceneGT.transform(reg_p2p.transformation)
-                
-                # o3d.visualization.draw_geometries([sceneGT, sceneEst],window_name='gt vs est after icp')
-                distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).mean()
-                min_distance = np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)).min()
-                #print('ADD(s) point distance after ICP: ', distance)
-                if class_name in lm_syms:
-                    if min_distance <= add_threshold[class_name]*1000:
-                        af_icp+=1
-                        print('After ICP ADD(s) pass')
-                else:
-                    if distance <= add_threshold[class_name]*1000:
-                        af_icp+=1
-                        print('After ICP ADD(s) pass')      
-                print('\tDistance after ICP: ', distance)
-                print('\tMin distance after ICP: ', min_distance)         
                 general_counter += 1
+
+                img_end_timer = time.time_ns()
+
+                img_avg_time += img_end_timer - img_start_timer
+                img_avg_time_ms = img_avg_time/general_counter/1000000
+                
+                print("Average image time consumption: ", img_avg_time_ms, " ms")
+
+               
+
+
+
             
             count = count + 1
         #os.system("pause")

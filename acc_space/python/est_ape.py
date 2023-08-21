@@ -565,7 +565,7 @@ def estimate_6d_pose_lm():
     
     dataPath = rootpvPath + 'JPEGImages/'
 
-
+    img_avg_time = 0
         
     for filename in os.listdir(dataPath):
         # Only 25 first images
@@ -576,11 +576,12 @@ def estimate_6d_pose_lm():
             filename_without_ext = os.path.splitext(filename)[0]
 
             if filename_without_ext not in test_list:
-                print('Not in test list: ', filename_without_ext)
                 continue
 
             if filename_without_ext in test_list:
                 print(filename)
+
+                img_start_timer = time.time_ns()
 
                 estimated_kpts = np.zeros((3,3))
                 RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
@@ -590,7 +591,6 @@ def estimate_6d_pose_lm():
                 keypoint_count = 1
 
                 for keypoint in keypoints:
-                    print("Kpt count: ", keypoint_count)
                     keypoint=keypoints[keypoint_count]
 
                     
@@ -609,12 +609,16 @@ def estimate_6d_pose_lm():
                     tic = time.time_ns()
                     
                     #Cpp backend
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_cpp/score_' + str(count) +'.txt'
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) + '/tensors_cpp/score_rad_' + str(count) +'.txt'
+                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/semantic/' + filename_without_ext + '.txt'
+                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/radial' + str(keypoint_count) + '/' + filename_without_ext + '.txt'
                     radial_out = fileToTensor(rad_out_path)
                     sem_out = fileToTensor(sem_out_path)
-                    sem_out = np.where(sem_out>0.8,1,0).squeeze(2).transpose(1,0)
-                    radial_out = np.array(radial_out).squeeze(2).transpose(1,0)
+
+                    sem_out = (sem_out - sem_out.min()) / (sem_out.max() - sem_out.min())
+
+                    sem_out = np.where(sem_out>0.8,1,0).transpose(1,0)
+                    radial_out = np.array(radial_out).transpose(1,0)
+
 
                     #Python backend      
                     #sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/acc_space/python/kpt' +str(keypoint_count) +'/tensors_py/score_' + str(count) +'.npy'
@@ -645,6 +649,15 @@ def estimate_6d_pose_lm():
                     
                     #gt_list = np.load(GTRadiusPath+ os.path.splitext(filename)[0] + '.npy')
                     #gt_list = gt_list[pixel_coor]         
+
+                    # if the radial_list or xyz is empty then skip
+                    if (len(radial_list) == 0 or len(xyz) == 0):
+                        print("Empty Prediction for keypoint: ", keypoint_count)
+                        keypoint_count+=1
+                        if (keypoint_count == 4):
+                            break
+                        continue
+
 
                     center_mm_s = Accumulator_3D(xyz, radial_list, keypoint_count)
                     #gt_center = Accumulator_3D(xyz, gt_list)
@@ -728,7 +741,6 @@ def estimate_6d_pose_lm():
                 median_distance_bf_icp = np.median(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
                 std_dev_distance_bf_icp = np.std(np.asarray(sceneGT.compute_point_cloud_distance(sceneEst)))
 
-         
                 if class_name in lm_syms:
                     if min_distance_bf_icp <= add_threshold[class_name]*1000:
                         bf_icp+=1   
@@ -764,10 +776,19 @@ def estimate_6d_pose_lm():
                         af_icp+=1                   
                 general_counter += 1
 
+                img_end_timer = time.time_ns()
+
+                img_avg_time += img_end_timer - img_start_timer
+                img_avg_time_ms = img_avg_time/general_counter/1000000
+
                 print ('Before ICP: ', bf_icp)
                 print ('After ICP: ', af_icp)
                 print ('Current ADDs before ICP: ', bf_icp/general_counter)
-                print ('Current ADDs after ICP: ', af_icp/general_counter, '\n')
+                print ('Current ADDs after ICP: ', af_icp/general_counter)
+                print ('Average time per image: ', img_avg_time_ms ,'ms\n')
+                print ('Avg Acc space time ' , acc_time/general_counter/1000000 ,'ms\n')
+                print ('Avg Network time ' , net_time/general_counter/1000000 ,'ms\n')
+                print ('Avg ICP time ' , (img_avg_time_ms - acc_time/general_counter/1000000 - net_time/general_counter/1000000) ,'ms\n')
 
                 #Save data distances to file
                 with open('data/' + filename_without_ext + '.txt', 'a') as f:

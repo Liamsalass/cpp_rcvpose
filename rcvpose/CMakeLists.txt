@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.8)
 
 project(rcvpose)
 
-set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
+# set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
 
 find_package(OpenMP REQUIRED)
 find_package(Torch REQUIRED)

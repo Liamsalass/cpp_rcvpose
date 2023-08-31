@@ -4,12 +4,18 @@ cmake_minimum_required(VERSION 3.8)
 
 project(rcvpose)
 
-# set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
+set(CMAKE_PREFIX_PATH "../../libs/libtorch" "../../libs/opencv-4.6.0" "../../libs/Open3D")
 
 find_package(OpenMP REQUIRED)
-find_package(Torch REQUIRED)
+
 find_package(Open3D REQUIRED)
+include_directories(${Open3D_INCLUDE_DIRS})
+
 find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(Torch REQUIRED)
+include_directories(${TORCH_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 

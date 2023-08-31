@@ -165,12 +165,11 @@ void normalizeMat(cv::Mat& input, const bool& debug = false) {
 
 
 
-//TODO :: Check if racecondition affects performance
 void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
     const double factor = (std::pow(3, 0.5) / 4.0);
     const int start = 0;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int count = 0; count < xyz_mm.size(); ++count) {
         const Vertex xyz = xyz_mm[count];
         const int radius = round(radial_list_mm[count]);
@@ -187,7 +186,6 @@ void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& 
 
                     if (radius - distance < factor && radius - distance > 0) {
                         int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
-                        //Possible race condition, check if the accuracy decreases here
                         VoteMap_3D[index] += 1;
                     }
                 }
@@ -196,6 +194,43 @@ void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& 
     }
 }
 
+void fast_for_cpu2(const std::vector<Vertex>& xyz_mm, const std::vector<double>& radial_list_mm, int* VoteMap_3D, const int& vote_map_size) {
+    const double factor = (std::pow(3, 0.5) / 4.0);
+    const int start = 0;
+
+    int num_threads = omp_get_max_threads();
+    int chunk_size = xyz_mm.size() / num_threads;
+
+    #pragma omp parallel num_threads(num_threads) 
+    {
+        int tid = omp_get_thread_num();
+        int start_index = tid * chunk_size;
+        int end_index = (tid == num_threads - 1) ? xyz_mm.size() : start_index + chunk_size;
+
+        for (int count = start_index; count < end_index; ++count) {
+            const Vertex xyz = xyz_mm[count];
+            const int radius = round(radial_list_mm[count]);
+
+            for (int i = start; i < vote_map_size; i++) {
+                double x_diff = i - xyz.x;
+
+                for (int j = start; j < vote_map_size; j++) {
+                    double y_diff = j - xyz.y;
+
+                    for (int k = start; k < vote_map_size; k++) {
+                        double z_diff = k - xyz.z;
+                        double distance = sqrt(x_diff * x_diff + y_diff * y_diff + z_diff * z_diff);
+
+                        if (radius - distance < factor && radius - distance > 0) {
+                            int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
+                            VoteMap_3D[index] += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 
@@ -263,8 +298,6 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     }
 
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
-
-
 
     if (zero_boundary < 0) {
         for (int i = 0; i < xyz_mm.size(); i++) {
@@ -349,19 +382,11 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
 
     delete[] VoteMap_3D;
 
-    //cout << "Centers: " << endl;
-    //for (auto center : centers) {
-    //    cout << "\t" << center << endl;
-    //}
-
     if (debug) {
         cout << "\tMax vote: " << max_vote << endl;
         cout << "\tCenter: " << centers[0][0] << " " << centers[0][1] << " " << centers[0][2] << endl;
     }
 
-    //if (centers.size() > 1) {
-    //    cout << centers.size() << " centers located." << endl;
-    //}
 
     Eigen::Vector3d center = centers[0].cast<double>();
     if (zero_boundary < 0) {

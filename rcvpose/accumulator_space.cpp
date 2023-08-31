@@ -1,8 +1,10 @@
 #include "accumulator_space.h"
 
+namespace fs = std::filesystem;
 using namespace std;
 using namespace open3d;
 namespace e = Eigen;
+
 
 typedef e::MatrixXd matrix;
 typedef shared_ptr<geometry::PointCloud> pc_ptr;
@@ -81,6 +83,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     bool use_cuda = torch::cuda::is_available();
 
 
+
     // Check if verbose mode is enabled
     if (opts.verbose) {
         if (use_cuda) {
@@ -146,7 +149,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
 
     // Define path to load point cloud
-    string pcv_load_path = rootpvPath + "pc_ape.npy";
+    string pcv_load_path = rootpvPath + "pc_" + class_name + ".npy";
 
     // Log path if verbose
     if (opts.verbose) {
@@ -158,8 +161,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
     // Variables for timing
     long long backend_net_time = 0;
-    long long acc_time = 0;
     long long icp_time = 0;
+    long long acc_time = 0;
+    long long avg_acc_length = 0;
     int general_counter = 0;
 
     // Variables for counting before and after ICP
@@ -254,11 +258,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     for (auto test_img : test_list) {
         int img_num = stoi(test_img);
 
-        //if (general_counter < 636) {
-        //    general_counter++;
-        //    continue;
+        //if (general_counter > 10) {
+        //    break;
         //}
-
 
         // Record the current time using a high-resolution clock
         auto img_start = chrono::high_resolution_clock::now();
@@ -284,7 +286,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         string RTGT_path = opts.root_dataset + "/LINEMOD/" + class_name + "/pose_txt/pose" + to_string(img_num) + ".txt";
 
         // Load the ground truth rotation and translation (RTGT) data from the path
-        vector<vector<double>> RTGT = read_ground_truth(RTGT_path, true);
+        vector<vector<double>> RTGT = read_ground_truth(RTGT_path, false);
 
 
         // Print the RTGT data if verbose option is enabled
@@ -384,7 +386,19 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
 
             // Define the depth image path
-            string depth_path = rootpvPath + "data/depth" + to_string(img_num) + ".dpt";
+            string depth_path = rootpvPath + "data/depth" + to_string(img_num);
+
+            // Check if ".dpt" file exists, if not, check for ".png"
+            if (fs::exists(depth_path + ".dpt")) {
+                depth_path += ".dpt";
+            }
+            else if (fs::exists(depth_path + ".png")) {
+                depth_path += ".png";
+            }
+            else {
+                cout << "No suitable depth image file found for: " << depth_path << "..." << endl;
+                return;
+            }
 
             // Load the depth image
             cv::Mat depth_cv = read_depth_to_cv(depth_path, false);
@@ -393,11 +407,12 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             cv::transpose(sem_cv, sem_cv);
             cv::transpose(rad_cv, rad_cv);
 
+
             cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
 
 
             cv::Mat thresholded;
-            cv::threshold(sem_cv, thresholded, 0.8, 1, cv::THRESH_BINARY);
+            cv::threshold(sem_cv, thresholded, opts.mask_threshold, 1, cv::THRESH_BINARY);
             thresholded.convertTo(sem_cv, sem_cv.type());
             thresholded.release();
 
@@ -417,6 +432,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             rad_tmp.release();
             depth_tmp.release();
             sem_tmp.release();
+
 
 
             // Gather the pixel coordinates from the semantic output
@@ -459,6 +475,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                 xyz[i].z = xyz[i].z / 1000;
             }
 
+            avg_acc_length += xyz.size();
+
             if (xyz.size() == 0 || radial_list.size() == 0) {
                 cout << "Error: xyz or radial list is empty" << endl;
             }
@@ -466,15 +484,21 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             // Define a vector for storing the transformed pointcloud
             if (opts.verbose) {
                 cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
-                start = chrono::high_resolution_clock::now();
+ 
             }
 
             //Calculate the estimated center in mm
+            auto acc_start = chrono::high_resolution_clock::now();
+
             Eigen::Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list, opts.verbose);
+
+            auto acc_end = chrono::high_resolution_clock::now();
+
+            acc_time += chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count();
 
             // Print the number of centers returned and the estimate if verbose option is enabled
             if (opts.verbose) {
-                end = chrono::high_resolution_clock::now();
+                
                 cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
                 cout << "\tEstimate: " << estimated_center_mm[0] << " " << estimated_center_mm[1] << " " << estimated_center_mm[2] << endl << endl;
 
@@ -588,8 +612,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         }
 
         vector<Eigen::Vector3d> pointsGT, pointsEst, pointEst_py, pointEst_gt;
-
-
 
         auto icp_start = chrono::high_resolution_clock::now();
         // Load the ground truth points
@@ -824,7 +846,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         else {
             cout << "\r" << string(100, ' ') << "\r";
             cout << "ADD: " << (static_cast<double>(bf_icp)/ static_cast<double>(general_counter)) * 100.0 << "%\t";
-            printProgressBar(general_counter, total_num_img, 60);
+            cout << "| " << to_string(general_counter) << "/" << to_string(total_num_img) << " ";
+            printProgressBar(general_counter, total_num_img, 50);
+ 
         }
     }
     cout << endl;
@@ -844,10 +868,13 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     auto hours = duration.count() / 3600;
     auto min = (duration.count() % 3600) / 60;
     auto sec = (duration.count() % 3600) % 60;
-    cout << "Total Accumulator time: " << hours << " hours, " << min << " minutes, and " << sec << " seconds." << endl;
-    cout << "Average Time per image: " << (static_cast<double>(duration.count()) / static_cast<double>(general_counter)) << " seconds." << endl;
-    cout << "Resnet152 Processing Time per image: " << (static_cast<double>(backend_net_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
-    cout << "ICP Processing Time per image: " << (static_cast<double>(icp_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
+
+    cout << "Total Time: " << hours << " hours, " << min << " minutes, and " << sec << " seconds." << endl;
+    cout << "Avg Time per image: " << (static_cast<double>(duration.count()) / static_cast<double>(general_counter)) << " seconds." << endl;
+    cout << "Avg Accumulator time: " << (static_cast<double>(acc_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
+    cout << "Avg Backend Time: " << (static_cast<double>(backend_net_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
+    cout << "Avg ICP Time: " << (static_cast<double>(icp_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
+    cout << "Avg Input Size to Accumulator Space: " << static_cast<double>(avg_acc_length) / static_cast<double>(general_counter) << endl;
     return;
     
 }
@@ -884,7 +911,7 @@ void estimate_6d_pose(const Options& opts, DenseFCNResNet152& model, cv::Mat& im
     cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
 
     cv::Mat threshold;
-    cv::threshold(sem_cv, threshold, 0.8, 1, cv::THRESH_BINARY);
+    cv::threshold(sem_cv, threshold, opts.mask_threshold, 1, cv::THRESH_BINARY);
     threshold.convertTo(sem_cv, sem_cv.type());
     threshold.release();
 

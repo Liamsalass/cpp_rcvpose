@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <vector>
 #include <cstdint>
-#include <torch/serialize.h>
 #include <torch/torch.h>
+#include <torch/serialize.h>
 #include "models/denseFCNResNet152.h"
 
 struct Vertex {

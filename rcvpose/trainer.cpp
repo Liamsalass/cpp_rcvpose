@@ -12,7 +12,10 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
     device_type = use_cuda ? torch::kCUDA : torch::kCPU;
     torch::Device device(device_type);
 
+    model->to(torch::kDouble);
+    
     model->to(device);
+
 
     if (opts.verbose) {
         cout << "Using " << (use_cuda ? "CUDA" : "CPU") << endl;
@@ -279,6 +282,8 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             torch::Tensor loss_r = compute_r_loss(score_rad_1, rad_1);
             loss_r += compute_r_loss(score_rad_2, rad_2);
             loss_r += compute_r_loss(score_rad_3, rad_3);
+            
+
             torch::Tensor loss_g = compute_geo_constraint(score_rad_1, score_rad_2, score_rad_3, rad_1, rad_2, rad_3);
             auto loss_r_g = loss_r*0.8 + loss_g*0.2;
 
@@ -310,7 +315,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
         
         if(((epoch % 10) == 0) && (epoch != 0)){
             model->eval();
-            float val_loss = 0, sem_loss = 0, radial_loss = 0, geometric_loss = 0;
+            double val_loss = 0, sem_loss = 0, radial_loss = 0, geometric_loss = 0;
             count = 0;
 
             auto val_start = std::chrono::steady_clock::now();
@@ -366,6 +371,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 auto loss_r = compute_r_loss(score_rad_1, rad_1);
                 loss_r += compute_r_loss(score_rad_2, rad_2);
                 loss_r += compute_r_loss(score_rad_3, rad_3);
+
                 auto loss_g = compute_geo_constraint(score_rad_1, score_rad_2, score_rad_3, rad_1, rad_2, rad_3);
                 auto loss_r_g = loss_r * 0.8 + loss_g * 0.2;
 
@@ -377,10 +383,10 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 if (loss.numel() == 0)
                     std::runtime_error("Loss is empty");
 
-                val_loss += loss.item<float>();
-                sem_loss += loss_s.item<float>();
-                radial_loss += loss_r.item<float>();
-                geometric_loss += loss_g.item<float>();
+                val_loss += loss.item<double>();
+                sem_loss += loss_s.item<double>();
+                radial_loss += loss_r.item<double>();
+                geometric_loss += loss_g.item<double>();
             }
 
 
@@ -393,14 +399,12 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             }
 
             val_loss /= val_size.value();
-            float mean_acc = val_loss;
-
-        
+            float mean_acc = val_loss;        
 
             cout << "Mean Loss: " << mean_acc << endl;
             cout << "\tSemantic Loss: " << sem_loss / val_size.value() << endl;
-            cout << "\tRadial Loss: " << radial_loss / val_size.value() << endl;
-            cout << "\tGeometric Loss: " << geometric_loss / val_size.value() << endl;
+            cout << "\tRadial Loss: " << (radial_loss / val_size.value()) * 0.8 << endl;
+            cout << "\tGeometric Loss: " << (geometric_loss / val_size.value()) * 0.2 << endl;
 
             bool is_best = mean_acc < best_acc_mean;
 
@@ -541,7 +545,7 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
     // Compute the loss
     torch::Tensor loss = loss_radial(pred_masked, gt_masked);
     // Normalize the loss
-    loss = loss / static_cast<float>(gt_masked.size(0));
+    loss = loss / static_cast<double>(gt_masked.size(0));
 
     return loss;
 }
@@ -567,9 +571,9 @@ torch::Tensor Trainer::compute_geo_constraint(torch::Tensor score_rad_1, torch::
     torch::Tensor loss_1_3 = loss_geo(score_diff_1_3, diff_1_3);
     torch::Tensor loss_2_3 = loss_geo(score_diff_2_3, diff_2_3);
     // Normalize the loss
-    torch::Tensor loss = (loss_1_2 / static_cast<float>(gt_mask.size(0)) +
-        loss_1_3 / static_cast<float>(gt_mask.size(0)) +
-        loss_2_3 / static_cast<float>(gt_mask.size(0)))/3;
+    torch::Tensor loss = (loss_1_2 / static_cast<double>(gt_mask.size(0)) +
+        loss_1_3 / static_cast<double>(gt_mask.size(0)) +
+        loss_2_3 / static_cast<double>(gt_mask.size(0)))/3;
 
     return loss;
 }

@@ -27,13 +27,99 @@ Options testing_options() {
     return opts; 
 }
 
+
+
+
 int main(int argc, char* args[])
 {
-    Options opts = testing_options();
-  
-    RCVpose rcv(opts);
-    rcv.train();
-    
+    bool train = false;
 
-    return 0;    
+
+    if(argc > 1){
+        if (strcmp(args[1], "train") == 0) {
+            train = true;
+        }
+        else if (strcmp(args[1], "validate") == 0){
+            cout << "Validation not functioning: defaulting to training" << endl;
+            train = true;
+        }
+        else {
+            cout << "Usage: " << args[0] << " <train/validate>" << endl;
+            return 0;
+        }
+    } else {
+        cout << "Usage: " << args[0] << " <train/validate>" << endl;
+        cout << "Defaulting to train" << endl;
+        train = true;
+    }
+
+    Options opts;
+    if ((argc > 2) &&(argc <= 15)) {
+        try {
+            opts.dname = args[2];
+
+            opts.root_dataset = args[3];
+
+            opts.model_dir = args[4];
+
+            if (args[5] == "true") {
+                opts.resume_train = true;
+            }
+            else {
+                opts.resume_train = false;
+            }
+            opts.optim = args[6];
+
+            opts.batch_size = stoi(args[7]);
+
+            opts.class_name = args[8];
+
+            opts.initial_lr = stod(args[9]);
+            if (args[10] == "true") {
+                opts.reduce_on_plateau = true;
+            }
+            else {
+                opts.reduce_on_plateau = false;
+            }
+            opts.patience = stoi(args[11]);
+
+            if (args[12] == "true") {
+                opts.demo_mode = true;
+            }
+            else {
+                opts.demo_mode = false;
+            }
+            if (args[13] == "true") {
+                opts.verbose = true;
+            }
+            else {
+                opts.verbose = false;
+            }
+            if (args[14] == "true") {
+                opts.test_occ = true;
+            }
+            else {
+                opts.test_occ = false;
+            }
+        }
+        catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
+            cout << "Usage: " << args[0] << " <dataset_name(lm)> <dataset_root> <model_directory> <resume_train(true/false)> <optim(adam/sgd)> <batch_size(int)> <class_name(string)> <initial_lr(double)> <reduce_on_plateau(true/false)> <patience(int)> <demo_mode(true/false)> <verbose(true/false)> <test_occ(true/false)(hasn't been implemented yet)>" << endl;
+            cout << "Defaulting to testing options" << endl;
+            opts = testing_options();
+        }
+    }
+    else {
+        cout << "Using Default Testing Options" <<  endl;
+        opts = testing_options();
+    }
+
+
+    RCVpose rcv(opts);
+    //Trains the model with the given parameters, if resume if true, will resume training from previous saved state
+    if (train){
+        rcv.train();
+    }
+
+    return 0;
 }

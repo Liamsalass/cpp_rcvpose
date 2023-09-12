@@ -121,6 +121,8 @@ RCVpose::RCVpose(Options& options)
                 }
             }
 
+            cout << "Model Path: " << out << endl;
+
             model = DenseFCNResNet152(3, 4);
 
         }
@@ -162,8 +164,10 @@ RCVpose::RCVpose(Options& options)
             cout << "Error: " << e.msg() << endl;
             can_run = false;
         }
+
     }
 
+    cout << "Model Loaded" << endl;
     if (!can_run) exit(1);
 
     //Print params

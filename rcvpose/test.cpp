@@ -13,14 +13,14 @@ Options testing_options() {
     opts.dname = "lm";
     opts.root_dataset = "/ingenuity_NAS/dataset/public/RCVLab/Bluewrist/16yw113/";
     //or ".../dataset/public/RCVLab/Bluewrist/16yw11"
-    opts.model_dir = "/home/19lhs4/cpp_rcvpose/models/";
-    opts.resume_train = true;
+    opts.model_dir = "/home/19lhs4/cpp_rcvpose/models/ape_with_geo_constraint/";
+    opts.resume_train = false;
     opts.optim = "adam";
-    opts.batch_size = 18;
+    opts.batch_size = 1;
     opts.class_name = "ape";
     opts.initial_lr = 0.0001;
     opts.reduce_on_plateau = false;
-    opts.patience = 10;
+    opts.patience = 2;
     opts.demo_mode = false;
     opts.verbose = false;
     opts.test_occ = false;

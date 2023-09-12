@@ -35,10 +35,12 @@ private:
 	//void validate();
 
 	torch::Tensor compute_r_loss(torch::Tensor pred, torch::Tensor gt);
+	torch::Tensor compute_geo_constraint(torch::Tensor score_rad_1, torch::Tensor score_rad_2, torch::Tensor score_rad_3, torch::Tensor rad_1, torch::Tensor rad_2, torch::Tensor rad_3);
 	void printProgressBar(int current, int total, int width);
 	DenseFCNResNet152 model;
 	torch::optim::Optimizer* optim;
 	torch::nn::L1Loss loss_radial;
+	torch::nn::SmoothL1Loss loss_geo;
 	torch::nn::L1Loss loss_sem;
 	torch::DeviceType device_type;
 

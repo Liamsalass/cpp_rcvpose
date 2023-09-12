@@ -109,9 +109,11 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
 
     // Instantiate the loss function
     try {
+        loss_geo = torch::nn::SmoothL1Loss(torch::nn::SmoothL1LossOptions().reduction(torch::kMean));
         loss_radial = torch::nn::L1Loss(torch::nn::L1LossOptions().reduction(torch::kSum));
-        //loss_radial->to(torch::kCPU);
+        
 
+        loss_geo->to(device);
         loss_radial->to(device);
     }
     catch (const torch::Error& e) {
@@ -190,7 +192,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
     cout << "Val Data Set Size : " << val_size.value() << endl;
 
     max_epoch = static_cast<int>(std::ceil(1.0 * max_iteration / train_size.value()));
-
+    epochs_without_improvement = 0;
     // Instantiate the dataloaders 
 
     auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(
@@ -215,6 +217,8 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             cout << string(100, '-') << endl;
             cout << string(43, ' ') << "Epoch " << epoch << endl;
             cout << "Training Epoch" << endl;
+        } else {
+            cout << "Epoch : " << epoch << endl;
         }
 
         // ========================================================================================== \\
@@ -230,8 +234,6 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             }
             count = batch.size() + count;
 
-       
-
             iteration = batch.size() + iteration;
 
             std::vector<torch::Tensor> batch_data;
@@ -242,9 +244,9 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
             for (const auto& example : batch) {
                 batch_data.push_back(example.data());
-                batch_radial_1.push_back(example.rad1());
-                batch_radial_2.push_back(example.rad2());
-                batch_radial_3.push_back(example.rad3());
+                batch_radial_1.push_back(example.rad_1());
+                batch_radial_2.push_back(example.rad_2());
+                batch_radial_3.push_back(example.rad_3());
                 batch_sem_target.push_back(example.sem_target());
             }
 
@@ -277,8 +279,10 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             torch::Tensor loss_r = compute_r_loss(score_rad_1, rad_1);
             loss_r += compute_r_loss(score_rad_2, rad_2);
             loss_r += compute_r_loss(score_rad_3, rad_3);
+            torch::Tensor loss_g = compute_geo_constraint(score_rad_1, score_rad_2, score_rad_3, rad_1, rad_2, rad_3);
+            auto loss_r_g = loss_r*0.8 + loss_g*0.2;
 
-            torch::Tensor loss = loss_r + loss_s;
+            torch::Tensor loss = loss_r_g + loss_s;
 
             //cout << "Radial Loss: " << loss_r.item<float>() << " Semantic Loss: " << loss_s.item<float>() << " Total Loss: " << loss.item<float>() << "\r";
 
@@ -303,156 +307,163 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
         // ========================================================================================== \\
         //                                  Validation Epoch 									       \\
+        
+        if(((epoch % 10) == 0) && (epoch != 0)){
+            model->eval();
+            float val_loss = 0, sem_loss = 0, radial_loss = 0, geometric_loss = 0;
+            count = 0;
 
-        model->eval();
-        float val_loss = 0;
-        count = 0;
-        torch::NoGradGuard no_grad;
-        auto val_start = std::chrono::steady_clock::now();
+            auto val_start = std::chrono::steady_clock::now();
 
-        int val_count = 0;
+            int val_count = 0;
 
-        for (const auto& batch : *val_loader) {
+            for (const auto& batch : *val_loader) {
+                if (opts.verbose) {
+                    printProgressBar(count, val_size.value(), 75);
+                }
+                count = batch.size() + count;
+                iteration_val = batch.size() + iteration_val;
+                torch::NoGradGuard no_grad;
+
+                std::vector<torch::Tensor> batch_data;
+                std::vector<torch::Tensor> batch_radial_1;
+                std::vector<torch::Tensor> batch_radial_2;
+                std::vector<torch::Tensor> batch_radial_3;
+                std::vector<torch::Tensor> batch_sem_target;
+
+                for (const auto& example : batch) {
+                    batch_data.push_back(example.data());
+                    batch_radial_1.push_back(example.rad_1());
+                    batch_radial_2.push_back(example.rad_2());
+                    batch_radial_3.push_back(example.rad_3());
+                    batch_sem_target.push_back(example.sem_target());
+                }
+
+
+                auto img = torch::stack(batch_data, 0);
+                auto rad_1 = torch::stack(batch_radial_1, 0);
+                auto rad_2 = torch::stack(batch_radial_2, 0);
+                auto rad_3 = torch::stack(batch_radial_3, 0);
+                auto sem_target = torch::stack(batch_sem_target, 0);
+
+
+                img = img.to(device);
+                rad_1 = rad_1.to(device);
+                rad_2 = rad_2.to(device);
+                rad_3 = rad_3.to(device);
+                sem_target = sem_target.to(device);
+
+                torch::Tensor output = model->forward(img);
+
+                auto score_rad_1 = output.index({ torch::indexing::Slice(), 0, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+                auto score_rad_2 = output.index({ torch::indexing::Slice(), 1, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+                auto score_rad_3 = output.index({ torch::indexing::Slice(), 2, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+                auto score_sem = output.index({ torch::indexing::Slice(), 3, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
+
+                val_count++;
+
+                auto loss_s = loss_sem(score_sem, sem_target);
+                auto loss_r = compute_r_loss(score_rad_1, rad_1);
+                loss_r += compute_r_loss(score_rad_2, rad_2);
+                loss_r += compute_r_loss(score_rad_3, rad_3);
+                auto loss_g = compute_geo_constraint(score_rad_1, score_rad_2, score_rad_3, rad_1, rad_2, rad_3);
+                auto loss_r_g = loss_r * 0.8 + loss_g * 0.2;
+
+                auto loss = loss_r_g + loss_s;
+
+
+                //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
+
+                if (loss.numel() == 0)
+                    std::runtime_error("Loss is empty");
+
+                val_loss += loss.item<float>();
+                sem_loss += loss_s.item<float>();
+                radial_loss += loss_r.item<float>();
+                geometric_loss += loss_g.item<float>();
+            }
+
+
+            auto val_end = std::chrono::steady_clock::now();
+            auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
+
             if (opts.verbose) {
-                printProgressBar(count, val_size.value(), 75);
-            }
-            count = batch.size() + count;
-            iteration_val = batch.size() + iteration_val;
-          
-
-            std::vector<torch::Tensor> batch_data;
-            std::vector<torch::Tensor> batch_radial_1;
-            std::vector<torch::Tensor> batch_radial_2;
-            std::vector<torch::Tensor> batch_radial_3;
-            std::vector<torch::Tensor> batch_sem_target;
-
-            for (const auto& example : batch) {
-                batch_data.push_back(example.data());
-                batch_radial_1.push_back(example.rad1());
-                batch_radial_2.push_back(example.rad2());
-                batch_radial_3.push_back(example.rad3());
-                batch_sem_target.push_back(example.sem_target());
+                cout << "\r" << string(80, ' ') << "\r";
+                cout << "Validation Time: " << val_duration.count() << " s" << endl;
             }
 
+            val_loss /= val_size.value();
+            float mean_acc = val_loss;
 
-            auto img = torch::stack(batch_data, 0);
-            auto rad_1 = torch::stack(batch_radial_1, 0);
-            auto rad_2 = torch::stack(batch_radial_2, 0);
-            auto rad_3 = torch::stack(batch_radial_3, 0);
-            auto sem_target = torch::stack(batch_sem_target, 0);
-
-
-            img = img.to(device);
-            rad_1 = rad_1.to(device);
-            rad_2 = rad_2.to(device);
-            rad_3 = rad_3.to(device);
-            sem_target = sem_target.to(device);
-
-            torch::Tensor output = model->forward(img);
-
-            auto score_rad_1 = output.index({ torch::indexing::Slice(), 0, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-            auto score_rad_2 = output.index({ torch::indexing::Slice(), 1, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-            auto score_rad_3 = output.index({ torch::indexing::Slice(), 2, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-            auto score_sem = output.index({ torch::indexing::Slice(), 3, torch::indexing::Slice(), torch::indexing::Slice() }).unsqueeze(1);
-         
-            val_count++;
-
-            auto loss_s = loss_sem(score_sem, sem_target);
-            auto loss_r = compute_r_loss(score_rad_1, rad_1);
-            loss_r += compute_r_loss(score_rad_2, rad_2);
-            loss_r += compute_r_loss(score_rad_3, rad_3);
-
-            auto loss = loss_r + loss_s;
-
-            //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";
-
-            if (loss.numel() == 0)
-                std::runtime_error("Loss is empty");
-
-            val_loss += loss.item<float>();
-          
-
-        }
-
-
-        auto val_end = std::chrono::steady_clock::now();
-        auto val_duration = std::chrono::duration_cast<std::chrono::seconds>(val_end - val_start);
-
-        if (opts.verbose) {
-            cout << "\r" << string(80, ' ') << "\r";
-            cout << "Validation Time: " << val_duration.count() << " s" << endl;
-        }
-
-        val_loss /= val_size.value();
-        float mean_acc = val_loss;
-
-        if (!opts.verbose) {
-            cout << "Epoch : " << epoch << endl;
-        }
-
-        cout << "Mean Loss: " << mean_acc << endl;
-        bool is_best = mean_acc < best_acc_mean;
         
-        if (is_best) {
-            best_acc_mean = mean_acc;
-            epochs_without_improvement = 0;
-        } else {
-            epochs_without_improvement++;
-        }
-        if (opts.verbose) {
-            cout << "Iterations: " << iteration << endl;
-            cout << "Epochs without improvement: " << epochs_without_improvement << endl;
-        }
 
-        //================================================================\\
-        //                  Save Model and Optimizer                      \\
-        
-        
-        try {
-            std::string save_location;
+            cout << "Mean Loss: " << mean_acc << endl;
+            cout << "\tSemantic Loss: " << sem_loss / val_size.value() << endl;
+            cout << "\tRadial Loss: " << radial_loss / val_size.value() << endl;
+            cout << "\tGeometric Loss: " << geometric_loss / val_size.value() << endl;
+
+            bool is_best = mean_acc < best_acc_mean;
+
             if (is_best) {
-                if (opts.verbose) {
-                    cout << "Saving New Best Model" << endl;
-                }
-                save_location = out + "/model_best";
+                best_acc_mean = mean_acc;
+                epochs_without_improvement = 0;
+            } else {
+                epochs_without_improvement++;
             }
-            else {
-                if (opts.verbose) {
-                    cout << "Saving Current Model" << endl;
-                }
-                save_location = out + "/current";
+            if (opts.verbose) {
+                cout << "Iterations: " << iteration << endl;
+                cout << "Epochs without improvement: " << epochs_without_improvement << endl;
             }
 
-            if (!std::filesystem::is_directory(save_location))
-                std::filesystem::create_directory(save_location);
-
-            torch::serialize::OutputArchive output_model_info;
-            output_model_info.write("epoch", epoch);
-            output_model_info.write("iteration", iteration);
-            output_model_info.write("arch", model->name());
-            output_model_info.write("best_acc_mean", best_acc_mean);
-            output_model_info.write("loss", val_loss);
-            output_model_info.write("optimizer", opts.optim);
-            output_model_info.write("lr", current_lr);
-
-            output_model_info.save_to(save_location + "/info.pt");
-
-            torch::serialize::OutputArchive output_model_archive;
-            model->to(torch::kCPU);
-            model->save(output_model_archive);
-            model->to(device);
-            output_model_archive.save_to(save_location + "/model.pt");
+            //================================================================\\
+            //                  Save Model and Optimizer                      \\
 
 
-            torch::serialize::OutputArchive output_optim_archive;
-            optim->save(output_optim_archive);
-            output_optim_archive.save_to(save_location + "/optim.pt");
+            try {
+                std::string save_location;
+                if (is_best) {
+                    if (opts.verbose) {
+                        cout << "Saving New Best Model" << endl;
+                    }
+                    save_location = out + "/model_best";
+                }
+                else {
+                    if (opts.verbose) {
+                        cout << "Saving Current Model" << endl;
+                    }
+                    save_location = out + "/current";
+                }
+
+                if (!std::filesystem::is_directory(save_location))
+                    std::filesystem::create_directory(save_location);
+
+                torch::serialize::OutputArchive output_model_info;
+                output_model_info.write("epoch", epoch);
+                output_model_info.write("iteration", iteration);
+                output_model_info.write("arch", model->name());
+                output_model_info.write("best_acc_mean", best_acc_mean);
+                output_model_info.write("loss", val_loss);
+                output_model_info.write("optimizer", opts.optim);
+                output_model_info.write("lr", current_lr);
+
+                output_model_info.save_to(save_location + "/info.pt");
+
+                torch::serialize::OutputArchive output_model_archive;
+                model->to(torch::kCPU);
+                model->save(output_model_archive);
+                model->to(device);
+                output_model_archive.save_to(save_location + "/model.pt");
+
+
+                torch::serialize::OutputArchive output_optim_archive;
+                optim->save(output_optim_archive);
+                output_optim_archive.save_to(save_location + "/optim.pt");
+            }
+            catch (std::exception& e) {
+                std::cout << "Error saving model: " << e.what() << std::endl;
+            }
         }
-        catch (std::exception& e) {
-            std::cout << "Error saving model: " << e.what() << std::endl;
-        }
-        
-            
+
 
         // Reduce learning rate every 70 epoch
         if (!opts.reduce_on_plateau){
@@ -519,7 +530,6 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 cout << "Average Time per Epoch: " << average_epoch_time << " s" << endl;
             }
         }
-        cout << endl;
         epoch++;
     }
 }
@@ -532,6 +542,34 @@ torch::Tensor Trainer::compute_r_loss(torch::Tensor pred, torch::Tensor gt) {
     torch::Tensor loss = loss_radial(pred_masked, gt_masked);
     // Normalize the loss
     loss = loss / static_cast<float>(gt_masked.size(0));
+
+    return loss;
+}
+
+torch::Tensor Trainer::compute_geo_constraint(torch::Tensor score_rad_1, torch::Tensor score_rad_2, torch::Tensor score_rad_3, torch::Tensor rad_1, torch::Tensor rad_2, torch::Tensor rad_3) {
+    torch::Tensor gt_mask = rad_1 != 0;
+    torch::Tensor score_rad_1_masked = torch::masked_select(score_rad_1, gt_mask);
+    torch::Tensor score_rad_2_masked = torch::masked_select(score_rad_2, gt_mask);
+    torch::Tensor score_rad_3_masked = torch::masked_select(score_rad_3, gt_mask);
+    torch::Tensor score_diff_1_2 = torch::abs(torch::sub(score_rad_1_masked, score_rad_2_masked));
+    torch::Tensor score_diff_1_3 = torch::abs(torch::sub(score_rad_1_masked, score_rad_3_masked));
+    torch::Tensor score_diff_2_3 = torch::abs(torch::sub(score_rad_3_masked, score_rad_2_masked));
+
+    torch::Tensor rad_1_masked = torch::masked_select(rad_1, gt_mask);
+    torch::Tensor rad_2_masked = torch::masked_select(rad_2, gt_mask);
+    torch::Tensor rad_3_masked = torch::masked_select(rad_3, gt_mask);
+
+    torch::Tensor diff_1_2 = torch::abs(torch::sub(rad_1_masked, rad_2_masked));
+    torch::Tensor diff_1_3 = torch::abs(torch::sub(rad_1_masked, rad_3_masked));
+    torch::Tensor diff_2_3 = torch::abs(torch::sub(rad_3_masked, rad_2_masked));
+    // Compute the loss
+    torch::Tensor loss_1_2 = loss_geo(score_diff_1_2, diff_1_2);
+    torch::Tensor loss_1_3 = loss_geo(score_diff_1_3, diff_1_3);
+    torch::Tensor loss_2_3 = loss_geo(score_diff_2_3, diff_2_3);
+    // Normalize the loss
+    torch::Tensor loss = (loss_1_2 / static_cast<float>(gt_mask.size(0)) +
+        loss_1_3 / static_cast<float>(gt_mask.size(0)) +
+        loss_2_3 / static_cast<float>(gt_mask.size(0)))/3;
 
     return loss;
 }

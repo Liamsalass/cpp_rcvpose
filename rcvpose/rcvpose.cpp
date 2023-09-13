@@ -124,6 +124,7 @@ RCVpose::RCVpose(Options& options)
             cout << "Model Path: " << out << endl;
 
             model = DenseFCNResNet152(3, 4);
+           
 
         }
         catch (const torch::Error& e) {
@@ -150,14 +151,9 @@ RCVpose::RCVpose(Options& options)
 
             model = loader.getModel();
 
-            model->to(torch::kCPU);
+          
       
 
-            torch::Tensor dummy_input = torch::randn({ 2, 3, 640, 480 });
-
-            auto out = model->forward(dummy_input);
-
-            cout << "Model loaded and forwarded successfully" << endl;
         }
         catch (const torch::Error& e) {
             cout << "Cannot Resume model from checkpoint" << endl;
@@ -168,6 +164,9 @@ RCVpose::RCVpose(Options& options)
     }
 
     cout << "Model Loaded" << endl;
+    
+
+    
     if (!can_run) exit(1);
 
     //Print params
@@ -185,6 +184,11 @@ RCVpose::RCVpose(Options& options)
     cout << "initial_lr: " << opts.initial_lr << endl;
     cout << "model_dir: " << opts.model_dir << endl;
     cout << "demo_mode: " << opts.demo_mode << endl;
+    if (opts.verbose){
+        cout << "verbose: true" << endl;
+    } else {
+        cout << "verbose: false" << endl;
+    }
     cout << "test_occ: " << opts.test_occ << endl;
     cout << "Configurations: " << endl;
     for (const auto& entry : opts.cfg) {

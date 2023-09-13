@@ -13,8 +13,28 @@ Trainer::Trainer(const Options& opts, DenseFCNResNet152& model)
     torch::Device device(device_type);
 
     model->to(torch::kDouble);
-    
+
     model->to(device);
+    
+    
+      
+    size_t free_memory, total_memory;
+    cudaMemGetInfo(&free_memory, &total_memory);
+
+    size_t used_memory = total_memory - free_memory;
+
+    cout << "Total GPU memory: " << total_memory / (1024 * 1024 * 1024) << " GB, "
+        << (total_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+        << total_memory % (1024 * 1024) << " bytes" << endl;
+
+    cout << "Memory Profile of Empty Model" << endl;
+    cout << "\tUsed GPU memory: " << used_memory / (1024 * 1024 * 1024) << " GB, "
+        << (used_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+        << used_memory % (1024 * 1024) << " bytes" << endl;
+
+    cout << "\tFree GPU memory: " << free_memory / (1024 * 1024 * 1024) << " GB, "
+        << (free_memory % (1024 * 1024 * 1024)) / (1024 * 1024) << " MB, "
+        << free_memory % (1024 * 1024) << " bytes" << endl;
 
 
     if (opts.verbose) {
@@ -232,9 +252,11 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
 
         auto train_start = std::chrono::steady_clock::now();
         for (const auto& batch : *train_loader) {
+
             if (opts.verbose) {
                 printProgressBar(count, train_size.value(), 75);
             }
+            
             count = batch.size() + count;
 
             iteration = batch.size() + iteration;
@@ -261,7 +283,9 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             auto rad_3 = torch::stack(batch_radial_3, 0).to(device);
             auto sem_target = torch::stack(batch_sem_target, 0).to(device);
 
+
             torch::Tensor scores = model->forward(data);
+
 
             auto score_rad_1 = scores.index({ torch::indexing::Slice(), 0}).unsqueeze(1);
             auto score_rad_2 = scores.index({ torch::indexing::Slice(), 1}).unsqueeze(1);
@@ -300,7 +324,6 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             if (np_loss.numel() == 0)
                 std::runtime_error("Loss is empty");
         }
-    
 
         auto train_end = std::chrono::steady_clock::now();
         auto train_duration = std::chrono::duration_cast<std::chrono::seconds>(train_end - train_start);
@@ -527,7 +550,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
   
         if (opts.verbose) {
             cout << "Epoch Training Time: " << epoch_total_time.count() << " s" << endl;
-            cout << "Average Time pe6r Epoch: " << average_epoch_time << " s" << endl;
+            cout << "Average Time per Epoch: " << average_epoch_time << " s" << endl;
         }
         else {
             if (epoch % 10 == 0) {

@@ -18,6 +18,7 @@
 #include "data_loader.h"
 #include <cuda_runtime.h>
 
+
 class RCVpose {
 public:
     RCVpose(Options& options);

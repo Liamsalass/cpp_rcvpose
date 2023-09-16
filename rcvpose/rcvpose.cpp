@@ -31,7 +31,7 @@ RCVpose::RCVpose(Options& options)
     // Instantiate the dataset
     try {
         auto train_dataset = RData(opts.root_dataset, opts.dname, "train", opts.class_name);
-        auto val_dataset = RData(opts.root_dataset, opts.dname, "test", opts.class_name);
+        auto val_dataset = RData(opts.root_dataset, opts.dname, "val", opts.class_name);
 
         // Instantiate the dataloaders 
         auto train_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(

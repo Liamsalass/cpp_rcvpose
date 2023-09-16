@@ -16,27 +16,10 @@ std::vector<torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& gt1, cv::Mat&
 	img.convertTo(img, CV_32FC3);
 	img /= 255.0;
 
-	gt1.convertTo(gt1, CV_32FC3);
-	gt2.convertTo(gt2, CV_32FC3);
-	gt3.convertTo(gt3, CV_32FC3);
+	gt1.convertTo(gt1, CV_32FC1);
+	gt2.convertTo(gt2, CV_32FC1);
+	gt3.convertTo(gt3, CV_32FC1);
 
-	if (gt1.channels() == 2) {
-		cv::Mat expandedLbl;
-		cv::cvtColor(gt1, expandedLbl, cv::COLOR_GRAY2BGR);
-		gt1 = expandedLbl.reshape(1, 1); 
-	}
-
-	if (gt2.channels() == 2) {
-		cv::Mat expandedLbl;
-		cv::cvtColor(gt2, expandedLbl, cv::COLOR_GRAY2BGR);
-		gt2 = expandedLbl.reshape(1, 1);
-	}
-
-	if (gt3.channels() == 2) {
-		cv::Mat expandedLbl;
-		cv::cvtColor(gt3, expandedLbl, cv::COLOR_GRAY2BGR);
-		gt3 = expandedLbl.reshape(1, 1);
-	}
 
 	for (int i = 0; i < 3; i++) {
 		cv::Mat channel(img.size(), CV_32FC1);

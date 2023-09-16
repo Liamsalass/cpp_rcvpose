@@ -233,7 +233,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 printProgressBar(count, train_size.value(), 75);
             }
             count = batch.size() + count;
-
+            
             iteration = batch.size() + iteration;
 
             std::vector<torch::Tensor> batch_data;
@@ -249,6 +249,13 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 batch_radial_3.push_back(example.rad_3());
                 batch_sem_target.push_back(example.sem_target());
             }
+
+            for (const auto& tensor : batch_data) {
+                if (tensor.sizes().size() == 0) {
+                    std::cerr << "Found an empty tensor in batch_data" << std::endl;
+                }
+            }
+
 
             optim->zero_grad();
 
@@ -280,18 +287,16 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
             loss_r += compute_r_loss(score_rad_2, rad_2);
             loss_r += compute_r_loss(score_rad_3, rad_3);
             torch::Tensor loss_g = compute_geo_constraint(score_rad_1, score_rad_2, score_rad_3, rad_1, rad_2, rad_3);
-            auto loss_r_g = loss_r*0.8 + loss_g*0.2;
+
+            float coef1 = (epoch >= 150) ? 0.8 : 0.2;
+            float coef2 = 1.0 - coef1;
+            torch::Tensor loss_r_g = loss_r * coef1 + loss_g * coef2;
 
             torch::Tensor loss = loss_r_g + loss_s;
-
-            //cout << "Radial Loss: " << loss_r.item<float>() << " Semantic Loss: " << loss_s.item<float>() << " Total Loss: " << loss.item<float>() << "\r";
-
             loss.backward();
-
             optim->step();
 
             auto np_loss = loss.detach().cpu().numpy_T();
-
             if (np_loss.numel() == 0)
                 std::runtime_error("Loss is empty");
         }
@@ -308,7 +313,7 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
         // ========================================================================================== \\
         //                                  Validation Epoch 									       \\
         
-        if(((epoch % 10) == 0) && (epoch != 0)){
+        if(true || (((epoch % 10) == 0) && (epoch != 0))){
             model->eval();
             float val_loss = 0, sem_loss = 0, radial_loss = 0, geometric_loss = 0;
             count = 0;
@@ -367,9 +372,13 @@ void Trainer::train(Options& opts, DenseFCNResNet152& model)
                 loss_r += compute_r_loss(score_rad_2, rad_2);
                 loss_r += compute_r_loss(score_rad_3, rad_3);
                 auto loss_g = compute_geo_constraint(score_rad_1, score_rad_2, score_rad_3, rad_1, rad_2, rad_3);
-                auto loss_r_g = loss_r * 0.8 + loss_g * 0.2;
 
-                auto loss = loss_r_g + loss_s;
+
+                float coef1 = (epoch >= 150) ? 0.8 : 0.2;
+                float coef2 = 1.0 - coef1;
+                torch::Tensor loss_r_g = loss_r * coef1 + loss_g * coef2;
+
+                torch::Tensor loss = loss_r_g + loss_s;
 
 
                 //cout << "Loss_r: " << loss_r.item<float>() << " Loss_s: " << loss_s.item<float>() << "\r";

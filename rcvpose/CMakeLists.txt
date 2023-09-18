@@ -19,8 +19,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(Open3D REQUIRED)
 include_directories(${Open3D_INCLUDE_DIRS})
 
-find_package(Torch REQUIRED)
-include_directories(${TORCH_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 

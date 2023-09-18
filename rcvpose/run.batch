@@ -1,0 +1,10 @@
+@echo off
+
+
+cd out/build/x64-Release
+
+<exe>		<val/inf/train> <dataset> <ds path>					<Model path>									<resume> <optim> <> <use adam> <epochs> <use pose> <use shape> <use exp> <use tex> <use light>
+
+rcvpose.exe validate lm "C:/Users/User/.cw/work/datasets/test" "C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/ape" true adam 1 ape 0.0001 true 10 true true true
+
+pause

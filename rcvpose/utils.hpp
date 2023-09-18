@@ -44,7 +44,7 @@ public:
         // Default initialization
     }
 
-    CheckpointLoader(const std::string& checkpointPath, bool get_best_ckpt, bool load_model, bool load_optimizer) {
+    CheckpointLoader(const std::string& checkpointPath, bool get_best_ckpt, bool load_model) {
         if (get_best_ckpt) {
             path = checkpointPath + "/model_best";
         }
@@ -103,14 +103,12 @@ public:
         return model_;
     }
 
-    torch::optim::Optimizer* getOptimizer() {
-        if (!model_) {
-            throw std::runtime_error("Model was not loaded");
-        }
+    torch::optim::Optimizer* getOptimizer(DenseFCNResNet152& ref_model) {
+ 
         torch::serialize::InputArchive optimArchive;
         optimArchive.load_from(path + "/optim.pt");
         //TODO, load current LR values and store them
-        optim_ = new torch::optim::Adam(model_->parameters(), torch::optim::AdamOptions(0.0001));
+        optim_ = new torch::optim::Adam(ref_model->parameters(), torch::optim::AdamOptions(0.0001));
         optim_->load(optimArchive);
 
         if (!optim_) {

@@ -296,6 +296,29 @@ cv::Mat eigen_matrix_to_cv_mat(Eigen::MatrixXd matrix, const bool& debug = false
 
 }
 
+
+torch::Tensor npy_to_tensor(const std::string& path) {
+    vector<double> data;
+    vector<unsigned long> shape;
+    bool fortran_order;
+
+    npy::LoadArrayFromNumpy(path, shape, fortran_order, data);
+
+    int rows = static_cast<int>(shape[0]);
+    int cols = static_cast<int>(shape[1]);
+
+    torch::Tensor tensor = torch::zeros({ rows, cols });
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; ++j) {
+			tensor[i][j] = data[i * cols + j];
+		}
+	}
+
+    return tensor;
+
+}
+
 cv::Mat read_depth_to_cv(const std::string& path, const bool& debug = false) {
     cv::Mat depth_image;
 

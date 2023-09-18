@@ -11,19 +11,6 @@ endif()
 set(TARGET_NAME "rcvpose")
 project(${TARGET_NAME})
 
-set(CMAKE_PREFIX_PATH "C:/libtorch_release/libtorch")
-set(TORCH_DIR "C:/libtorch_release/libtorch")
-
-# Must fix on pc
-# set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda-12.0")
-# 
-# set(CUDA_HOME "/usr/local/cuda-12.0")
-# 
-# set (CUDA_NVCC_EXECUTABLE "/usr/local/cuda-12.0/bin/nvcc")
-# 
-# set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.0/bin/nvcc")
-#
-
 find_package(OpenMP)
 
 find_package(OpenCV REQUIRED)

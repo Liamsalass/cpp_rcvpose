@@ -609,15 +609,17 @@ def estimate_6d_pose_lm():
                     tic = time.time_ns()
                     
                     #Cpp backend
-                    sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/semantic/' + filename_without_ext + '.txt'
-                    rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/radial' + str(keypoint_count) + '/' + filename_without_ext + '.txt'
-                    radial_out = fileToTensor(rad_out_path)
-                    sem_out = fileToTensor(sem_out_path)
+                    #sem_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/semantic/' + filename_without_ext + '.txt'
+                    #rad_out_path = 'C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/' + class_name + '/test_tensors/radial' + str(keypoint_count) + '/' + filename_without_ext + '.txt'
+                    #radial_out = fileToTensor(rad_out_path)
+                    #sem_out = fileToTensor(sem_out_path)
 
-                    sem_out = (sem_out - sem_out.min()) / (sem_out.max() - sem_out.min())
+                    
 
-                    sem_out = np.where(sem_out>0.8,1,0).transpose(1,0)
-                    radial_out = np.array(radial_out).transpose(1,0)
+                    #sem_out = (sem_out - sem_out.min()) / (sem_out.max() - sem_out.min())
+
+                    #sem_out = np.where(sem_out>0.8,1,0).transpose(1,0)
+                    #radial_out = np.array(radial_out).transpose(1,0)
 
 
                     #Python backend      
@@ -628,10 +630,17 @@ def estimate_6d_pose_lm():
                     #sem_out = np.where(sem_out>0.8,1,0)
                     #radial_out = np.array(radial_out)
 
+                    # Paper output
+                    radial_path = root_dataset + "/estimated_radii/"+class_name+"/"+"Estimated_out_pt"+str(keypoint_count)+"_dm/"+os.path.splitext(filename)[0][:] + '.npy'
+                    #print(radial_path)
+                    radial_out = np.load(radial_path)   
+
+                    sem_out = np.where(radial_out>0.8,1,0)
+
                     toc = time.time_ns()
                     net_time += toc-tic
                     #print("Network time consumption: ", network_time_single)
-                    depth_map1 = read_depth(rootPath+'data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
+                    depth_map1 = read_depth(root_dataset + "LINEMOD/"+class_name+'/data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
    
                     depth_map = depth_map1*sem_out 
 

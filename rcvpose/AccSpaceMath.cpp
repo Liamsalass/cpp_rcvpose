@@ -325,8 +325,14 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
 
     int total_size = vote_map_dim * vote_map_dim * vote_map_dim;
 
-    int* VoteMap_3D = new int[total_size]();
-
+    int* VoteMap_3D; 
+    try {
+        VoteMap_3D = new int[total_size]();
+    }
+    catch (bad_alloc& ba) {
+		cerr << "bad_alloc caught: " << ba.what() << endl;
+		return Vector3d(0, 0, 0);
+	}
 
     //if (use_cuda && !debug) {
         //cout << "Using GPU for fast_for" << endl;
@@ -389,6 +395,7 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
 
 
     Eigen::Vector3d center = centers[0].cast<double>();
+
     if (zero_boundary < 0) {
         center.array() += zero_boundary;
     }

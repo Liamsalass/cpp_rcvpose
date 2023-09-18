@@ -1,9 +1,9 @@
 import numpy as np
 import os
 
-path = 'C:/Users/User/.cw/work/datasets/test/LINEMOD/duck/pose/'
+path = 'C:/Users/User/.cw/work/datasets/test/LINEMOD/phone/pose/'
 
-save_path = 'C:/Users/User/.cw/work/datasets/test/LINEMOD/duck/pose_txt/'
+save_path = 'C:/Users/User/.cw/work/datasets/test/LINEMOD/phone/pose_txt/'
 
 for filename in os.listdir(path):
     pose = path + filename

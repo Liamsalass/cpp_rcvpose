@@ -24,6 +24,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 #include <omp.h> 
+#include <future>
+#include <atomic>
 
 
 

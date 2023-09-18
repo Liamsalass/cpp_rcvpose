@@ -47,6 +47,10 @@ RMapDataset::RMapDataset(
 			//remove the \n at the end of the line
 			line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
 
+			if (line.find("synth") != std::string::npos) {
+				continue;
+			}
+
 			ids_.push_back(line);
 		}
 		file.close();
@@ -61,18 +65,23 @@ RMapDataset::RMapDataset(
 CustomExample RMapDataset::get(size_t index) {
 	std::string img_id = ids_[index];
 
-	// TODO:
-	// Check type of data and shape stored in radial .npy (may not be float)
 
 
-	cv::Mat img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
+
+	cv::Mat img;
+	try {
+		img = cv::imread(imgpath_ + img_id + ".jpg", cv::IMREAD_COLOR);
+	}
+	catch (const std::exception& e) {
+		std::cout << "Error: Cannot read image\n" << e.what() << std::endl;
+	}
 
 	cv::Mat radial_kpt1 = read_npy(radialpath1_ + img_id + ".npy");
 	cv::Mat radial_kpt2 = read_npy(radialpath2_ + img_id + ".npy");
 	cv::Mat radial_kpt3 = read_npy(radialpath3_ + img_id + ".npy");
 
 	std::vector<torch::Tensor> transfromed_data = transform(img, radial_kpt1, radial_kpt2, radial_kpt3);
-		
+
 	return CustomExample(transfromed_data[0], transfromed_data[1], transfromed_data[2], transfromed_data[3], transfromed_data[4]);
 }
 
@@ -86,8 +95,12 @@ cv::Mat RMapDataset::read_npy(const std::string& path)
 	std::vector<double> data;
 	std::vector<unsigned long> shape;
 	bool fortran_order;
-
-	npy::LoadArrayFromNumpy(path, shape, fortran_order, data);
+	try {
+		npy::LoadArrayFromNumpy(path, shape, fortran_order, data);
+	}
+	catch (const std::exception& e) {
+		std::cout << "Error: Cannot read " << path << ".npy file\n" << e.what() << std::endl;
+	}
 
 	int rows = static_cast<int>(shape[0]);
 	int cols = static_cast<int>(shape[1]);

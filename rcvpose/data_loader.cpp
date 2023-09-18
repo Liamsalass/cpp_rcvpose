@@ -13,33 +13,17 @@ std::vector<torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& gt1, cv::Mat&
 	const std::vector<double> mean = { 0.485, 0.456, 0.406 };
 	const std::vector<double> std = { 0.229, 0.224, 0.225 };
 
-	img.convertTo(img, CV_32FC3);
+	img.convertTo(img, CV_64FC3);
 	img /= 255.0;
 
-	gt1.convertTo(gt1, CV_32FC3);
-	gt2.convertTo(gt2, CV_32FC3);
-	gt3.convertTo(gt3, CV_32FC3);
+	gt1.convertTo(gt1, CV_64FC1);
+	gt2.convertTo(gt2, CV_64FC1);
+	gt3.convertTo(gt3, CV_64FC1);
 
-	if (gt1.channels() == 2) {
-		cv::Mat expandedLbl;
-		cv::cvtColor(gt1, expandedLbl, cv::COLOR_GRAY2BGR);
-		gt1 = expandedLbl.reshape(1, 1); 
-	}
 
-	if (gt2.channels() == 2) {
-		cv::Mat expandedLbl;
-		cv::cvtColor(gt2, expandedLbl, cv::COLOR_GRAY2BGR);
-		gt2 = expandedLbl.reshape(1, 1);
-	}
-
-	if (gt3.channels() == 2) {
-		cv::Mat expandedLbl;
-		cv::cvtColor(gt3, expandedLbl, cv::COLOR_GRAY2BGR);
-		gt3 = expandedLbl.reshape(1, 1);
-	}
 
 	for (int i = 0; i < 3; i++) {
-		cv::Mat channel(img.size(), CV_32FC1);
+		cv::Mat channel(img.size(), CV_64FC1);
 		cv::extractChannel(img, channel, i);
 		channel = (channel - mean[i]) / std[i];
 		cv::insertChannel(channel, img, i);
@@ -56,11 +40,11 @@ std::vector<torch::Tensor> RData::transform(cv::Mat& img, cv::Mat& gt1, cv::Mat&
 	cv::Mat gt2Transposed = gt2.t();
 	cv::Mat gt3Transposed = gt3.t();
 
-	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat32).clone();
+	torch::Tensor imgTensor = torch::from_blob(imgTransposed.data, { imgTransposed.rows, imgTransposed.cols, imgTransposed.channels() }, torch::kFloat64).clone();
 	imgTensor = imgTensor.permute({ 2, 0, 1 });
-	torch::Tensor gt1Tensor = torch::from_blob(gt1Transposed.data, { gt1Transposed.channels(), gt1Transposed.rows, gt1Transposed.cols }, torch::kFloat32).clone();
-	torch::Tensor gt2Tensor = torch::from_blob(gt2Transposed.data, { gt2Transposed.channels(), gt2Transposed.rows, gt2Transposed.cols }, torch::kFloat32).clone();
-	torch::Tensor gt3Tensor = torch::from_blob(gt3Transposed.data, { gt3Transposed.channels(), gt3Transposed.rows, gt3Transposed.cols }, torch::kFloat32).clone();
+	torch::Tensor gt1Tensor = torch::from_blob(gt1Transposed.data, { gt1Transposed.channels(), gt1Transposed.rows, gt1Transposed.cols }, torch::kFloat64).clone();
+	torch::Tensor gt2Tensor = torch::from_blob(gt2Transposed.data, { gt2Transposed.channels(), gt2Transposed.rows, gt2Transposed.cols }, torch::kFloat64).clone();
+	torch::Tensor gt3Tensor = torch::from_blob(gt3Transposed.data, { gt3Transposed.channels(), gt3Transposed.rows, gt3Transposed.cols }, torch::kFloat64).clone();
 	torch::Tensor semTensor = torch::where(gt1Tensor > 0, torch::ones_like(gt1Tensor), -torch::ones_like(gt1Tensor));
 
 	std::vector<torch::Tensor> tensors = { imgTensor, gt1Tensor, gt2Tensor, gt3Tensor, semTensor };

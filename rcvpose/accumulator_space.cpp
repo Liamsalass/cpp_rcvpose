@@ -325,19 +325,35 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         torch::Tensor radial_output3;
 
      
+        cv::Mat img = cv::imread(image_path);
 
         // Record the current time before executing the FCResBackbone
         auto start = chrono::high_resolution_clock::now();
 
-        cv::Mat img = cv::imread(image_path);
         // Execute the FCResBackbone model to get semantic and radial output
         FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
 
         // Record the current time after executing the FCResBackbone
         auto end = chrono::high_resolution_clock::now();
 
+      
+
+        //string r1_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
+        //string r2_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
+        //string r3_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
+        //
+        //torch::Tensor radial_pred_1 = npy_to_tensor(r1_path);
+        //torch::Tensor radial_pred_2 = npy_to_tensor(r2_path);
+        //torch::Tensor radial_pred_3 = npy_to_tensor(r3_path);
+
+
+        //semantic_output = torch::where(radial_pred_1 > 0, torch::ones_like(radial_pred_1), -torch::ones_like(radial_pred_1));
+
+
         // Add the time taken to execute the FCResBackbone to the total network time
         backend_net_time += chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
+        //vector<torch::Tensor> radial_outputs = { radial_pred_1, radial_pred_2, radial_pred_3 };
 
         vector<torch::Tensor> radial_outputs = { radial_output1, radial_output2, radial_output3 };
 
@@ -385,6 +401,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
             cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
 
+                    
             // Define the depth image path
             string depth_path = rootpvPath + "data/depth" + to_string(img_num);
 
@@ -410,6 +427,24 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
 
+            // Check if the images have the same dimensions
+            if (sem_cv.size() != rad_cv.size() || sem_cv.type() != rad_cv.type()) {
+                std::cerr << "Error: The dimensions or types of the two matrices are not the same." << std::endl;
+            }
+
+            // Initialize a 3-channel matrix with zeros
+            //std::vector<cv::Mat> channels(3, cv::Mat::zeros(sem_cv.size(), sem_cv.type()));
+
+            // Set blue channel to semantic and red channel to radial
+            //channels[0] = sem_cv;  // Blue
+            //channels[2] = rad_cv;  // Red
+
+            // Merge single-channel mats in 'channels' into a 3-channel mat
+            //cv::Mat combined;
+            //cv::merge(channels, combined);
+
+            // Display the result
+            //cv::imshow("Combined Image", combined);
 
             cv::Mat thresholded;
             cv::threshold(sem_cv, thresholded, opts.mask_threshold, 1, cv::THRESH_BINARY);
@@ -423,6 +458,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             depth_cv.convertTo(depth_tmp, CV_32F);
             rad_cv.convertTo(rad_tmp, CV_32F);
 
+
             // Multiply the radial matrix by the semantic matrix
             rad_tmp = rad_tmp.mul(sem_cv);
             depth_tmp = depth_tmp.mul(sem_tmp);
@@ -432,6 +468,10 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             rad_tmp.release();
             depth_tmp.release();
             sem_tmp.release();
+
+
+            //cv::imshow("Semantic", sem_cv);
+            //cv::imshow("Radial", rad_cv);
 
 
 
@@ -489,8 +529,25 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             //Calculate the estimated center in mm
             auto acc_start = chrono::high_resolution_clock::now();
+            Eigen::Vector3d estimated_center_mm;
+            try {
+            
 
-            Eigen::Vector3d estimated_center_mm = Accumulator_3D(xyz, radial_list, opts.verbose);
+                std::future<Eigen::Vector3d> future_result = std::async(std::launch::async, Accumulator_3D, xyz, radial_list, opts.verbose);
+
+                if (future_result.wait_for(std::chrono::milliseconds(60000)) == std::future_status::ready) {
+
+                    estimated_center_mm = future_result.get();
+                }
+                else {
+                    cout << "Accumulator timed out\n";
+                    break;
+                }
+            }
+            catch (const std::exception& e) {
+				cout << "Accumulator failed\n";
+				break;
+			}
 
             auto acc_end = chrono::high_resolution_clock::now();
 
@@ -498,10 +555,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Print the number of centers returned and the estimate if verbose option is enabled
             if (opts.verbose) {
-                
-                cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl;
+                cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
                 cout << "\tEstimate: " << estimated_center_mm[0] << " " << estimated_center_mm[1] << " " << estimated_center_mm[2] << endl << endl;
-
             }
 
 

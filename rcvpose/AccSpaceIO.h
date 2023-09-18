@@ -42,6 +42,8 @@ Eigen::MatrixXd read_depth_to_matrix(const std::string& path, const bool& debug)
 
 cv::Mat eigen_matrix_to_cv_mat(Eigen::MatrixXd matrix, const bool& debug);
 
+torch::Tensor npy_to_tensor(const std::string& path);
+
 cv::Mat read_depth_to_cv(const std::string& path, const bool& debug);
 
 Eigen::MatrixXd convertToEigenMatrix(const std::vector<Vertex>& vertices);

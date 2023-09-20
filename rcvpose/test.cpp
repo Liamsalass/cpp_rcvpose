@@ -3,6 +3,7 @@
 
 #include "rcvpose.h"
 #include <iostream>
+#include <string>
 #include <opencv2/opencv.hpp>
 
 using namespace std;
@@ -29,80 +30,49 @@ Options testing_options() {
 
 //Cam Failed at img 86 which is number img99 in dataset
 
-
-int main(int argc, char* args[])
-{
+int main(int argc, char* args[]) {
     bool train = false;
     bool validate = false;
     bool estimate = false;
 
-    if(argc > 1){
-        if (args[1] == "train"){
+    if (argc > 1) {
+        if (strcmp(args[1], "train") == 0) {
             train = true;
-        } 
-        else if (args[1] == "validate"){
+        }
+        else if (strcmp(args[1], "validate") == 0) {
             validate = true;
         }
-        else if (args[1] == "estimate"){
+        else if (strcmp(args[1], "estimate") == 0) {
             estimate = true;
         }
         else {
             cout << "Usage: " << args[0] << " <train/validate/estimate>" << endl;
             return 0;
         }
-    } else {
+    }
+    else {
         cout << "Usage: " << args[0] << " <train/validate/estimate>" << endl;
         cout << "Defaulting to validating" << endl;
         validate = true;
     }
 
     Options opts;
-    if ((argc > 2) &&(argc < 15)) {
+
+    if (argc > 2 && argc < 15) {
         try {
             opts.dname = args[2];
-
             opts.root_dataset = args[3];
-
             opts.model_dir = args[4];
-
-            if (args[5] == "true") {
-                opts.resume_train = true;
-            }
-            else {
-                opts.resume_train = false;
-            }
+            opts.resume_train = (strcmp(args[5], "true") == 0);
             opts.optim = args[6];
-
             opts.batch_size = stoi(args[7]);
-
             opts.class_name = args[8];
-
             opts.initial_lr = stod(args[9]);
-            if (args[10] == "true") {
-                opts.reduce_on_plateau = true;
-            }
-            else {
-                opts.reduce_on_plateau = false;
-            }
-            opts.patience = stoi(args[12]);
-            if (args[12] == "true") {
-                opts.demo_mode = true;
-            }
-            else {
-                opts.demo_mode = false;
-            }
-            if (args[13] == "true") {
-                opts.verbose = true;
-            }
-            else {
-                opts.verbose = false;
-            }
-            if (args[14] == "true") {
-                opts.test_occ = true;
-            }
-            else {
-                opts.test_occ = false;
-            }
+            opts.reduce_on_plateau = (strcmp(args[10], "true") == 0);
+            opts.patience = stoi(args[11]);
+            opts.demo_mode = (strcmp(args[12], "true") == 0);
+            opts.verbose = (strcmp(args[13], "true") == 0);
+            opts.test_occ = (strcmp(args[14], "true") == 0);
         }
         catch (const exception& e) {
             cout << "Error: " << e.what() << endl;
@@ -112,7 +82,7 @@ int main(int argc, char* args[])
         }
     }
     else {
-        cout << "Using Default Testing Options" <<  endl;
+        cout << "Using Default Testing Options" << endl;
         opts = testing_options();
     }
 

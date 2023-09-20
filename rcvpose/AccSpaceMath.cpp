@@ -186,6 +186,7 @@ void fast_for_cpu(const std::vector<Vertex>& xyz_mm, const std::vector<double>& 
 
                     if (radius - distance < factor && radius - distance > 0) {
                         int index = i * vote_map_size * vote_map_size + j * vote_map_size + k;
+                        #pragma omp atomic
                         VoteMap_3D[index] += 1;
                     }
                 }

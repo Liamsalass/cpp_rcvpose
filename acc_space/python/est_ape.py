@@ -631,17 +631,22 @@ def estimate_6d_pose_lm():
                     #radial_out = np.array(radial_out)
 
                     # Paper output
-                    radial_path = root_dataset + "/estimated_radii/"+class_name+"/"+"Estimated_out_pt"+str(keypoint_count)+"_dm/"+os.path.splitext(filename)[0][:] + '.npy'
+                    radial_path = root_dataset + "/LINEMOD/"+class_name+"/"+"Out_pt"+str(keypoint_count)+"_dm/"+os.path.splitext(filename)[0][:] + '.npy'
                     #print(radial_path)
                     radial_out = np.load(radial_path)   
 
-                    sem_out = np.where(radial_out>0.8,1,0)
+                    sem_out = np.where(radial_out!=0,1,0)
 
                     toc = time.time_ns()
                     net_time += toc-tic
                     #print("Network time consumption: ", network_time_single)
                     depth_map1 = read_depth(root_dataset + "LINEMOD/"+class_name+'/data/depth'+os.path.splitext(filename)[0][5:]+'.dpt')
-   
+
+                    #for i in range(20):
+                    #    print(depth_map1[i])
+                    #input("Press Enter to continue...")
+                    
+
                     depth_map = depth_map1*sem_out 
 
                     pixel_coor = np.where(sem_out==1)

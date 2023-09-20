@@ -327,17 +327,26 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
      
         cv::Mat img = cv::imread(image_path);
 
+        string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
+        string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
+        string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
+
+      
+
         // Record the current time before executing the FCResBackbone
         auto start = chrono::high_resolution_clock::now();
 
         // Execute the FCResBackbone model to get semantic and radial output
-        FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
+        //FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
 
         // Record the current time after executing the FCResBackbone
+
+
+        radial_output1 = npy_to_tensor(gt1_path);
+        radial_output2 = npy_to_tensor(gt2_path);
+        radial_output3 = npy_to_tensor(gt3_path);
+        
         auto end = chrono::high_resolution_clock::now();
-
-      
-
         //string r1_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
         //string r2_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
         //string r3_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
@@ -398,34 +407,77 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
 
             // Convert the semantic and radial output tensors to OpenCV matrices
-            cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
+            //cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
             cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
+            
+            cv::Mat sem_cv = rad_cv.clone();
 
-                    
+           
+
+            for (int i = 0; i < sem_cv.rows; i++) {
+                for (int j = 0; j < sem_cv.cols; j++) {
+                    if (sem_cv.at<float>(i, j) != 0) {
+						sem_cv.at<float>(i, j) = 1;
+                    }
+				}
+            }
+
+      
             // Define the depth image path
-            string depth_path = rootpvPath + "data/depth" + to_string(img_num);
+            string depth_path = rootpvPath + "data/depth_npy/depth" + to_string(img_num) + ".npy";
+          
 
             // Check if ".dpt" file exists, if not, check for ".png"
-            if (fs::exists(depth_path + ".dpt")) {
-                depth_path += ".dpt";
-            }
-            else if (fs::exists(depth_path + ".png")) {
-                depth_path += ".png";
-            }
-            else {
-                cout << "No suitable depth image file found for: " << depth_path << "..." << endl;
-                return;
-            }
+            //if (fs::exists(depth_path + ".dpt")) {
+            //    depth_path += ".dpt";
+            //}
+            //else if (fs::exists(depth_path + ".png")) {
+            //    depth_path += ".png";
+            //}
+            //else {
+            //    cout << "No suitable depth image file found for: " << depth_path << "..." << endl;
+            //    return;
+            //}
 
             // Load the depth image
-            cv::Mat depth_cv = read_depth_to_cv(depth_path, false);
+            //cv::Mat depth_cv = read_depth_to_cv(depth_path, false);
+
+            vector<vector<double>> depth;
+            vector<UINT16> data;
+            vector<unsigned long> shape;
+            bool fortran_order;
+
+            npy::LoadArrayFromNumpy(depth_path, shape, fortran_order, data);
+
+            for (int i = 0; i < shape[0]; i++) {
+				vector<double> row;
+                for (int j = 0; j < shape[1]; j++) {
+					row.push_back(data[i * shape[1] + j]);
+				}
+				depth.push_back(row);
+			}
+
+
+            cv::Mat depth_cv = cv::Mat::zeros(480, 640, CV_32FC1);
+            //Convert depth to depth_cv
+            for (int i = 0; i < depth_cv.rows; i++) {
+                for (int j = 0; j < depth_cv.cols; j++) {
+                    depth_cv.at<float>(i, j) = static_cast<float>(depth[i][j]);
+                }
+            }
+
+
+            // Convert the datatypes of semantic, depth, and radial matrices
+            sem_cv.convertTo(sem_cv, CV_32F);
+            depth_cv.convertTo(depth_cv, CV_32F);
+            rad_cv.convertTo(rad_cv, CV_32F);
 
             // Transpose the semantic and radial matrices for correct orientation
-            cv::transpose(sem_cv, sem_cv);
-            cv::transpose(rad_cv, rad_cv);
+            //cv::transpose(sem_cv, sem_cv);
+            //cv::transpose(rad_cv, rad_cv);
 
 
-            cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
+            //cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
 
             // Check if the images have the same dimensions
             if (sem_cv.size() != rad_cv.size() || sem_cv.type() != rad_cv.type()) {
@@ -721,7 +773,10 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         }
         else {
             if (opts.verbose) {
-                cout << "\tICP needed" << endl;
+                cout << "\tICP needed\nPress any key to continue" << endl;
+                // Pause program, wait for enter key
+                cin.get();
+                
             }
         }
 

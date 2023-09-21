@@ -626,9 +626,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             int num_above_threshold = 0;
             for (int i = 0; i < xyz.size(); i++) {
                 if (radial_list[i] > max_radius_dm) {
-                    //Remove point from both xyz and radial list
-                    xyz.erase(xyz.begin() + i);
-                    radial_list.erase(radial_list.begin() + i);
+                    radial_list[i] = 0;
                     num_above_threshold++;
 
                 }

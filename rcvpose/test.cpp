@@ -21,14 +21,14 @@ Options testing_options() {
     opts.initial_lr = 0.0001;
     opts.reduce_on_plateau = true;
     opts.patience = 10;
-    opts.demo_mode = true;
+    opts.demo_mode = false;
     opts.verbose = false;
     opts.test_occ = false;
     opts.mask_threshold = 0.8;
     return opts;
 }
 
-//Cam Failed at img 86 which is number img99 in dataset
+//Note cam Failed at img 86 which is number img99 in dataset
 
 int main(int argc, char* args[]) {
     bool train = false;

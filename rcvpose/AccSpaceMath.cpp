@@ -76,11 +76,10 @@ void project(const MatrixXd& xyz, const MatrixXd& K, const MatrixXd& RT, MatrixX
 
 
 vector<Vertex> rgbd_to_point_cloud(const array<array<double, 3>, 3>& K, const cv::Mat& depth) {
-    cv::Mat depth64F;
-    depth.convertTo(depth64F, CV_64F);  // Convert depth image to CV_64F
+  // Convert depth image to CV_64F
 
     vector<cv::Point> nonzeroPoints;
-    cv::findNonZero(depth64F, nonzeroPoints);
+    cv::findNonZero(depth, nonzeroPoints);
 
     vector<double> zs(nonzeroPoints.size());
     vector<double> xs(nonzeroPoints.size());
@@ -91,9 +90,12 @@ vector<Vertex> rgbd_to_point_cloud(const array<array<double, 3>, 3>& K, const cv
         int v, u;
         v = nonzeroPoints[i].y;
         u = nonzeroPoints[i].x;
-        zs[i] = depth64F.at<double>(v, u);
+        zs[i] = depth.at<float>(v, u);
     }
 
+    //for (int i = 0; i < 20; i++) {
+    //    cout << zs[i] << endl;
+    //}
 
     for (int i = 0; i < nonzeroPoints.size(); i++) {
         int v, u;
@@ -237,10 +239,13 @@ void fast_for_cpu2(const std::vector<Vertex>& xyz_mm, const std::vector<double>&
 
 Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const bool& debug = false) {
 
-    double acc_unit = 5;
+    double acc_unit = 10;
     // unit 5mm
     vector<Vertex> xyz_mm(xyz.size());
 
+    //for (int i = 0; i < 20; i++) {
+    //    cout << xyz[i].x << " " <<  xyz[i].y << " " << xyz[i].z << endl;
+    //}
 
 
     for (int i = 0; i < xyz.size(); i++) {
@@ -263,6 +268,9 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     y_mean_mm /= xyz_mm.size();
     z_mean_mm /= xyz_mm.size();
 
+    //cout << "x mean " << x_mean_mm << endl;
+    //cout << "y mean " << y_mean_mm << endl;
+    //cout << "z mean " << z_mean_mm << endl;
 
     for (int i = 0; i < xyz_mm.size(); i++) {
         xyz_mm[i].x -= x_mean_mm;
@@ -278,9 +286,9 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     }
 
 
-    double x_mm_min = 0;
-    double y_mm_min = 0;
-    double z_mm_min = 0;
+    double x_mm_min = numeric_limits<double>::infinity();
+    double y_mm_min = numeric_limits<double>::infinity();
+    double z_mm_min = numeric_limits<double>::infinity();
 
     for (int i = 0; i < xyz_mm.size(); i++) {
         x_mm_min = min(x_mm_min, xyz_mm[i].x);
@@ -298,7 +306,12 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         }
     }
 
+    //cout << "xyz min: " << xyz_mm_min << endl;
+    //cout << "Max radial: " << radius_max << endl;
+
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
+
+    //cout << "Zero Boundary: " << zero_boundary << endl;
 
     if (zero_boundary < 0) {
         for (int i = 0; i < xyz_mm.size(); i++) {
@@ -321,6 +334,8 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     double xyz_mm_max = max(x_mm_max, max(y_mm_max, z_mm_max));
 
     int length = static_cast<int>(xyz_mm_max);
+
+
 
     int vote_map_dim = length + static_cast<int>(radius_max);
 

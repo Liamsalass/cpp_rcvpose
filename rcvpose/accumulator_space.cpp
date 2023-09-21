@@ -248,6 +248,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     // Load keypoints from the file
     vector<vector<double>> keypoints = read_double_npy(keypoints_path, false);
 
+
+
     // Define path to data
     string data_path = rootpvPath + "JPEGImages/";
 
@@ -258,8 +260,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     for (auto test_img : test_list) {
         int img_num = stoi(test_img);
 
-        //if (general_counter > 10) {
-        //    break;
+        //if (img_num != 10) {
+        //    general_counter++;
+        //    continue;
         //}
 
         // Record the current time using a high-resolution clock
@@ -327,9 +330,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
      
         cv::Mat img = cv::imread(image_path);
 
-        string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
-        string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
-        string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
+        //string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
+        //string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
+        //string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
 
       
 
@@ -337,26 +340,27 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         auto start = chrono::high_resolution_clock::now();
 
         // Execute the FCResBackbone model to get semantic and radial output
-        //FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
+        FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
 
         // Record the current time after executing the FCResBackbone
 
 
-        radial_output1 = npy_to_tensor(gt1_path);
-        radial_output2 = npy_to_tensor(gt2_path);
-        radial_output3 = npy_to_tensor(gt3_path);
+        //radial_output1 = npy_to_tensor(gt1_path);
+        //radial_output2 = npy_to_tensor(gt2_path);
+        //radial_output3 = npy_to_tensor(gt3_path);
         
         auto end = chrono::high_resolution_clock::now();
-        //string r1_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
-        //string r2_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
-        //string r3_path = opts.root_dataset + "/estimated_radii/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
+
+        //string r1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
+        //string r2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
+        //string r3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
         //
         //torch::Tensor radial_pred_1 = npy_to_tensor(r1_path);
         //torch::Tensor radial_pred_2 = npy_to_tensor(r2_path);
         //torch::Tensor radial_pred_3 = npy_to_tensor(r3_path);
 
 
-        //semantic_output = torch::where(radial_pred_1 > 0, torch::ones_like(radial_pred_1), -torch::ones_like(radial_pred_1));
+        //semantic_output = torch::where(radial_output1 > 0, torch::ones_like(radial_output1), -torch::ones_like(radial_output1));
 
 
         // Add the time taken to execute the FCResBackbone to the total network time
@@ -371,6 +375,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
         }
 
+    
+
         // Loop over each keypoint for estimation
         for (const auto& keypoint : keypoints) {
             if (opts.verbose) {
@@ -384,6 +390,27 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             // Print the keypoint data if verbose option is enabled
             if (opts.verbose) {
                 cout << "Keypoint data: \n" << keypoint << endl << endl;
+            }
+
+            const string mesh_path = opts.root_dataset + "/LINEMOD/" + class_name + "/mesh_npy.npy";
+            vector<Vertex> cad = read_point_cloud(mesh_path);
+
+            for (auto point : cad) {
+                point.x /= 1000;
+                point.y /= 1000;
+                point.z /= 1000;
+            }
+
+            double max_radius_dm = 0.0;
+            for (int i = 0; i < cad.size(); i++) {
+                double dx = cad[i].x - keypoint[0];
+                double dy = cad[i].y - keypoint[1];
+                double dz = cad[i].z - keypoint[2];
+                double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+                if (max_radius_dm < distance) {
+                    max_radius_dm = distance;
+                }
+
             }
 
             // Initialize iteration count
@@ -410,79 +437,82 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             //cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
             cv::Mat rad_cv = torch_tensor_to_cv_mat(radial_outputs[keypoint_count - 1]);
             
-            cv::Mat sem_cv = rad_cv.clone();
-
-           
-
-            for (int i = 0; i < sem_cv.rows; i++) {
-                for (int j = 0; j < sem_cv.cols; j++) {
-                    if (sem_cv.at<float>(i, j) != 0) {
-						sem_cv.at<float>(i, j) = 1;
-                    }
-				}
-            }
+            cv::Mat sem_cv = torch_tensor_to_cv_mat(semantic_output);
 
       
             // Define the depth image path
-            string depth_path = rootpvPath + "data/depth_npy/depth" + to_string(img_num) + ".npy";
-          
+            //string depth_path = rootpvPath + "data/depth_npy/depth" + to_string(img_num) + ".npy";
+            string depth_path = rootpvPath + "data/depth" + to_string(img_num);
 
             // Check if ".dpt" file exists, if not, check for ".png"
-            //if (fs::exists(depth_path + ".dpt")) {
-            //    depth_path += ".dpt";
-            //}
-            //else if (fs::exists(depth_path + ".png")) {
-            //    depth_path += ".png";
-            //}
-            //else {
-            //    cout << "No suitable depth image file found for: " << depth_path << "..." << endl;
-            //    return;
-            //}
+            if (fs::exists(depth_path + ".dpt")) {
+                depth_path += ".dpt";
+            }
+            else if (fs::exists(depth_path + ".png")) {
+                depth_path += ".png";
+            }
+            else {
+                cout << "No suitable depth image file found for: " << depth_path << "..." << endl;
+                return;
+            }
 
             // Load the depth image
-            //cv::Mat depth_cv = read_depth_to_cv(depth_path, false);
+            cv::Mat depth_cv = read_depth_to_cv(depth_path, false);
 
-            vector<vector<double>> depth;
-            vector<UINT16> data;
-            vector<unsigned long> shape;
-            bool fortran_order;
-
-            npy::LoadArrayFromNumpy(depth_path, shape, fortran_order, data);
-
-            for (int i = 0; i < shape[0]; i++) {
-				vector<double> row;
-                for (int j = 0; j < shape[1]; j++) {
-					row.push_back(data[i * shape[1] + j]);
-				}
-				depth.push_back(row);
-			}
-
-
-            cv::Mat depth_cv = cv::Mat::zeros(480, 640, CV_32FC1);
-            //Convert depth to depth_cv
-            for (int i = 0; i < depth_cv.rows; i++) {
-                for (int j = 0; j < depth_cv.cols; j++) {
-                    depth_cv.at<float>(i, j) = static_cast<float>(depth[i][j]);
-                }
-            }
+            //vector<vector<double>> depth;
+            //vector<UINT16> data;
+            //vector<unsigned long> shape;
+            //bool fortran_order;
+            //
+            //npy::LoadArrayFromNumpy(depth_path, shape, fortran_order, data);
+            //
+            //for (int i = 0; i < shape[0]; i++) {
+			//	vector<double> row;
+            //    for (int j = 0; j < shape[1]; j++) {
+			//		row.push_back(data[i * shape[1] + j]);
+			//	}
+			//	depth.push_back(row);
+			//}
+            //cout << "Depth at max: " << depth[216][272] << endl;
+            //
+            //cv::Mat depth_cv = cv::Mat::zeros(480, 640, CV_32FC1);
+            ////Convert depth to depth_cv
+            //for (int i = 0; i < depth_cv.rows; i++) {
+            //    for (int j = 0; j < depth_cv.cols; j++) {
+            //        depth_cv.at<float>(i, j) = static_cast<float>(depth[i][j]);
+            //    }
+            //}
 
 
             // Convert the datatypes of semantic, depth, and radial matrices
-            sem_cv.convertTo(sem_cv, CV_32F);
-            depth_cv.convertTo(depth_cv, CV_32F);
-            rad_cv.convertTo(rad_cv, CV_32F);
+            //sem_cv.convertTo(sem_cv, CV_32F);
+            //depth_cv.convertTo(depth_cv, CV_32F);
+            //rad_cv.convertTo(rad_cv, CV_32F);
 
             // Transpose the semantic and radial matrices for correct orientation
-            //cv::transpose(sem_cv, sem_cv);
-            //cv::transpose(rad_cv, rad_cv);
+            cv::transpose(sem_cv, sem_cv);
+            cv::transpose(rad_cv, rad_cv);
 
 
-            //cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
+            cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
 
             // Check if the images have the same dimensions
             if (sem_cv.size() != rad_cv.size() || sem_cv.type() != rad_cv.type()) {
                 std::cerr << "Error: The dimensions or types of the two matrices are not the same." << std::endl;
             }
+
+            
+            //double min;
+            //double max;
+            //
+            //cv::Point min_loc;
+            //cv::Point max_loc;
+            //
+            //minMaxLoc(rad_cv, &min, &max, &min_loc, &max_loc);
+
+            //cout << "Radial Max: " << max << " Radial Min: " << min << endl;
+            //cout << "Max Index: " << max_loc.x << " " << max_loc.y << endl;
+            //cout << "Min Index: " << min_loc.x << " " << min_loc.y << endl;
 
             // Initialize a 3-channel matrix with zeros
             //std::vector<cv::Mat> channels(3, cv::Mat::zeros(sem_cv.size(), sem_cv.type()));
@@ -557,8 +587,26 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
 
 
-            // Convert the depth image to a pointcloud
+            //minMaxLoc(depth_cv, &min, &max, &min_loc, &max_loc);
+            //
+            //cout << "Depth Max: " << max << endl;
+            //cout << "Max Index: " << max_loc.x << " " << max_loc.y << endl;
+            //
+            //
+            //
+            //// Convert the depth image to a pointcloud
+            //cv::imshow("Depth with mask", depth_cv);
+            //cv::waitKey(0);
+
+
+
             vector<Vertex> xyz = rgbd_to_point_cloud(linemod_K, depth_cv);
+
+            //for(int i = 0; i < 20; i++) {
+			//	cout << xyz[i].x << " " << xyz[i].y << " " << xyz[i].z << endl;
+			//}
+
+
             depth_cv.release();
 
             for (int i = 0; i < xyz.size(); i++) {
@@ -573,12 +621,30 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                 cout << "Error: xyz or radial list is empty" << endl;
             }
 
+      
+
+            int num_above_threshold = 0;
+            for (int i = 0; i < xyz.size(); i++) {
+                if (radial_list[i] > max_radius_dm) {
+                    //Remove point from both xyz and radial list
+                    xyz.erase(xyz.begin() + i);
+                    radial_list.erase(radial_list.begin() + i);
+                    num_above_threshold++;
+
+                }
+            }
+
+            if (num_above_threshold != 0) {
+                cout << "Max radial distance: " << max_radius_dm << endl;
+                cout << "Removed " << num_above_threshold << " points from radial list.\n";
+                cout << "New size: " << xyz.size() << endl;
+            }
+
             // Define a vector for storing the transformed pointcloud
             if (opts.verbose) {
                 cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
- 
-            }
 
+            }
             //Calculate the estimated center in mm
             auto acc_start = chrono::high_resolution_clock::now();
             Eigen::Vector3d estimated_center_mm;
@@ -773,9 +839,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         }
         else {
             if (opts.verbose) {
-                cout << "\tICP needed\nPress any key to continue" << endl;
-                // Pause program, wait for enter key
-                cin.get();
+                cout << "\tICP needed" << endl;
+                
+                //cin.get();
                 
             }
         }

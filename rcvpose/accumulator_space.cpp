@@ -330,43 +330,36 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
      
         cv::Mat img = cv::imread(image_path);
 
-        //string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
-        //string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
-        //string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
-
-      
 
         // Record the current time before executing the FCResBackbone
         auto start = chrono::high_resolution_clock::now();
 
-        // Execute the FCResBackbone model to get semantic and radial output
-        FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
 
-        // Record the current time after executing the FCResBackbone
+        //FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
 
+        // Use GT for testing
+        string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
+        string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
+        string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
+        radial_output1 = npy_to_tensor(gt1_path);
+        radial_output2 = npy_to_tensor(gt2_path);
+        radial_output3 = npy_to_tensor(gt3_path);
 
-        //radial_output1 = npy_to_tensor(gt1_path);
-        //radial_output2 = npy_to_tensor(gt2_path);
-        //radial_output3 = npy_to_tensor(gt3_path);
-        
-        auto end = chrono::high_resolution_clock::now();
-
+        // Use python estimated radii maps (paper backend)
         //string r1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
         //string r2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
         //string r3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
-        //
-        //torch::Tensor radial_pred_1 = npy_to_tensor(r1_path);
-        //torch::Tensor radial_pred_2 = npy_to_tensor(r2_path);
-        //torch::Tensor radial_pred_3 = npy_to_tensor(r3_path);
+        //torch::Tensor radial_output1 = npy_to_tensor(r1_path);
+        //torch::Tensor radial_output2 = npy_to_tensor(r2_path);
+        //torch::Tensor radial_output3 = npy_to_tensor(r3_path);
 
 
-        //semantic_output = torch::where(radial_output1 > 0, torch::ones_like(radial_output1), -torch::ones_like(radial_output1));
+        semantic_output = torch::where(radial_output1 > 0, torch::ones_like(radial_output1), -torch::ones_like(radial_output1));
+        
+        auto end = chrono::high_resolution_clock::now();
 
 
-        // Add the time taken to execute the FCResBackbone to the total network time
         backend_net_time += chrono::duration_cast<chrono::milliseconds>(end - start).count();
-
-        //vector<torch::Tensor> radial_outputs = { radial_pred_1, radial_pred_2, radial_pred_3 };
 
         vector<torch::Tensor> radial_outputs = { radial_output1, radial_output2, radial_output3 };
 
@@ -490,11 +483,11 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             //rad_cv.convertTo(rad_cv, CV_32F);
 
             // Transpose the semantic and radial matrices for correct orientation
-            cv::transpose(sem_cv, sem_cv);
-            cv::transpose(rad_cv, rad_cv);
 
+            //cv::transpose(sem_cv, sem_cv);
+            //cv::transpose(rad_cv, rad_cv);
 
-            cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
+            //cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
 
             // Check if the images have the same dimensions
             if (sem_cv.size() != rad_cv.size() || sem_cv.type() != rad_cv.type()) {
@@ -555,8 +548,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             //cv::imshow("Semantic", sem_cv);
             //cv::imshow("Radial", rad_cv);
 
-
-
             // Gather the pixel coordinates from the semantic output
             vector<Vertex> pixel_coor;
             for (int i = 0; i < sem_cv.rows; i++) {
@@ -565,12 +556,36 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                         Vertex v;
                         v.x = i;
                         v.y = j;
-                        v.z = 1;
+                        v.z = depth_cv.at<double>(i, j);
 
                         pixel_coor.push_back(v);
                     }
                 }
             }
+
+   
+            
+            unordered_map<double, vector<Vertex>> point_list_per_radius;
+
+     
+            for (auto cord : pixel_coor) {
+				double radius = static_cast<double>(rad_cv.at<float>(cord.x, cord.y));
+				point_list_per_radius[radius].push_back(cord);
+			}
+
+            // Print out the number of points per radius if verbose option is enabled
+            if (opts.verbose) {
+                cout << "Number of points per radius: " << endl;
+                for (auto item : point_list_per_radius) {
+					cout << "\t" << item.first << ": " << item.second.size() << endl;
+				}
+				cout << endl;
+
+            }
+
+            
+
+
 
 
             // Print the number of pixel coordinates gathered if verbose option is enabled

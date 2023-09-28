@@ -22,7 +22,7 @@ Options testing_options() {
     opts.reduce_on_plateau = true;
     opts.patience = 10;
     opts.demo_mode = false;
-    opts.verbose = false;
+    opts.verbose = true;
     opts.test_occ = false;
     opts.mask_threshold = 0.8;
     return opts;

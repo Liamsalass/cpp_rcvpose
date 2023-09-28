@@ -585,8 +585,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                 radial_list.push_back(static_cast<double>(rad_cv.at<float>(cord.x, cord.y)));
             }
 
-
-
             //minMaxLoc(depth_cv, &min, &max, &min_loc, &max_loc);
             //
             //cout << "Depth Max: " << max << endl;
@@ -621,8 +619,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                 cout << "Error: xyz or radial list is empty" << endl;
             }
 
-      
-
             int num_above_threshold = 0;
             for (int i = 0; i < xyz.size(); i++) {
                 if (radial_list[i] > max_radius_dm) {
@@ -656,7 +652,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                     estimated_center_mm = future_result.get();
                 }
                 else {
-                    cout << "Accumulator timed out\n";
+                    cout << "Accumulator timed out\n\tImage: " << test_img << "\tKeypoint: " << keypoint_count << endl;
                     break;
                 }
             }

@@ -38,6 +38,8 @@ struct Options {
     // Smaller values decrease speed and increase accuracy wihtin the range of 0.78 to 0.82. 
     // Any larger or smaller reduces accuracy significantly or decreases speed exponentially
     float mask_threshold = 0.8;
+    // Epsilon value
+    double epsilon = 0.01;
     // Configs
     std::map<std::string, std::vector<float>> cfg;
 };

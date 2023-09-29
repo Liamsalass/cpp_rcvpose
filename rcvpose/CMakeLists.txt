@@ -52,6 +52,8 @@ set(SOURCE_FILES
     "AccSpaceMath.cpp"
     "AccSpaceIO.h" 
     "AccSpaceIO.cpp"
+    "ransac.h"
+    "ransac.cpp"
 )
 
 option(BUILD_DLL "Build DLL" OFF)

@@ -6,7 +6,7 @@
 #include "models/denseFCNResNet152.h"
 #include "utils.hpp"
 #include "options.hpp"
-
+#include "ransac.h"
 #include <chrono>
 #include <string>
 #include <unordered_map>

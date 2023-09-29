@@ -9,10 +9,16 @@
 #include <cstdint>
 #include <torch/torch.h>
 #include <torch/serialize.h>
+#include <Eigen/Geometry>
 #include "models/denseFCNResNet152.h"
 
 struct Vertex {
     double x, y, z;
+};
+
+struct Sphere {
+    Eigen::Vector3d center;
+    double radius;
 };
 
 // Shape of config is {<int, <string, vector<float>>>} in a map

@@ -82,8 +82,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     // Check whether CUDA is available
     bool use_cuda = torch::cuda::is_available();
 
-
-
+   
     // Check if verbose mode is enabled
     if (opts.verbose) {
         if (use_cuda) {
@@ -146,6 +145,10 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     const float mask_threshold = opts.mask_threshold;
 
     cout << "Masking Threshold: " << mask_threshold << endl;
+     
+    const double eps = opts.epsilon;
+
+    cout << "Epsilon: " << eps << endl;
 
 
     // Define path to load point cloud
@@ -163,6 +166,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     long long backend_net_time = 0;
     long long icp_time = 0;
     long long acc_time = 0;
+    long long ransac_time = 0;
     long long avg_acc_length = 0;
     int general_counter = 0;
 
@@ -548,50 +552,29 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             //cv::imshow("Semantic", sem_cv);
             //cv::imshow("Radial", rad_cv);
 
-            // Gather the pixel coordinates from the semantic output
+
+
+            // Gather the pixel coordinates from the semantic output and depth image
+
+
             vector<Vertex> pixel_coor;
             for (int i = 0; i < sem_cv.rows; i++) {
                 for (int j = 0; j < sem_cv.cols; j++) {
                     if (sem_cv.at<float>(i, j) == 1) {
                         Vertex v;
-                        v.x = i;
-                        v.y = j;
-                        v.z = depth_cv.at<double>(i, j);
-
+                        v.x = static_cast<double>(i);
+                        v.y = static_cast<double>(j);
+                        v.z = 1;
                         pixel_coor.push_back(v);
                     }
                 }
             }
 
-   
             
-            unordered_map<double, vector<Vertex>> point_list_per_radius;
-
-     
-            for (auto cord : pixel_coor) {
-				double radius = static_cast<double>(rad_cv.at<float>(cord.x, cord.y));
-				point_list_per_radius[radius].push_back(cord);
-			}
-
-            // Print out the number of points per radius if verbose option is enabled
-            if (opts.verbose) {
-                cout << "Number of points per radius: " << endl;
-                for (auto item : point_list_per_radius) {
-					cout << "\t" << item.first << ": " << item.second.size() << endl;
-				}
-				cout << endl;
-
-            }
-
-            
-
-
-
-
-            // Print the number of pixel coordinates gathered if verbose option is enabled
             if (opts.verbose) {
                 cout << "Number of pixels gatherd: " << pixel_coor.size() << endl << endl;
             }
+
 
             // Define a vector for storing the radial values
             vector<double> radial_list;
@@ -654,8 +637,11 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                 cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
 
             }
+
             //Calculate the estimated center in mm
             auto acc_start = chrono::high_resolution_clock::now();
+
+
             Eigen::Vector3d estimated_center_mm;
             try {
             
@@ -684,7 +670,45 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             if (opts.verbose) {
                 cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
                 cout << "\tEstimate: " << estimated_center_mm[0] << " " << estimated_center_mm[1] << " " << estimated_center_mm[2] << endl << endl;
+                cout << "Calculating center using RANSAC:" << endl;
             }
+
+
+            auto ransac_start = chrono::high_resolution_clock::now();
+
+            Eigen::Vector3d ransac_center;
+
+            atomic<bool> terminateFlag(false);
+
+            while (true){
+                terminateFlag.store(false);
+                future<Eigen::Vector3d> future_result = async(launch::async, Ransac_3D, xyz, radial_list, opts.epsilon, opts.verbose, std::ref(terminateFlag));
+
+                if (future_result.wait_for(std::chrono::milliseconds(2000)) == std::future_status::ready) {
+                    ransac_center = future_result.get();
+					break;
+                }
+                else {
+                    if (opts.verbose) {
+                        cout << "Error: RANSAC timeout, retrying RANSAC\n";
+                    }
+                    terminateFlag.store(true);
+                    std::this_thread::sleep_for(chrono::milliseconds(100));
+                }
+            } 
+
+            auto ransac_end = chrono::high_resolution_clock::now();
+
+            ransac_time += chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count();
+
+            if (opts.verbose) {
+                cout << "\tRANSAC Time: " << chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count() << "ms" << endl;
+                cout << "\tRANSAC center: " << ransac_center[0] << " " << ransac_center[1] << " " << ransac_center[2] << endl << endl;
+                //cout << "Press Enter to continue:";
+                //cin.get();
+                //cout << "\n";
+            }
+
 
 
             // Define a vector for storing the transformed pointcloud
@@ -692,13 +716,15 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Calculate the offset
             Eigen::Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
-
+            Eigen::Vector3d ransac_diff = transformed_gt_center_mm_vector - ransac_center;
 
             double center_off_mm = diff.norm();
-
+            double ransac_off_mm = ransac_diff.norm();
 
             if (opts.verbose) {
-                cout << "Estimated offset: " << center_off_mm << endl << endl;
+                cout << "Estimated offsets:\n\tAcc Space: " << center_off_mm << endl;
+                cout << "\tRANSAC: " << ransac_off_mm << endl << endl;;
+
             }
 
 
@@ -912,6 +938,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         }
 
         general_counter += 1;
+        //cout << "Press Enter to continue:";
+        //cin.get();
+        //cout << "\n";
 
         auto img_end = chrono::high_resolution_clock::now();
         auto img_duration = chrono::duration_cast<chrono::milliseconds>(img_end - img_start);
@@ -1057,6 +1086,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     cout << "Total Time: " << hours << " hours, " << min << " minutes, and " << sec << " seconds." << endl;
     cout << "Avg Time per image: " << (static_cast<double>(duration.count()) / static_cast<double>(general_counter)) << " seconds." << endl;
     cout << "Avg Accumulator time: " << (static_cast<double>(acc_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
+    cout << "Avg RANSAC time: " << (static_cast<double>(ransac_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
     cout << "Avg Backend Time: " << (static_cast<double>(backend_net_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
     cout << "Avg ICP Time: " << (static_cast<double>(icp_time) / static_cast<double>(general_counter)) / 1000.0 << " seconds." << endl;
     cout << "Avg Input Size to Accumulator Space: " << static_cast<double>(avg_acc_length) / static_cast<double>(general_counter) << endl;

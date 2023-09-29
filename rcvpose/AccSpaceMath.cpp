@@ -237,16 +237,13 @@ void fast_for_cpu2(const std::vector<Vertex>& xyz_mm, const std::vector<double>&
 
 
 
+
+
 Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const bool& debug = false) {
 
     double acc_unit = 10;
-    // unit 5mm
+
     vector<Vertex> xyz_mm(xyz.size());
-
-    //for (int i = 0; i < 20; i++) {
-    //    cout << xyz[i].x << " " <<  xyz[i].y << " " << xyz[i].z << endl;
-    //}
-
 
     for (int i = 0; i < xyz.size(); i++) {
         xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
@@ -422,3 +419,4 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
 
     return center;
 }
+

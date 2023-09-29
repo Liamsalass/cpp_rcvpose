@@ -112,8 +112,11 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     vector<Vertex> xyz_mm(xyz.size());
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < xyz.size(); i++) {
+        if (flag.load()) {
+            break;
+        }
         xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
         xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
         xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
@@ -123,8 +126,11 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
     double y_mean_mm = 0;
     double z_mean_mm = 0;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
+        if (flag.load()) {
+            break;
+        }
         x_mean_mm += xyz_mm[i].x;
         y_mean_mm += xyz_mm[i].y;
         z_mean_mm += xyz_mm[i].z;
@@ -133,9 +139,12 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
     x_mean_mm /= xyz_mm.size();
     y_mean_mm /= xyz_mm.size();
     z_mean_mm /= xyz_mm.size();
-
-#pragma omp parallel for
+    
+    #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
+        if (flag.load()) {
+            break;
+        }
         xyz_mm[i].x -= x_mean_mm;
         xyz_mm[i].y -= y_mean_mm;
         xyz_mm[i].z -= z_mean_mm;
@@ -143,8 +152,11 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     vector<double> radial_list_mm(radial_list.size());
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < radial_list.size(); ++i) {
+        if (flag.load()) {
+            break;
+        }
         radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
     }
 
@@ -172,8 +184,11 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
 
     if (zero_boundary < 0) {
-#pragma omp parallel for
+    #pragma omp parallel for
         for (int i = 0; i < xyz_mm.size(); i++) {
+            if (flag.load()) {
+                break;
+            }
             xyz_mm[i].x -= zero_boundary;
             xyz_mm[i].y -= zero_boundary;
             xyz_mm[i].z -= zero_boundary;
@@ -182,8 +197,11 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     vector<Sphere> sphere_list(xyz.size());
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
+        if (flag.load()) {
+            break;
+        }
         sphere_list[i].center = Vector3d(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
         sphere_list[i].radius = radial_list_mm[i];
     }
@@ -191,10 +209,13 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     map<int, vector<Sphere>> sphere_map;
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < sphere_list.size(); i++) {
         int key = static_cast<int>(sphere_list[i].radius / epsilon);
-#pragma omp critical
+        if (flag.load()) {
+            break;
+        }
+        #pragma omp critical
         {
             sphere_map[key].push_back(sphere_list[i]);
         }
@@ -221,7 +242,9 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
         for (int i = 0; i < iterations; i++) {
             int key_index = rand() % sphere_map.size();
-
+            if (flag.load()) {
+                break;
+            }
             auto it = sphere_map.begin();
             advance(it, key_index);
             vector<Sphere> spheres = it->second;
@@ -234,10 +257,16 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
             p1_index = rand() % spheres.size();
             do {
                 p2_index = rand() % spheres.size();
+                if (flag.load()) {
+                    break;
+                }
             } while (p2_index == p1_index);
 
             do {
                 p3_index = rand() % spheres.size();
+                if (flag.load()) {
+                    break;
+                }
             } while (p3_index == p1_index || p3_index == p2_index);
 
             Sphere p1 = spheres[p1_index];
@@ -371,6 +400,9 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
     while (getline(ss, token, '_')) {
         center[i] = stod(token);
         i++;
+        if (flag.load()) {
+            break;
+        }
     }
 
     if (debug) {

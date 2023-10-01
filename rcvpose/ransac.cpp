@@ -3,6 +3,8 @@
 using namespace std;
 using namespace Eigen;
 
+
+
 bool intersecting_spheres(const Sphere& a, const Sphere& b) {
     double dist = (a.center - b.center).norm();
     return dist <= (a.radius + b.radius);
@@ -54,6 +56,7 @@ Vector3d lines_intersection(const Vector3d& p1, const Vector3d& p2, const Vector
     //cout << "\t\tDenominator: " << denom << endl;
 
     if (abs(denom) < 1e-6) {
+        cout << "\tError: Denominator is 0\n";
         return Vector3d(0, 0, 0);
     }
 
@@ -80,6 +83,7 @@ Vector3d lines_intersection(const Vector3d& p1, const Vector3d& p2, const Vector
 
 Sphere find_circumcenter(const Sphere& A, const Sphere& B, const Sphere& C) {
     if (!intersecting_spheres(A, B) || !intersecting_spheres(B, C) || !intersecting_spheres(A, C)) {
+        cout << "\tError: Spheres do not intersect\n";
         return Sphere{ Vector3d(0, 0, 0), 0 };
     }
 
@@ -107,8 +111,229 @@ Sphere find_circumcenter(const Sphere& A, const Sphere& B, const Sphere& C) {
 
 
 
+
+Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug) {
+    double acc_unit = 5;
+
+    vector<Vertex> xyz_mm(xyz.size());
+
+    for (int i = 0; i < xyz.size(); i++) {
+        xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
+        xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
+        xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
+    }
+
+    double x_mean_mm = 0;
+    double y_mean_mm = 0;
+    double z_mean_mm = 0;
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mean_mm += xyz_mm[i].x;
+        y_mean_mm += xyz_mm[i].y;
+        z_mean_mm += xyz_mm[i].z;
+    }
+
+    x_mean_mm /= xyz_mm.size();
+    y_mean_mm /= xyz_mm.size();
+    z_mean_mm /= xyz_mm.size();
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        xyz_mm[i].x -= x_mean_mm;
+        xyz_mm[i].y -= y_mean_mm;
+        xyz_mm[i].z -= z_mean_mm;
+    }
+
+    vector<double> radial_list_mm(radial_list.size());
+
+    for (int i = 0; i < radial_list.size(); ++i) {
+        radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
+    }
+
+
+    double x_mm_min = numeric_limits<double>::infinity();
+    double y_mm_min = numeric_limits<double>::infinity();
+    double z_mm_min = numeric_limits<double>::infinity();
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mm_min = min(x_mm_min, xyz_mm[i].x);
+        y_mm_min = min(y_mm_min, xyz_mm[i].y);
+        z_mm_min = min(z_mm_min, xyz_mm[i].z);
+    }
+
+    double xyz_mm_min = min(x_mm_min, min(y_mm_min, z_mm_min));
+
+    double radius_max = radial_list_mm[0];
+
+    for (int i = 0; i < radial_list_mm.size(); i++) {
+        if (radius_max < radial_list_mm[i]) {
+            radius_max = radial_list_mm[i];
+        }
+    }
+
+    int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
+
+    if (zero_boundary < 0) {
+        for (int i = 0; i < xyz_mm.size(); i++) {
+            xyz_mm[i].x -= zero_boundary;
+            xyz_mm[i].y -= zero_boundary;
+            xyz_mm[i].z -= zero_boundary;
+        }
+    }
+
+    vector<Sphere> sphere_list(xyz.size());
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        sphere_list[i].center = Vector3d(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
+        sphere_list[i].radius = radial_list_mm[i];
+    }
+
+
+    map<int, vector<Sphere>> sphere_map;
+
+
+    for (int i = 0; i < sphere_list.size(); i++) {
+        int key = static_cast<int>(sphere_list[i].radius / epsilon);
+        sphere_map[key].push_back(sphere_list[i]);
+        
+    }
+
+    int three_count = 0;
+
+
+    for (auto [key, spheres] : sphere_map) {
+        if (spheres.size() < 3) {
+            sphere_map.erase(key);
+        }
+        else {
+            three_count += floor(spheres.size() / 3);
+        }
+    }
+
+    cout << "\tSphere map size: " << sphere_map.size() << endl;
+    cout << "\tNumber of spheres with at least 3 points: " << three_count << endl;
+    
+
+    unordered_map<string, int> sphere_votes;
+
+    int iterations = 10000;
+
+    for (int i = 0; i < iterations; i++) {
+        int key_index = rand() % sphere_map.size();
+
+        auto it = sphere_map.begin();
+        advance(it, key_index);
+        vector<Sphere> spheres = it->second;
+
+        if (spheres.size() < 3) {
+            cout << "\tNot enough spheres at " << key_index * epsilon << endl;
+            continue;
+        }
+
+        int p1_index, p2_index, p3_index;
+
+        p1_index = rand() % spheres.size();
+
+        do {
+            p2_index = rand() % spheres.size();
+        } while (p2_index == p1_index);
+
+        do {
+            p3_index = rand() % spheres.size();
+        } while (p3_index == p1_index || p3_index == p2_index);
+
+        Sphere p1 = spheres[p1_index];
+        Sphere p2 = spheres[p2_index];
+        Sphere p3 = spheres[p3_index];
+
+        cout << "\tInput Spheres:\n";
+        cout << "\t\tSphere 1: [" << p1.center[0] << ", " << p1.center[1] << ", " << p1.center[2] << "], r = " << p1.radius << "\n";
+        cout << "\t\tSphere 2: [" << p2.center[0] << ", " << p2.center[1] << ", " << p2.center[2] << "], r = " << p2.radius << "\n";
+        cout << "\t\tSphere 3: [" << p3.center[0] << ", " << p3.center[1] << ", " << p3.center[2] << "], r = " << p3.radius << "\n\n";
+
+
+        //TODO: work through iteration math, check if math returns correct pos
+        Sphere circumcenter_sphere = find_circumcenter(p1, p2, p3);
+
+        cout << "\tCircumcenter Sphere:\n";
+        cout << "\t\tSphere: [" << circumcenter_sphere.center[0] << ", " << circumcenter_sphere.center[1] << ", " << circumcenter_sphere.center[2] << "], r = " << circumcenter_sphere.radius << "\n";
+
+        //TODO: add rounding threshold (not to nearest int) Based off epsilon?
+        circumcenter_sphere.center[0] = round(circumcenter_sphere.center[0]);
+        circumcenter_sphere.center[1] = round(circumcenter_sphere.center[1]);
+        circumcenter_sphere.center[2] = round(circumcenter_sphere.center[2]);
+
+        cout << "\t\tRounded: [" << circumcenter_sphere.center[0] << ", " << circumcenter_sphere.center[1] << ", " << circumcenter_sphere.center[2] << "]\n\n";
+
+        
+        stringstream ss;
+        ss << fixed << setprecision(8) << circumcenter_sphere.center[0] << "_" << circumcenter_sphere.center[1] << "_" << circumcenter_sphere.center[2];
+        string circumcenter_string = ss.str();
+
+        if (sphere_votes.find(circumcenter_string) == sphere_votes.end()) {
+            sphere_votes[circumcenter_string] = 1;
+        }
+        else {
+            sphere_votes[circumcenter_string]++;
+        }
+    }
+
+
+    if (sphere_votes.size() == 0) {
+        cerr << "RANSAC failed: no center found" << endl;
+        return Vector3d(0, 0, 0);
+    }
+
+    int max_vote = 0;
+    string max_vote_center;
+
+    for (auto [center, vote] : sphere_votes) {
+        if (vote > max_vote) {
+            max_vote = vote;
+            max_vote_center = center;
+        }
+    }
+
+    if (debug) {
+        cout << "\tRANSAC max vote: " << max_vote << endl;
+    }
+
+
+    stringstream ss(max_vote_center);
+    string token;
+    vector<double> center(3);
+
+
+    int i = 0;
+
+    while (getline(ss, token, '_')) {
+        center[i] = stod(token);
+        i++;
+    }
+
+    if (debug) {
+        cout << "\tUnshifted Center: [" << center[0] << ", " << center[1] << ", " << center[2] << "]\n";
+    }
+
+    Vector3d center_vec(center[0], center[1], center[2]);
+
+    if (zero_boundary < 0) {
+        center_vec.array() += zero_boundary;
+    }
+
+    center_vec[0] = (center_vec[0] + x_mean_mm + 0.5) * acc_unit;
+    center_vec[1] = (center_vec[1] + y_mean_mm + 0.5) * acc_unit;
+    center_vec[2] = (center_vec[2] + z_mean_mm + 0.5) * acc_unit;
+
+    return center_vec;
+}
+
+
 Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug, std::atomic<bool>& flag) {
-    double acc_unit = 10;
+    double acc_unit = 5;
+
+    if (debug) {
+        cout << "RANSAC Unit: " << acc_unit << endl;
+    }
 
     vector<Vertex> xyz_mm(xyz.size());
 
@@ -237,138 +462,68 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     int iterations = 10000;
 
-    if (!debug) {
-        cout << "\tIterations: " << iterations << endl;
+    #pragma omp parallel for
+    for (int i = 0; i < iterations; i++) {
+        int key_index = rand() % sphere_map.size();
 
-        for (int i = 0; i < iterations; i++) {
-            int key_index = rand() % sphere_map.size();
+        if (flag.load()) {
+            break;
+        }
+
+        auto it = sphere_map.begin();
+        advance(it, key_index);
+        vector<Sphere> spheres = it->second;
+
+        if (spheres.size() < 3) {
+            continue;
+        }
+
+        int p1_index, p2_index, p3_index;
+
+        p1_index = rand() % spheres.size();
+
+        do {
+            p2_index = rand() % spheres.size();
             if (flag.load()) {
                 break;
             }
-            auto it = sphere_map.begin();
-            advance(it, key_index);
-            vector<Sphere> spheres = it->second;
+        } while (p2_index == p1_index);
 
-            if (spheres.size() < 3) {
-                continue;
+        do {
+            if (flag.load()) {
+                break;
             }
+            p3_index = rand() % spheres.size();
+        } while (p3_index == p1_index || p3_index == p2_index);
 
-            int p1_index, p2_index, p3_index;
-            p1_index = rand() % spheres.size();
-            do {
-                p2_index = rand() % spheres.size();
-                if (flag.load()) {
-                    break;
-                }
-            } while (p2_index == p1_index);
+        Sphere p1 = spheres[p1_index];
+        Sphere p2 = spheres[p2_index];
+        Sphere p3 = spheres[p3_index];
 
-            do {
-                p3_index = rand() % spheres.size();
-                if (flag.load()) {
-                    break;
-                }
-            } while (p3_index == p1_index || p3_index == p2_index);
+        Sphere circumcenter_sphere = find_circumcenter(p1, p2, p3);
 
-            Sphere p1 = spheres[p1_index];
-            Sphere p2 = spheres[p2_index];
-            Sphere p3 = spheres[p3_index];
+        circumcenter_sphere.center[0] = round(circumcenter_sphere.center[0]);
+        circumcenter_sphere.center[1] = round(circumcenter_sphere.center[1]);
+        circumcenter_sphere.center[2] = round(circumcenter_sphere.center[2]);
 
 
-            cout << "Input Spheres:\n";
-            cout << "\t[" << p1.center[0] << ", " << p1.center[1] << ", " << p1.center[3] << "] r = " << p1.radius << "\n";
-            cout << "\t[" << p2.center[0] << ", " << p2.center[1] << ", " << p2.center[3] << "] r = " << p2.radius << "\n";
-            cout << "\t[" << p3.center[0] << ", " << p3.center[1] << ", " << p3.center[3] << "] r = " << p3.radius << endl << endl;
+        stringstream ss;
+        ss << fixed << setprecision(8) << circumcenter_sphere.center[0] << "_" << circumcenter_sphere.center[1] << "_" << circumcenter_sphere.center[2];
+        string circumcenter_string = ss.str();
 
-            Sphere circumcenter_sphere = find_circumcenter(p1, p2, p3);
-
-            cout << "Circumcenter Sphere:\n";
-            cout << "\t[" << circumcenter_sphere.center[0] << ", " << circumcenter_sphere.center[1] << ", " << circumcenter_sphere.center[2] << "] r = " << circumcenter_sphere.radius << "\n";
-            cin.get();
-
-            if (circumcenter_sphere.radius == 0) {
-                continue;
-            }
-
-            circumcenter_sphere.center[0] = round(circumcenter_sphere.center[0]);
-            circumcenter_sphere.center[1] = round(circumcenter_sphere.center[1]);
-            circumcenter_sphere.center[2] = round(circumcenter_sphere.center[2]);
-
-
-            stringstream ss;
-            ss << fixed << setprecision(8) << circumcenter_sphere.center[0] << "_" << circumcenter_sphere.center[1] << "_" << circumcenter_sphere.center[2];
-            string circumcenter_string = ss.str();
-
-            if (sphere_votes.find(circumcenter_string) == sphere_votes.end()) {
+        if (sphere_votes.find(circumcenter_string) == sphere_votes.end()) {
+            #pragma omp critical
+            {
                 sphere_votes[circumcenter_string] = 1;
             }
-            else {
-                sphere_votes[circumcenter_string]++;
-            }
+        }
+        else {
+            #pragma omp atomic
+            sphere_votes[circumcenter_string]++;
         }
     }
-    else {
-        #pragma omp parallel for
-        for (int i = 0; i < iterations; i++) {
-            int key_index = rand() % sphere_map.size();
 
-            if (flag.load()) {
-                break;
-            }
-
-            auto it = sphere_map.begin();
-            advance(it, key_index);
-            vector<Sphere> spheres = it->second;
-
-            if (spheres.size() < 3) {
-                continue;
-            }
-
-            int p1_index, p2_index, p3_index;
-
-            p1_index = rand() % spheres.size();
-
-            do {
-                p2_index = rand() % spheres.size();
-                if (flag.load()) {
-                    break;
-                }
-            } while (p2_index == p1_index);
-
-            do {
-                if (flag.load()) {
-                    break;
-                }
-                p3_index = rand() % spheres.size();
-            } while (p3_index == p1_index || p3_index == p2_index);
-
-            Sphere p1 = spheres[p1_index];
-            Sphere p2 = spheres[p2_index];
-            Sphere p3 = spheres[p3_index];
-
-            Sphere circumcenter_sphere = find_circumcenter(p1, p2, p3);
-
-            circumcenter_sphere.center[0] = round(circumcenter_sphere.center[0]);
-            circumcenter_sphere.center[1] = round(circumcenter_sphere.center[1]);
-            circumcenter_sphere.center[2] = round(circumcenter_sphere.center[2]);
-
-
-            stringstream ss;
-            ss << fixed << setprecision(8) << circumcenter_sphere.center[0] << "_" << circumcenter_sphere.center[1] << "_" << circumcenter_sphere.center[2];
-            string circumcenter_string = ss.str();
-
-            if (sphere_votes.find(circumcenter_string) == sphere_votes.end()) {
-                #pragma omp critical
-                {
-                    sphere_votes[circumcenter_string] = 1;
-                }
-            }
-            else {
-                #pragma omp atomic
-                sphere_votes[circumcenter_string]++;
-            }
-        }
-
-    }
+    
     if (sphere_votes.size() == 0) {
         cerr << "RANSAC failed: no center found" << endl;
         return Vector3d(0, 0, 0);

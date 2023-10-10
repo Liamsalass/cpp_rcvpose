@@ -23,6 +23,8 @@ struct Options {
     // Use reduce on plateau
     // If false, will reduce lr every 70 epoch
     bool reduce_on_plateau = false;
+    // Type of frontend voting system to use
+    std::string frontend = "ransac";
     // Patience for reduce on plateau
     int patience = 10;
     // Directory to save model

@@ -15,11 +15,11 @@
 #include <omp.h> 
 #include <atomic>
 #include <mutex>
+#include <future>
 #include <iomanip>
 
 
+Eigen::Vector3d Ransac_3D(const std::vector<Vertex>& xyz, const std::vector<double>& radial_list, const double& epsilon, const bool& debug);
 
-Eigen::Vector3d Ransac_3D(const std::vector<Vertex>& xyz, const std::vector<double>& radial_list, const double& epsilon, const bool& debug, std::atomic<bool>& flag);
 
-
-Eigen::Vector3d Ransac_3D_debug(const std::vector<Vertex>& xyz, const std::vector<double>& radial_list, const double& epsilon, const bool& debug);
+Eigen::Vector3d Hash_Vote(const std::vector<Vertex>& xyz, const std::vector<double>& radial_list, const double& epsilon, const bool& debug);

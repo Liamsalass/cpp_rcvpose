@@ -16,6 +16,7 @@ Options testing_options() {
     opts.model_dir = "C:/Users/User/.cw/work/cpp_rcvpose/gpu_models/ape2.0";
     opts.resume_train = true;
     opts.optim = "adam";
+    opts.frontend = "ransac";
     opts.batch_size = 1;
     opts.class_name = "ape";
     opts.initial_lr = 0.0001;
@@ -25,7 +26,7 @@ Options testing_options() {
     opts.verbose = true;
     opts.test_occ = false;
     opts.mask_threshold = 0.8;
-    opts.epsilon = 0.01;
+    opts.epsilon = 0.02;
     return opts;
 }
 

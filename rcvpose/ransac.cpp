@@ -3,120 +3,132 @@
 using namespace std;
 using namespace Eigen;
 
+struct Vote {
+    Sphere s;
+    unsigned int vote;
+};
 
 
-bool intersecting_spheres(const Sphere& a, const Sphere& b) {
-    double dist = (a.center - b.center).norm();
-    return dist <= (a.radius + b.radius);
-}
+Vector3d centerest(const unordered_map<int, vector<Sphere>>& sphere_map, const int& sphere_count) {
+  
 
-vector<Vector3d> sphere_intersection_points(const Sphere& a, const Sphere& b) {
-    Vector3d d = b.center - a.center;
-    double d_norm = d.norm();
+    MatrixXd A(sphere_count, 4);
+    VectorXd b(sphere_count);
 
-    if (d_norm > a.radius + b.radius) {
-        return {};
+    int i = 0;
+    for (auto [key, spheres] : sphere_map) {
+        for (const Sphere& sphere : spheres) {
+            double x = sphere.center[0];
+            double y = sphere.center[1];
+            double z = sphere.center[2];
+            double r = sphere.radius;
+
+            A(i, 0) = -2 * x;
+            A(i, 1) = -2 * y;
+            A(i, 2) = -2 * z;
+            A(i, 3) = 1;
+            b(i) = x * x + y * y + z * z - r * r;
+
+            i++;
+        }
     }
 
-    double a1 = (a.radius * a.radius - b.radius * b.radius + d_norm * d_norm) / (2 * d_norm);
-    double a2 = d_norm - a1;
-    double h = sqrt(a.radius * a.radius - a1 * a1);
+    MatrixXd AtA = A.transpose() * A;
+    VectorXd Atb = A.transpose() * b;
 
-    Vector3d p2 = a.center + (a1 / d_norm) * d;
-    Vector3d p3 = p2 + (h / d_norm) * Vector3d(d[1], -d[0], 0);
-    Vector3d p4 = p2 + (h / d_norm) * Vector3d(-d[1], d[0], 0);
+    //cout << "AtA size: " << AtA.size() << endl;
+    //cout << "Atb size: " << Atb.size() << endl;
 
-    return { p3, p4 };
+    VectorXd X = AtA.colPivHouseholderQr().solve(Atb);
 
-}
+    Vector3d center;
+    center[0] = X(0) / (-2);
+    center[1] = X(1) / (-2);
+    center[2] = X(2) / (-2);
 
-Vector3d lines_intersection(const Vector3d& p1, const Vector3d& p2, const Vector3d& p3, const Vector3d& p4) {
-    Vector3d p13 = p1 - p3;
-    Vector3d p43 = p4 - p3;
-    Vector3d p21 = p2 - p1;
-
-    //cout << "\t\tP13: " << p13[0] << " " << p13[1] << " " << p13[2] << endl;
-    //cout << "\t\tP43: " << p43[0] << " " << p43[1] << " " << p43[2] << endl;
-    //cout << "\t\tP21: " << p21[0] << " " << p21[1] << " " << p21[2] << endl;
-
-    double d1343 = p13[0] * p43[0] + p13[1] * p43[1] + p13[2] * p43[2];
-    double d4321 = p43[0] * p21[0] + p43[1] * p21[1] + p43[2] * p21[2];
-    double d1321 = p13[0] * p21[0] + p13[1] * p21[1] + p13[2] * p21[2];
-    double d4343 = p43[0] * p43[0] + p43[1] * p43[1] + p43[2] * p43[2];
-    double d2121 = p21[0] * p21[0] + p21[1] * p21[1] + p21[2] * p21[2];
-
-    //cout << "\t\tD1343: " << d1343 << endl;
-    //cout << "\t\tD4321: " << d4321 << endl;
-    //cout << "\t\tD1321: " << d1321 << endl;
-    //cout << "\t\tD4343: " << d4343 << endl;
-    //cout << "\t\tD2121: " << d2121 << endl;
-
-    double denom = d2121 * d4343 - d4321 * d4321;
-
-    //cout << "\t\tDenominator: " << denom << endl;
-
-    if (abs(denom) < 1e-6) {
-        cout << "\tError: Denominator is 0\n";
-        return Vector3d(0, 0, 0);
-    }
-
-
-    double numer = d1343 * d4321 - d1321 * d4343;
-
-    //cout << "\t\tNumerator: " << numer << endl;
-
-    double mua = numer / denom;
-    double mub = (d1343 + d4321 * mua) / d4343;
-
-    //cout << "\t\tMua: " << mua << endl;
-    //cout << "\t\tMub: " << mub << endl;
-
-    Vector3d pa = p1 + mua * p21;
-    Vector3d pb = p3 + mub * p43;
-
-    //cout << "\t\tPA: " << pa[0] << " " << pa[1] << " " << pa[2] << endl;
-    //cout << "\t\tPB: " << pb[0] << " " << pb[1] << " " << pb[2] << endl;
-
-    return (pa + pb) / 2.0;
-
-}
-
-Sphere find_circumcenter(const Sphere& A, const Sphere& B, const Sphere& C) {
-    if (!intersecting_spheres(A, B) || !intersecting_spheres(B, C) || !intersecting_spheres(A, C)) {
-        cout << "\tError: Spheres do not intersect\n";
-        return Sphere{ Vector3d(0, 0, 0), 0 };
-    }
-
-    auto A_B_intersection = sphere_intersection_points(A, B);
-    auto B_C_intersection = sphere_intersection_points(B, C);
-
-    //cout << "\t\tAB: " << A_B_intersection[0][0] << " " << A_B_intersection[0][1] << " " << A_B_intersection[0][2] << endl;
-    //cout << "\t\tBC: " << B_C_intersection[0][0] << " " << B_C_intersection[0][1] << " " << B_C_intersection[0][2] << endl;
-
-    //auto A_C_intersection = sphere_intersection_points(A, C);
-
-    Vector3d circumcenter = lines_intersection(A_B_intersection[0], A_B_intersection[1], B_C_intersection[0], B_C_intersection[1]);
-    if (circumcenter[0] == 0 && circumcenter[1] == 0 && circumcenter[1] == 0) {
-        return Sphere{ Vector3d(0, 0, 0), 0 };
-    }
-
-    //cout << "\t\tCircumcenter: " << circumcenter[0] << " " << circumcenter[1] << " " << circumcenter[2] << endl;
-
-    double radius = (circumcenter - A.center).norm();
-
-    //cout << "\t\tCalculated radius: " << radius << "\tActual radius: " << A.radius << endl;
-
-    return Sphere{ circumcenter, radius };
+    return center;
 }
 
 
+/**
+ * Finds the intersection of three spheres and calculates two possible spheres defined
+ * by three points of equal radius. This function employs mathematical triangulation technique
+ *
+ * @param s1, s2, s3: Input spheres with centers and radii.
+ * @param result1, result2: Output spheres representing the possible intersections.
+ * @param debug: A flag indicating whether to print debug information (default is false).
+ *
+ * The math and technique involve:
+ * 1. Establishing a new coordinate system based on the centers of the input spheres.
+ * 2. Calculating direction vectors (ex, ey, and ez) in the new coordinate system.
+ * 3. Determining distances and dot products to find x and y, which are used to find
+ *    the centers of the two new spheres.
+ * 4. Using these centers, calculating B to check if real solutions exist.
+ * 5. If solutions exist, computing z and the two possible sphere centers.
+ * 6. Finally, calculating the radii of the resulting spheres and returning the results.
+ *
+ * @return true if solutions are found, false otherwise.
+ */
+bool findIntersectionSphere(const Sphere& s1, const Sphere& s2, const Sphere& s3, Sphere& result1, Sphere& result2, const bool& debug = false) {
+    // Finds the two possible spheres defined by 3 points of equal radius. Returns true if solutions can be found, returns false if not
+    Vector3d P1 = s1.center;
+    Vector3d P2 = s2.center;
+    Vector3d P3 = s3.center;
+
+    // Calculate the direction vectors ex, ey, and ez for a new coordinate system
+    Vector3d ex = (P2 - P1).normalized();
+    double i = ex.dot(P3 - P1);
+    Vector3d ey = (P3 - P1 - i * ex).normalized();
+    Vector3d ez = ex.cross(ey);
+
+    // Calculate the distance between P1 and P2 (d) and the dot product between ey and P3-P1 (j)
+    double d = (P2 - P1).norm();
+    double j = ey.dot(P3 - P1);
+
+    // Calculate x and y, which are used to find the new sphere centers
+    double x = (pow(s1.radius, 2) - pow(s2.radius, 2) + pow(d, 2)) / (2 * d);
+    double y = (pow(s1.radius, 2) - pow(s3.radius, 2) + pow(i, 2) + pow(j, 2)) / (2 * j) - (i / j) * x;
+
+    // Calculate B, which is used to determine if solutions exist
+    double B = pow(s1.radius, 2) - pow(x, 2) - pow(y, 2);
+
+    if (B < 0) {
+        // If B is negative, there are no real solutions
+        if (debug) {
+            int thread = omp_get_thread_num();
+            cout << "ERROR Thread[" << thread << "]: No real solution\n";
+        }
+        return false;
+    }
+
+    // Calculate z based on B
+    double z = sqrt(B);
+
+    // Calculate two possible solution points for the new sphere centers
+    Vector3d sol1 = P1 + x * ex + y * ey + z * ez;
+    Vector3d sol2 = P1 + x * ex + y * ey - z * ez;
+
+    // Set the centers and radii of the result spheres
+    result1.center = sol1;
+    result2.center = sol2;
+
+    double radius1 = (sol1 - s1.center).norm();
+    double radius2 = (sol2 - s1.center).norm();
+
+    result1.radius = radius1;
+    result2.radius = radius2;
+
+    return true;
+}
 
 
-Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug) {
-    double acc_unit = 5;
 
+Vector3d Hash_Vote(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug) {
+    double acc_unit = 10;
+   
     vector<Vertex> xyz_mm(xyz.size());
 
+    #pragma omp parallel for
     for (int i = 0; i < xyz.size(); i++) {
         xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
         xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
@@ -127,6 +139,7 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
     double y_mean_mm = 0;
     double z_mean_mm = 0;
 
+    #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
         x_mean_mm += xyz_mm[i].x;
         y_mean_mm += xyz_mm[i].y;
@@ -137,6 +150,7 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
     y_mean_mm /= xyz_mm.size();
     z_mean_mm /= xyz_mm.size();
 
+    #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
         xyz_mm[i].x -= x_mean_mm;
         xyz_mm[i].y -= y_mean_mm;
@@ -145,6 +159,7 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
 
     vector<double> radial_list_mm(radial_list.size());
 
+    #pragma omp parallel for
     for (int i = 0; i < radial_list.size(); ++i) {
         radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
     }
@@ -164,6 +179,7 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
 
     double radius_max = radial_list_mm[0];
 
+
     for (int i = 0; i < radial_list_mm.size(); i++) {
         if (radius_max < radial_list_mm[i]) {
             radius_max = radial_list_mm[i];
@@ -173,6 +189,7 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
 
     if (zero_boundary < 0) {
+    #pragma omp parallel for
         for (int i = 0; i < xyz_mm.size(); i++) {
             xyz_mm[i].x -= zero_boundary;
             xyz_mm[i].y -= zero_boundary;
@@ -182,54 +199,68 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
 
     vector<Sphere> sphere_list(xyz.size());
 
+    #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
         sphere_list[i].center = Vector3d(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
         sphere_list[i].radius = radial_list_mm[i];
     }
 
 
-    map<int, vector<Sphere>> sphere_map;
-
+    unordered_map<int, vector<Sphere>> sphere_map;
 
     for (int i = 0; i < sphere_list.size(); i++) {
-        int key = static_cast<int>(sphere_list[i].radius / epsilon);
+        int key = static_cast<int>(floor(sphere_list[i].radius / epsilon));
         sphere_map[key].push_back(sphere_list[i]);
-        
     }
 
-    int three_count = 0;
-
+    int sphere_count = 0, three_count = 0;
+    vector<int> keys_w_three;
 
     for (auto [key, spheres] : sphere_map) {
-        if (spheres.size() < 3) {
-            sphere_map.erase(key);
-        }
-        else {
-            three_count += floor(spheres.size() / 3);
+        int size = spheres.size();
+        sphere_count += size;
+        if (size >= 3) {
+            keys_w_three.push_back(key);
+            three_count++;
         }
     }
 
-    cout << "\tSphere map size: " << sphere_map.size() << endl;
-    cout << "\tNumber of spheres with at least 3 points: " << three_count << endl;
+    if (debug) {
+        cout << "\tSpheres : " << sphere_count << endl;
+        cout << "\tRadial Levels: " << sphere_map.size() << endl;
+        cout << "\tRadial Levels with 3 or more points: " << three_count << endl;
+    }
     
+    unordered_map<string, unsigned int> point_votes;
 
-    unordered_map<string, int> sphere_votes;
+    int iterations = 5000;
 
-    int iterations = 10000;
-
+    #pragma omp parallel for
     for (int i = 0; i < iterations; i++) {
-        int key_index = rand() % sphere_map.size();
 
-        auto it = sphere_map.begin();
-        advance(it, key_index);
-        vector<Sphere> spheres = it->second;
+        int keys_w_three_index = rand() % keys_w_three.size();
+
+        int key_index = keys_w_three[keys_w_three_index];
+
+    
+        vector<Sphere> spheres = sphere_map[key_index];
 
         if (spheres.size() < 3) {
-            cout << "\tNot enough spheres at " << key_index * epsilon << endl;
+            cerr << "Error: Unexpected spheres size in iteration: " << i << ". Size: " << spheres.size() << endl;
             continue;
         }
 
-        int p1_index, p2_index, p3_index;
+
+        if (spheres.size() < 3) {
+            if (debug) {
+                cout << "Error in Hash Vote: sphere size less than 3\n";
+                cout << "\t\tKey: " << key_index << "\n";
+                cout << "\t\tSize: " << sphere_map[key_index].size();
+            }
+            continue;
+        }
+
+        int p1_index, p2_index, p3_index, p4_index;
 
         p1_index = rand() % spheres.size();
 
@@ -241,52 +272,74 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
             p3_index = rand() % spheres.size();
         } while (p3_index == p1_index || p3_index == p2_index);
 
+        if (p1_index >= spheres.size() || p2_index >= spheres.size() || p3_index >= spheres.size()) {
+            cerr << "Error: Sphere index out of bounds in iteration: " << i << endl;
+            continue;
+        }
+
+
         Sphere p1 = spheres[p1_index];
         Sphere p2 = spheres[p2_index];
         Sphere p3 = spheres[p3_index];
+        Sphere r1, r2;
 
-        cout << "\tInput Spheres:\n";
-        cout << "\t\tSphere 1: [" << p1.center[0] << ", " << p1.center[1] << ", " << p1.center[2] << "], r = " << p1.radius << "\n";
-        cout << "\t\tSphere 2: [" << p2.center[0] << ", " << p2.center[1] << ", " << p2.center[2] << "], r = " << p2.radius << "\n";
-        cout << "\t\tSphere 3: [" << p3.center[0] << ", " << p3.center[1] << ", " << p3.center[2] << "], r = " << p3.radius << "\n\n";
+        if (!findIntersectionSphere(p1, p2, p3, r1, r2)) {
+            continue;
+        }
 
 
-        //TODO: work through iteration math, check if math returns correct pos
-        Sphere circumcenter_sphere = find_circumcenter(p1, p2, p3);
+        int vote1 = 0, vote2 = 0;
+        for (auto [key, spheres] : sphere_map) {
+            for (const Sphere& p : spheres) {
+                double dist1 = (r1.center - p.center).norm();
+                double dist2 = (r2.center - p.center).norm();
+                if (abs(dist1 - p.radius) <= epsilon) {
+                    vote1++;
+                }
+                if (abs(dist2 - p.radius) <= epsilon) {
+                    vote2++;
+                }
+            }
+        }
 
-        cout << "\tCircumcenter Sphere:\n";
-        cout << "\t\tSphere: [" << circumcenter_sphere.center[0] << ", " << circumcenter_sphere.center[1] << ", " << circumcenter_sphere.center[2] << "], r = " << circumcenter_sphere.radius << "\n";
-
-        //TODO: add rounding threshold (not to nearest int) Based off epsilon?
-        circumcenter_sphere.center[0] = round(circumcenter_sphere.center[0]);
-        circumcenter_sphere.center[1] = round(circumcenter_sphere.center[1]);
-        circumcenter_sphere.center[2] = round(circumcenter_sphere.center[2]);
-
-        cout << "\t\tRounded: [" << circumcenter_sphere.center[0] << ", " << circumcenter_sphere.center[1] << ", " << circumcenter_sphere.center[2] << "]\n\n";
-
-        
-        stringstream ss;
-        ss << fixed << setprecision(8) << circumcenter_sphere.center[0] << "_" << circumcenter_sphere.center[1] << "_" << circumcenter_sphere.center[2];
-        string circumcenter_string = ss.str();
-
-        if (sphere_votes.find(circumcenter_string) == sphere_votes.end()) {
-            sphere_votes[circumcenter_string] = 1;
+        Sphere best_center;
+        if (vote1 > vote2) {
+            best_center = r1;
         }
         else {
-            sphere_votes[circumcenter_string]++;
+            best_center = r2;
+        }
+
+        best_center.center[0] = round(best_center.center[0]);
+        best_center.center[1] = round(best_center.center[1]);
+        best_center.center[2] = round(best_center.center[2]);
+
+        stringstream ss;
+        ss << fixed << setprecision(4) << best_center.center[0] << "_" << best_center.center[1] << "_" << best_center.center[2];
+        string center_string = ss.str();
+
+        #pragma omp critical 
+        {
+            if (point_votes.find(center_string) == point_votes.end()) {
+                point_votes[center_string] = 1;
+            }
+            else {
+                point_votes[center_string]++;
+            }
         }
     }
 
 
-    if (sphere_votes.size() == 0) {
-        cerr << "RANSAC failed: no center found" << endl;
+
+    if (point_votes.size() == 0) {
+        cerr << "Hash Vote failed: no center found" << endl;
         return Vector3d(0, 0, 0);
     }
 
-    int max_vote = 0;
+    unsigned int max_vote = 0;
     string max_vote_center;
 
-    for (auto [center, vote] : sphere_votes) {
+    for (auto [center, vote] : point_votes) {
         if (vote > max_vote) {
             max_vote = vote;
             max_vote_center = center;
@@ -294,7 +347,7 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
     }
 
     if (debug) {
-        cout << "\tRANSAC max vote: " << max_vote << endl;
+        cout << "\tHash max vote: " << max_vote << endl;
     }
 
 
@@ -302,7 +355,11 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
     string token;
     vector<double> center(3);
 
-
+    int underscore_count = std::count(max_vote_center.begin(), max_vote_center.end(), '_');
+    if (underscore_count != 2) {
+        cerr << "Error: max_vote_center format is unexpected. Value: " << max_vote_center << endl;
+        return Vector3d(0, 0, 0);
+    }
     int i = 0;
 
     while (getline(ss, token, '_')) {
@@ -328,20 +385,20 @@ Vector3d Ransac_3D_debug(const vector<Vertex>& xyz, const vector<double>& radial
 }
 
 
-Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug, std::atomic<bool>& flag) {
-    double acc_unit = 5;
+
+
+Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug) {
+    double acc_unit = 10;
 
     if (debug) {
-        cout << "RANSAC Unit: " << acc_unit << endl;
+        cout << "\tEpsilon: " << epsilon << endl;
+        cout << "\tAccuracy Unit: " << acc_unit << endl;
     }
 
     vector<Vertex> xyz_mm(xyz.size());
 
     #pragma omp parallel for
     for (int i = 0; i < xyz.size(); i++) {
-        if (flag.load()) {
-            break;
-        }
         xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
         xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
         xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
@@ -353,9 +410,6 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
-        if (flag.load()) {
-            break;
-        }
         x_mean_mm += xyz_mm[i].x;
         y_mean_mm += xyz_mm[i].y;
         z_mean_mm += xyz_mm[i].z;
@@ -364,12 +418,9 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
     x_mean_mm /= xyz_mm.size();
     y_mean_mm /= xyz_mm.size();
     z_mean_mm /= xyz_mm.size();
-    
+
     #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
-        if (flag.load()) {
-            break;
-        }
         xyz_mm[i].x -= x_mean_mm;
         xyz_mm[i].y -= y_mean_mm;
         xyz_mm[i].z -= z_mean_mm;
@@ -379,9 +430,6 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     #pragma omp parallel for
     for (int i = 0; i < radial_list.size(); ++i) {
-        if (flag.load()) {
-            break;
-        }
         radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
     }
 
@@ -400,6 +448,7 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     double radius_max = radial_list_mm[0];
 
+
     for (int i = 0; i < radial_list_mm.size(); i++) {
         if (radius_max < radial_list_mm[i]) {
             radius_max = radial_list_mm[i];
@@ -411,9 +460,6 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
     if (zero_boundary < 0) {
     #pragma omp parallel for
         for (int i = 0; i < xyz_mm.size(); i++) {
-            if (flag.load()) {
-                break;
-            }
             xyz_mm[i].x -= zero_boundary;
             xyz_mm[i].y -= zero_boundary;
             xyz_mm[i].z -= zero_boundary;
@@ -424,147 +470,159 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
-        if (flag.load()) {
-            break;
-        }
         sphere_list[i].center = Vector3d(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
         sphere_list[i].radius = radial_list_mm[i];
     }
 
 
-    map<int, vector<Sphere>> sphere_map;
+    unordered_map<int, vector<Sphere>> sphere_map;
+
+    for (int i = 0; i < sphere_list.size(); i++) {
+        int key = static_cast<int>(floor(sphere_list[i].radius / epsilon));
+        sphere_map[key].push_back(sphere_list[i]);
+    }
+
+    sphere_list.clear();
+
+
+    int sphere_count = 0, three_count = 0;
+    vector<int> keys_w_three;
+
+    for (auto [key, spheres] : sphere_map) {
+        int size = spheres.size();
+        sphere_count += size;
+        if (size >= 3) {
+            keys_w_three.push_back(key);
+            three_count++;
+        }
+    }
+
+    if (debug) {
+        cout << "\tSpheres : " << sphere_count << endl;
+        cout << "\tRadial Levels: " << sphere_map.size() << endl;
+        cout << "\tRadial Levels with 3 or more points: " << three_count << endl;
+    }
+
+    //unordered_map<string, unsigned int> sphere_votes;
+    vector<Vote> sphere_votes;
+
+    int iterations = 200;
 
     #pragma omp parallel for
-    for (int i = 0; i < sphere_list.size(); i++) {
-        int key = static_cast<int>(sphere_list[i].radius / epsilon);
-        if (flag.load()) {
-            break;
+    for (int i = 0; i < iterations; i++) {
+        assert (keys_w_three.size() > 0);
+
+        int keys_w_three_index = rand() % keys_w_three.size();
+
+        int key_index = keys_w_three[keys_w_three_index];
+
+        vector<Sphere> spheres = sphere_map[key_index];
+
+        if (spheres.size() < 3) {
+            if (debug) {
+                cout << "Error in RANSAC: sphere size less than 3\n";
+            }
+            continue;
         }
+
+        int p1_index, p2_index, p3_index;
+
+        p1_index = rand() % spheres.size();
+
+        do {
+            p2_index = rand() % spheres.size();
+        } while (p2_index == p1_index);
+
+        do {
+            p3_index = rand() % spheres.size();
+        } while (p3_index == p1_index || p3_index == p2_index);
+
+
+     
+        Sphere p1 = spheres[p1_index];
+        Sphere p2 = spheres[p2_index];
+        Sphere p3 = spheres[p3_index];
+        Sphere r1, r2;
+     
+        if (!findIntersectionSphere(p1, p2, p3, r1, r2)) {
+            continue;
+        }
+        
+     
+        int vote1 = 0, vote2 = 0;
+        for (auto [key, spheres] : sphere_map) {
+            for (const Sphere& p : spheres) {
+                double dist1 = (r1.center - p.center).norm();
+                double dist2 = (r2.center - p.center).norm();
+                if (abs(dist1 - p.radius) <= epsilon) {
+                    vote1++;
+                }
+                if (abs(dist2 - p.radius) <= epsilon) {
+                    vote2++;
+                }
+            }
+		}
+
+        Vote v1, v2;
+        v1.s = r1;
+        v1.vote = vote1;
+        v2.s = r2;
+        v2.vote = vote2;
+
         #pragma omp critical
         {
-            sphere_map[key].push_back(sphere_list[i]);
+            sphere_votes.push_back(v1);
+            sphere_votes.push_back(v2);
         }
     }
-
-    int three_count = 0;
-
-
-    for (auto [key, spheres] : sphere_map) {
-        if (spheres.size() < 3) {
-            sphere_map.erase(key);
-        }
-        else {
-            three_count += floor(spheres.size() / 3);
-        }
-    }
-
-    unordered_map<string, int> sphere_votes;
-
-    int iterations = 10000;
-
-    #pragma omp parallel for
-    for (int i = 0; i < iterations; i++) {
-        int key_index = rand() % sphere_map.size();
-
-        if (flag.load()) {
-            break;
-        }
-
-        auto it = sphere_map.begin();
-        advance(it, key_index);
-        vector<Sphere> spheres = it->second;
-
-        if (spheres.size() < 3) {
-            continue;
-        }
-
-        int p1_index, p2_index, p3_index;
-
-        p1_index = rand() % spheres.size();
-
-        do {
-            p2_index = rand() % spheres.size();
-            if (flag.load()) {
-                break;
-            }
-        } while (p2_index == p1_index);
-
-        do {
-            if (flag.load()) {
-                break;
-            }
-            p3_index = rand() % spheres.size();
-        } while (p3_index == p1_index || p3_index == p2_index);
-
-        Sphere p1 = spheres[p1_index];
-        Sphere p2 = spheres[p2_index];
-        Sphere p3 = spheres[p3_index];
-
-        Sphere circumcenter_sphere = find_circumcenter(p1, p2, p3);
-
-        circumcenter_sphere.center[0] = round(circumcenter_sphere.center[0]);
-        circumcenter_sphere.center[1] = round(circumcenter_sphere.center[1]);
-        circumcenter_sphere.center[2] = round(circumcenter_sphere.center[2]);
-
-
-        stringstream ss;
-        ss << fixed << setprecision(8) << circumcenter_sphere.center[0] << "_" << circumcenter_sphere.center[1] << "_" << circumcenter_sphere.center[2];
-        string circumcenter_string = ss.str();
-
-        if (sphere_votes.find(circumcenter_string) == sphere_votes.end()) {
-            #pragma omp critical
-            {
-                sphere_votes[circumcenter_string] = 1;
-            }
-        }
-        else {
-            #pragma omp atomic
-            sphere_votes[circumcenter_string]++;
-        }
-    }
-
     
     if (sphere_votes.size() == 0) {
         cerr << "RANSAC failed: no center found" << endl;
         return Vector3d(0, 0, 0);
     }
 
-    int max_vote = 0;
-    string max_vote_center;
 
-    for (auto [center, vote] : sphere_votes) {
+    sort(sphere_votes.begin(), sphere_votes.end(), [](const Vote& v1, const Vote& v2) {return v1.vote > v2.vote; });
+    
+    Sphere max_vote_sphere = sphere_votes[0].s;
+    unsigned int max_votes = sphere_votes[0].vote;
 
-        if (vote > max_vote) {
-            max_vote = vote;
-            max_vote_center = center;
-        }
-    }
+    Vector3d center = max_vote_sphere.center;
 
     if (debug) {
-        cout << "\tRANSAC max vote: " << max_vote << endl;
+        cout << "\tCenter before outliers: [" << center[0] << ", " << center[1] << ", " << center[2] << "], spheres within epsilon range = " << max_votes << "\n";
     }
 
+    unordered_map<int, vector<Sphere>> sphere_map_no_outliers;
+    
+    sphere_count = 0;
 
-    stringstream ss(max_vote_center);
-    string token;
-    vector<double> center(3);
-
-
-    int i = 0;
-
-    while (getline(ss, token, '_')) {
-        center[i] = stod(token);
-        i++;
-        if (flag.load()) {
-            break;
-        }
+    for (auto [key, spheres] : sphere_map) {
+		vector<Sphere> spheres_no_outliers;
+        for (const Sphere& s : spheres) {
+			double dist = (s.center - center).norm();
+            if (abs(dist - s.radius) <= epsilon) {
+				spheres_no_outliers.push_back(s);
+                sphere_count++;
+			}
+		}
+		sphere_map_no_outliers[key] = spheres_no_outliers;
+	}
+    
+    sphere_map.clear();
+    
+    if (debug) {
+        cout << "\tRemaining non-outlier spheres: " << sphere_count << endl;
     }
+
+    Vector3d new_centerest = centerest(sphere_map_no_outliers, sphere_count);
+
 
     if (debug) {
-        cout << "\tUnshifted Center: [" << center[0] << ", " << center[1] << ", " << center[2] << "]\n";
+        cout << "\tUnshifted Center: [" << new_centerest[0] << ", " << new_centerest[1] << ", " << new_centerest[2] << "]\n";
     }
 
-    Vector3d center_vec(center[0], center[1], center[2]);
+    Vector3d center_vec(new_centerest[0], new_centerest[1], new_centerest[2]);
 
     if (zero_boundary < 0) {
         center_vec.array() += zero_boundary;
@@ -576,3 +634,5 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     return center_vec;
 }
+
+

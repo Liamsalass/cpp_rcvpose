@@ -23,15 +23,14 @@ Options testing_options() {
     opts.reduce_on_plateau = true;
     opts.patience = 10;
     opts.demo_mode = false;
-    opts.verbose = true;
+    opts.verbose = false;
     opts.test_occ = false;
     opts.mask_threshold = 0.8;
-    opts.epsilon = 0.02;
-    opts.use_gt = false;
+    opts.epsilon = 0.01;
+    opts.use_gt = true;
     return opts;
 }
 
-//Note cam Failed at img 86 which is number img99 in dataset
 
 int main(int argc, char* args[]) {
     bool train = false;

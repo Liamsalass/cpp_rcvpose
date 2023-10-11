@@ -5,38 +5,36 @@ using namespace Eigen;
 
 struct Vote {
     Sphere s;
-    unsigned int vote;
+    double error = 0;
 };
 
 
-Vector3d centerest(const vector<Vector3d>& point_list, const vector<double>& radius_list) {
-    assert(point_list.size() == radius_list.size());
-    assert(point_list.size() >= 4);
+Vector3d centerest(const vector<Sphere>& spheres) {
+    assert(spheres.size() >= 4);
 
-    MatrixXd A(point_list.size(), 5);
-    VectorXd b(point_list.size());
+    MatrixXd A(spheres.size(), 5);
 
-    for (size_t i = 0; i < point_list.size(); i++) {
-        const Vector3d& p = point_list[i];
-        double r = radius_list[i];
+  
+    for (int i = 0; i < spheres.size(); i++) {
+        const Vector3d& p = spheres[i].center;
+        double r = spheres[i].radius;
 
         A(i, 0) = -2 * p(0);
         A(i, 1) = -2 * p(1);
         A(i, 2) = -2 * p(2);
         A(i, 3) = 1;
-        A(i, 4) = p.dot(p) - r * r;  
-
-        b(i) = 0;
+        A(i, 4) = p.dot(p) - r * r;
     }
 
-    BDCSVD<MatrixXd> svd(A, ComputeThinU | ComputeThinV);
-    VectorXd X = svd.matrixV().col(4);  
+    MatrixXd V = A.jacobiSvd(ComputeThinU | ComputeThinV).matrixV();
+    VectorXd X = V.col(4);  // 5 columns, so the last one is indexed by 4
 
-    
-    //X /= X(3);
+    X /= X(4);
 
-    return Vector3d(X(0), X(1), X(2));
+    Vector3d center(X(0), X(1), X(2));
+    return center;
 }
+
 
 
 
@@ -479,7 +477,6 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     sphere_list.clear();
 
-
     int sphere_count = 0, three_count = 0;
     vector<int> keys_w_three;
 
@@ -498,41 +495,46 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
         cout << "\tRadial Levels with 3 or more points: " << three_count << endl;
     }
 
+    if (three_count == 0) {
+        return Vector3d(0, 0, 0);
+    }
+
     //unordered_map<string, unsigned int> sphere_votes;
     vector<Vote> sphere_votes;
 
-    int iterations = 200;
 
+    int iterations = 100;
+    
     #pragma omp parallel for
     for (int i = 0; i < iterations; i++) {
         assert (keys_w_three.size() > 0);
-
+    
         int keys_w_three_index = rand() % keys_w_three.size();
-
+    
         int key_index = keys_w_three[keys_w_three_index];
-
+    
         vector<Sphere> spheres = sphere_map[key_index];
-
+    
         if (spheres.size() < 3) {
             if (debug) {
                 cout << "Error in RANSAC: sphere size less than 3\n";
             }
             continue;
         }
-
+    
         int p1_index, p2_index, p3_index;
-
+    
         p1_index = rand() % spheres.size();
-
+    
         do {
             p2_index = rand() % spheres.size();
         } while (p2_index == p1_index);
-
+    
         do {
             p3_index = rand() % spheres.size();
         } while (p3_index == p1_index || p3_index == p2_index);
-
-
+    
+    
      
         Sphere p1 = spheres[p1_index];
         Sphere p2 = spheres[p2_index];
@@ -544,90 +546,330 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
         }
         
      
-        int vote1 = 0, vote2 = 0;
+        double avg1 = 0, avg2 = 0;
         for (auto [key, spheres] : sphere_map) {
             for (const Sphere& p : spheres) {
                 double dist1 = (r1.center - p.center).norm();
                 double dist2 = (r2.center - p.center).norm();
-                if (abs(dist1 - p.radius) <= epsilon) {
-                    vote1++;
-                }
-                if (abs(dist2 - p.radius) <= epsilon) {
-                    vote2++;
-                }
+
+                avg1 += abs(dist1 - p.radius);
+                avg2 += abs(dist2 - p.radius);
             }
 		}
 
+        avg1 /= sphere_count;
+        avg2 /= sphere_count;
+        
         Vote v1, v2;
         v1.s = r1;
-        v1.vote = vote1;
         v2.s = r2;
-        v2.vote = vote2;
-
+        v1.error = avg1;
+        v2.error = avg2;
+    
         #pragma omp critical
         {
             sphere_votes.push_back(v1);
             sphere_votes.push_back(v2);
         }
     }
+
+    if (sphere_votes.size() == 0) {
+        cerr << "RANSAC failed: no center found" << endl;
+        return Vector3d(0, 0, 0);
+    }
+
+    sort(sphere_votes.begin(), sphere_votes.end(), [](const Vote& v1, const Vote& v2) {return v1.error < v2.error; });
     
+    Sphere max_vote_sphere = sphere_votes[0].s;
+    double avg_error1 = sphere_votes[0].error;
+
+    Vector3d vote_center = max_vote_sphere.center;
+
+    if (debug) {
+        cout << "\tCenter through avg error: [" << vote_center[0] << ", " << vote_center[1] << ", " << vote_center[2] << "], Average Error: " << avg_error1 << "\n";
+    }
+
+    vector<Sphere> spheres_no_outliers;
+    
+
+    for (auto [key, spheres] : sphere_map) {
+        for (const Sphere& s : spheres) {
+			double dist = (vote_center - s.center).norm();
+            if (abs(dist - s.radius) < avg_error1) {
+                spheres_no_outliers.push_back(s);
+			} 
+		}
+	}
+    
+    if (debug) {
+        cout << "\tRemaining non-outlier spheres: " << spheres_no_outliers.size() << endl;
+    }
+
+    double x_shift = 0, y_shift = 0, z_shift = 0;
+
+    
+    for (int i = 0; i < spheres_no_outliers.size(); i++) {
+        const Sphere& s = spheres_no_outliers[i];
+        double x_dist = s.center[0] - vote_center[0];
+        double y_dist = s.center[1] - vote_center[1];
+        double z_dist = s.center[2] - vote_center[2];
+        double radius = s.radius; 
+
+        double dist = sqrt(x_dist * x_dist + y_dist * y_dist + z_dist * z_dist);
+
+        #pragma omp critical 
+        {
+            x_shift += x_dist * (radius - dist) / dist;
+            y_shift += y_dist * (radius - dist) / dist;
+            z_shift += z_dist * (radius - dist) / dist;
+        }
+	}
+	
+    x_shift /= spheres_no_outliers.size();
+    y_shift /= spheres_no_outliers.size();
+    z_shift /= spheres_no_outliers.size();
+
+    Vector3d new_centerest(vote_center[0] + x_shift, vote_center[1] + y_shift, vote_center[2] + z_shift);
+	
+    double avg_error2 = 0;
+    for (auto [key, spheres] : sphere_map) {
+        for (const Sphere& sphere : spheres) {
+            avg_error2 += abs((sphere.center - new_centerest).norm() - sphere.radius);
+        }
+    }
+
+    sphere_map.clear();
+    avg_error2 /= sphere_count;
+
+    if (debug) {
+        cout << "\tNew Center: [" << new_centerest[0] << ", " << new_centerest[1] << ", " << new_centerest[2] << ", Average Error: " << avg_error2 << "\n";
+    }
+
+    if (zero_boundary < 0) {
+        new_centerest.array() += zero_boundary;
+    }
+
+    new_centerest[0] = (new_centerest[0] + x_mean_mm + 0.5) * acc_unit;
+    new_centerest[1] = (new_centerest[1] + y_mean_mm + 0.5) * acc_unit;
+    new_centerest[2] = (new_centerest[2] + z_mean_mm + 0.5) * acc_unit;
+
+    return new_centerest;
+}
+
+Eigen::Vector3d Ransac_3D_greenspan(const std::vector<Vertex>& xyz, const std::vector<double>& radial_list, const double& epsilon, const bool& debug)
+{
+    double acc_unit = 10;
+
+    if (debug) {
+        cout << "\tEpsilon: " << epsilon << endl;
+        cout << "\tAccuracy Unit: " << acc_unit << endl;
+    }
+
+    vector<Vertex> xyz_mm(xyz.size());
+
+    #pragma omp parallel for
+    for (int i = 0; i < xyz.size(); i++) {
+        xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
+        xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
+        xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
+    }
+
+    double x_mean_mm = 0;
+    double y_mean_mm = 0;
+    double z_mean_mm = 0;
+
+    #pragma omp parallel for
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mean_mm += xyz_mm[i].x;
+        y_mean_mm += xyz_mm[i].y;
+        z_mean_mm += xyz_mm[i].z;
+    }
+
+    x_mean_mm /= xyz_mm.size();
+    y_mean_mm /= xyz_mm.size();
+    z_mean_mm /= xyz_mm.size();
+
+    #pragma omp parallel for
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        xyz_mm[i].x -= x_mean_mm;
+        xyz_mm[i].y -= y_mean_mm;
+        xyz_mm[i].z -= z_mean_mm;
+    }
+
+    vector<double> radial_list_mm(radial_list.size());
+
+    #pragma omp parallel for
+    for (int i = 0; i < radial_list.size(); ++i) {
+        radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
+    }
+
+
+    double x_mm_min = numeric_limits<double>::infinity();
+    double y_mm_min = numeric_limits<double>::infinity();
+    double z_mm_min = numeric_limits<double>::infinity();
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mm_min = min(x_mm_min, xyz_mm[i].x);
+        y_mm_min = min(y_mm_min, xyz_mm[i].y);
+        z_mm_min = min(z_mm_min, xyz_mm[i].z);
+    }
+
+    double xyz_mm_min = min(x_mm_min, min(y_mm_min, z_mm_min));
+
+    double radius_max = radial_list_mm[0];
+
+
+    for (int i = 0; i < radial_list_mm.size(); i++) {
+        if (radius_max < radial_list_mm[i]) {
+            radius_max = radial_list_mm[i];
+        }
+    }
+
+    int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
+
+    if (zero_boundary < 0) {
+    #pragma omp parallel for
+        for (int i = 0; i < xyz_mm.size(); i++) {
+            xyz_mm[i].x -= zero_boundary;
+            xyz_mm[i].y -= zero_boundary;
+            xyz_mm[i].z -= zero_boundary;
+        }
+    }
+
+    vector<Sphere> sphere_list(xyz.size());
+
+    vector<Vector3d> sphere_centers(xyz.size());
+
+    #pragma omp parallel for
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        Vector3d center(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
+        sphere_centers[i] = center;
+        sphere_list[i].center = center;
+        sphere_list[i].radius = radial_list_mm[i];
+    }
+
+
+
+    if (debug) {
+        cout << "\tSpheres : " << sphere_list.size() << endl;
+
+    }
+
+    if (sphere_list.size() < 3) {
+        if (debug) {
+            cout << "Error in RANSAC: sphere size less than 3\n";
+        }
+        return Vector3d(0, 0, 0);
+    }
+
+
+    vector<Vote> sphere_votes;
+
+
+    int iterations = 200;
+
+    #pragma omp parallel for
+    for (int i = 0; i < iterations; i++) {
+  
+        int p1_index, p2_index, p3_index, p4_index;
+
+        p1_index = rand() % sphere_list.size();
+
+        do {
+            p2_index = rand() % sphere_list.size();
+        } while (p2_index == p1_index);
+
+        do {
+            p3_index = rand() % sphere_list.size();
+        } while (p3_index == p1_index || p3_index == p2_index);
+
+        do {
+            p4_index = rand() % sphere_list.size();
+        } while (p4_index == p1_index || p4_index == p2_index || p4_index == p3_index);
+
+
+        vector<Sphere> tmp_list(4);
+        tmp_list[0] = sphere_list[p1_index];
+        tmp_list[1] = sphere_list[p2_index];
+        tmp_list[2] = sphere_list[p3_index];
+        tmp_list[3] = sphere_list[p4_index];
+
+        Vector3d calculated_center = centerest(tmp_list);
+
+        Vote vote;
+
+        vote.s.center = calculated_center;
+
+        double avg_error = 0;
+        for (const Sphere& p : sphere_list) {
+            avg_error += abs((calculated_center - p.center).norm() - p.radius);
+        }
+
+        avg_error /= sphere_list.size();
+
+        vote.error = avg_error;
+
+        #pragma omp critical
+        {
+            sphere_votes.push_back(vote);
+        }
+    }
+
     if (sphere_votes.size() == 0) {
         cerr << "RANSAC failed: no center found" << endl;
         return Vector3d(0, 0, 0);
     }
 
 
-    sort(sphere_votes.begin(), sphere_votes.end(), [](const Vote& v1, const Vote& v2) {return v1.vote > v2.vote; });
-    
+    sort(sphere_votes.begin(), sphere_votes.end(), [](const Vote& v1, const Vote& v2) {return v1.error < v2.error; });
+
     Sphere max_vote_sphere = sphere_votes[0].s;
-    unsigned int max_votes = sphere_votes[0].vote;
+    double avg_error1 = sphere_votes[0].error;
 
-    Vector3d center = max_vote_sphere.center;
+    Vector3d vote_center = max_vote_sphere.center;
 
     if (debug) {
-        cout << "\tCenter before outliers: [" << center[0] << ", " << center[1] << ", " << center[2] << "], spheres within epsilon range = " << max_votes << "\n";
+        cout << "\tCenter Before Shift: [" << vote_center[0] << ", " << vote_center[1] << ", " << vote_center[2] << "], Average Error: " << avg_error1 << "\n";
     }
 
-    unordered_map<int, vector<Sphere>> sphere_map_no_outliers;
-    
-    sphere_count = 0;
+    vector<Sphere> spheres_no_outliers;
 
-    for (auto [key, spheres] : sphere_map) {
-		vector<Sphere> spheres_no_outliers;
-        for (const Sphere& s : spheres) {
-			double dist = (s.center - center).norm();
-            if (abs(dist - s.radius) <= epsilon) {
-				spheres_no_outliers.push_back(s);
-                sphere_count++;
-			}
+    for (const Sphere& p : sphere_list) {
+        double dist = (vote_center - p.center).norm();
+        if (abs(dist - p.radius) < avg_error1) {
+			spheres_no_outliers.push_back(p);
 		}
-		sphere_map_no_outliers[key] = spheres_no_outliers;
+    }
+
+
+    if (debug) {
+		cout << "\tRemaining non-outlier spheres: " << spheres_no_outliers.size() << endl;
 	}
-    
-    sphere_map.clear();
-    
-    if (debug) {
-        cout << "\tRemaining non-outlier spheres: " << sphere_count << endl;
+
+    Vector3d new_centerest = centerest(spheres_no_outliers);    
+
+    double avg_error2 = 0;
+
+    for (const Sphere& p : sphere_list) {
+        avg_error2 += abs((new_centerest - p.center).norm() - p.radius);	
     }
 
-    Vector3d new_centerest = centerest(sphere_centers, radial_list);
-
+    avg_error2 /= sphere_list.size();
 
     if (debug) {
-        cout << "\tUnshifted Center: [" << new_centerest[0] << ", " << new_centerest[1] << ", " << new_centerest[2] << "]\n";
+        cout << "\tNew Center: [" << new_centerest[0] << ", " << new_centerest[1] << ", " << new_centerest[2] << ", Average Error: " << avg_error2 << "\n";
     }
 
-    Vector3d center_vec(center[0], center[1], center[2]);
 
     if (zero_boundary < 0) {
-        center_vec.array() += zero_boundary;
+        new_centerest.array() += zero_boundary;
     }
 
-    center_vec[0] = (center_vec[0] + x_mean_mm + 0.5) * acc_unit;
-    center_vec[1] = (center_vec[1] + y_mean_mm + 0.5) * acc_unit;
-    center_vec[2] = (center_vec[2] + z_mean_mm + 0.5) * acc_unit;
+    new_centerest[0] = (new_centerest[0] + x_mean_mm + 0.5) * acc_unit;
+    new_centerest[1] = (new_centerest[1] + y_mean_mm + 0.5) * acc_unit;
+    new_centerest[2] = (new_centerest[2] + z_mean_mm + 0.5) * acc_unit;
 
-    return center_vec;
+    return new_centerest;
 }
 
 

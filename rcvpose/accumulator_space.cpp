@@ -235,16 +235,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         xyz_load.push_back(v);
     }
 
-
-    // Print top 5 XYZ data if verbose
-    if (opts.verbose) {
-        cout << "XYZ data (top 5)" << endl;
-        for (int i = 0; i < 5; i++) {
-            cout << "\tx: " << xyz_load[i].x << " y: " << xyz_load[i].y << " z: " << xyz_load[i].z << endl;
-        }
-        cout << endl;
-    }
-
     // Define path to keypoints
     string keypoints_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Outside9.npy";
 
@@ -255,8 +245,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
     // Load keypoints from the file
     vector<vector<double>> keypoints = read_double_npy(keypoints_path, false);
-
-
 
     // Define path to data
     string data_path = rootpvPath + "JPEGImages/";
@@ -269,6 +257,11 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         int img_num = stoi(test_img);
 
         //if (img_num != 10) {
+        //    general_counter++;
+        //    continue;
+        //}
+
+        //if (general_counter < 504) {
         //    general_counter++;
         //    continue;
         //}
@@ -299,18 +292,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         // Load the ground truth rotation and translation (RTGT) data from the path
         vector<vector<double>> RTGT = read_ground_truth(RTGT_path, false);
 
-
-        // Print the RTGT data if verbose option is enabled
-        if (opts.verbose) {
-            cout << "RTGT data: " << endl;
-            for (auto row : RTGT) {
-                for (auto item : row) {
-                    cout << item << " ";
-                }
-                cout << endl;
-            }
-            cout << endl;
-        }
 
         // Initialize keypoint count
         int keypoint_count = 1;
@@ -348,9 +329,14 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
             string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
             string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
-            radial_output1 = npy_to_tensor(gt1_path);
-            radial_output2 = npy_to_tensor(gt2_path);
-            radial_output3 = npy_to_tensor(gt3_path);
+
+            std::thread t1([&]() { radial_output1 = npy_to_tensor(gt1_path); });
+            std::thread t2([&]() { radial_output2 = npy_to_tensor(gt2_path); });
+            std::thread t3([&]() { radial_output3 = npy_to_tensor(gt3_path); });
+
+            t1.join();
+            t2.join();
+            t3.join();
 
 
             // Use python estimated radii maps (paper backend)
@@ -654,24 +640,24 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
 
             Eigen::Vector3d acc_center;
-            try {
-            
-            
-                std::future<Eigen::Vector3d> future_result = std::async(std::launch::async, Accumulator_3D, xyz, radial_list, opts.verbose);
-            
-                if (future_result.wait_for(std::chrono::milliseconds(60000)) == std::future_status::ready) {
-            
-                    acc_center = future_result.get();
-                }
-                else {
-                    cout << "Accumulator timed out\n\tImage: " << test_img << "\tKeypoint: " << keypoint_count << endl;
-                    break;
-                }
-            }
-            catch (const std::exception& e) {
-				cout << "Accumulator failed\n";
-				break;
-			}
+            //try {
+            //
+            //
+            //    std::future<Eigen::Vector3d> future_result = std::async(std::launch::async, Accumulator_3D, xyz, radial_list, opts.verbose);
+            //
+            //    if (future_result.wait_for(std::chrono::milliseconds(60000)) == std::future_status::ready) {
+            //
+            //        acc_center = future_result.get();
+            //    }
+            //    else {
+            //        cout << "Accumulator timed out\n\tImage: " << test_img << "\tKeypoint: " << keypoint_count << endl;
+            //        break;
+            //    }
+            //}
+            //catch (const std::exception& e) {
+			//	cout << "Accumulator failed\n";
+			//	break;
+			//}
 
             auto acc_end = chrono::high_resolution_clock::now();
 
@@ -679,8 +665,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Print the number of centers returned and the estimate if verbose option is enabled
             if (opts.verbose) {
-                cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
-                cout << "\tEstimate: " << acc_center[0] << " " << acc_center[1] << " " << acc_center[2] << endl << endl;
+                //cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
+                //cout << "\tEstimate: " << acc_center[0] << " " << acc_center[1] << " " << acc_center[2] << endl << endl;
                 cout << "Calculating center using RANSAC:" << endl;
             }
 
@@ -734,17 +720,17 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             //Eigen::Vector3d hash_diff = transformed_gt_center_mm_vector - hash_center;
 
-            double center_off_mm = diff.norm();
+            double acc_off_mm = diff.norm();
             double ransac_off_mm = ransac_diff.norm();
             //double hash_off_mm = hash_diff.norm();
 
             if (opts.verbose) {
-                cout << "Estimated offsets:\n\tAcc Space: " << center_off_mm << endl;
+                cout << "Estimated offsets:\n\tAcc Space: " << acc_off_mm << endl;
                 cout << "\tRANSAC: " << ransac_off_mm << endl;
                 //cout << "\tHash: " << hash_off_mm << endl;
             }
 
-            if (center_off_mm < ransac_off_mm) {
+            if (acc_off_mm < ransac_off_mm) {
                 acc_space_counter++;
             }
             else {
@@ -755,7 +741,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Save the estimation to the centers 
             for (int i = 0; i < 3; i++) {
-                estimated_kpts[keypoint_count - 1][i] = acc_center[i];
+                estimated_kpts[keypoint_count - 1][i] = ransac_center[i];
             }
 
 
@@ -780,7 +766,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (estimated_kpts[i][j] == 0) {
-                    cout << "Error: estimated_kpts is empty" << endl;
+                    if (opts.verbose) {
+                        cout << "Error: estimated_kpts is empty" << endl;
+                    }
                     break;
                 }
             }

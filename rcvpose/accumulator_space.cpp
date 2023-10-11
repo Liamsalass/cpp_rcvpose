@@ -614,36 +614,36 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
                 cout << "Error: xyz or radial list is empty" << endl;
             }
 
-            int num_above_threshold = 0;
-            for (int i = 0; i < xyz.size(); i++) {
-                if (radial_list[i] > max_radius_dm) {
-                    radial_list[i] = 0;
-                    num_above_threshold++;
+            //int num_above_threshold = 0;
+            //for (int i = 0; i < xyz.size(); i++) {
+            //    if (radial_list[i] > max_radius_dm) {
+            //        radial_list[i] = 0;
+            //        num_above_threshold++;
+            //
+            //    }
+            //}
+            //
+            //if (num_above_threshold != 0) {
+            //    cout << "Max radial distance: " << max_radius_dm << endl;
+            //    cout << "Removed " << num_above_threshold << " points from radial list.\n";
+            //    cout << "New size: " << xyz.size() << endl;
+            //}
 
-                }
-            }
 
-            if (num_above_threshold != 0) {
-                cout << "Max radial distance: " << max_radius_dm << endl;
-                cout << "Removed " << num_above_threshold << " points from radial list.\n";
-                cout << "New size: " << xyz.size() << endl;
-            }
+        
 
-            // Define a vector for storing the transformed pointcloud
             if (opts.verbose) {
                 cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
-
+            
             }
-
-            //Calculate the estimated center in mm
             auto acc_start = chrono::high_resolution_clock::now();
 
-
             Eigen::Vector3d acc_center;
+
+            acc_center = Ransac_Accumulator(xyz, radial_list, opts.epsilon, opts.verbose);
+
             //try {
-            //
-            //
-            //    std::future<Eigen::Vector3d> future_result = std::async(std::launch::async, Accumulator_3D, xyz, radial_list, opts.verbose);
+            //    std::future<Eigen::Vector3d> future_result = std::async(std::launch::async, Accumulator_3D, new_xyz, new_radial_list, opts.verbose);
             //
             //    if (future_result.wait_for(std::chrono::milliseconds(60000)) == std::future_status::ready) {
             //
@@ -665,8 +665,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Print the number of centers returned and the estimate if verbose option is enabled
             if (opts.verbose) {
-                //cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
-                //cout << "\tEstimate: " << acc_center[0] << " " << acc_center[1] << " " << acc_center[2] << endl << endl;
+                cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
+                cout << "\tEstimate: " << acc_center[0] << " " << acc_center[1] << " " << acc_center[2] << endl << endl;
                 cout << "Calculating center using RANSAC:" << endl;
             }
 
@@ -674,15 +674,15 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             Eigen::Vector3d ransac_center;
 
-            ransac_center = Ransac_3D(xyz, radial_list, opts.epsilon, opts.verbose);
+            //ransac_center = Ransac_3D(xyz, radial_list, opts.epsilon, opts.verbose);
 
             auto ransac_end = chrono::high_resolution_clock::now();
 
             ransac_time += chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count();
 
             if (opts.verbose) {
-                cout << "\tRANSAC Time: " << chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count() << "ms" << endl;
-                cout << "\tRANSAC center: " << ransac_center[0] << " " << ransac_center[1] << " " << ransac_center[2] << endl << endl;
+                //cout << "\tRANSAC Time: " << chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count() << "ms" << endl;
+                //cout << "\tRANSAC center: " << ransac_center[0] << " " << ransac_center[1] << " " << ransac_center[2] << endl << endl;
                 //cout << "Calculating center using Hash Vote: " << endl;
                 //cout << "Press Enter to continue:";
                 //cin.get();
@@ -725,8 +725,9 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             //double hash_off_mm = hash_diff.norm();
 
             if (opts.verbose) {
-                cout << "Estimated offsets:\n\tAcc Space: " << acc_off_mm << endl;
-                cout << "\tRANSAC: " << ransac_off_mm << endl;
+                cout << "Estimated offsets:\n";
+                cout << "\tAcc Space : " << acc_off_mm << endl;
+                //cout << "\tRANSAC: " << ransac_off_mm << endl;
                 //cout << "\tHash: " << hash_off_mm << endl;
             }
 
@@ -741,7 +742,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Save the estimation to the centers 
             for (int i = 0; i < 3; i++) {
-                estimated_kpts[keypoint_count - 1][i] = ransac_center[i];
+                estimated_kpts[keypoint_count - 1][i] = acc_center[i];
             }
 
 

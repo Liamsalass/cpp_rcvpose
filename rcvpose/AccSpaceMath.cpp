@@ -282,7 +282,6 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
     }
 
-
     double x_mm_min = numeric_limits<double>::infinity();
     double y_mm_min = numeric_limits<double>::infinity();
     double z_mm_min = numeric_limits<double>::infinity();
@@ -303,8 +302,6 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
         }
     }
 
-    //cout << "xyz min: " << xyz_mm_min << endl;
-    //cout << "Max radial: " << radius_max << endl;
 
     int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
 
@@ -333,10 +330,13 @@ Vector3d Accumulator_3D(const vector<Vertex>& xyz, const vector<double>& radial_
     int length = static_cast<int>(xyz_mm_max);
 
 
-
     int vote_map_dim = length + static_cast<int>(radius_max);
 
     int total_size = vote_map_dim * vote_map_dim * vote_map_dim;
+
+    if (debug) {
+        cout << "\tVote Map Dim: " << vote_map_dim << endl;
+    }
 
     int* VoteMap_3D; 
     try {

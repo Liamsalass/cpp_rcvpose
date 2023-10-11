@@ -376,6 +376,7 @@ Vector3d Hash_Vote(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
 
 
+
 Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list, const double& epsilon, const bool& debug) {
     double acc_unit = 10;
 
@@ -873,3 +874,265 @@ Eigen::Vector3d Ransac_3D_greenspan(const std::vector<Vertex>& xyz, const std::v
 }
 
 
+
+Vector3d Ransac_Accumulator(const std::vector<Vertex>& xyz, const std::vector<double>& radial_list, const double& epsilon, const bool& debug)
+{
+    double acc_unit = 10;
+
+    if (debug) {
+        cout << "\tEpsilon: " << epsilon << endl;
+        cout << "\tAccuracy Unit: " << acc_unit << endl;
+    }
+
+    vector<Vertex> xyz_mm(xyz.size());
+
+#pragma omp parallel for
+    for (int i = 0; i < xyz.size(); i++) {
+        xyz_mm[i].x = xyz[i].x * 1000 / acc_unit;
+        xyz_mm[i].y = xyz[i].y * 1000 / acc_unit;
+        xyz_mm[i].z = xyz[i].z * 1000 / acc_unit;
+    }
+
+    double x_mean_mm = 0;
+    double y_mean_mm = 0;
+    double z_mean_mm = 0;
+
+#pragma omp parallel for
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mean_mm += xyz_mm[i].x;
+        y_mean_mm += xyz_mm[i].y;
+        z_mean_mm += xyz_mm[i].z;
+    }
+
+    x_mean_mm /= xyz_mm.size();
+    y_mean_mm /= xyz_mm.size();
+    z_mean_mm /= xyz_mm.size();
+
+#pragma omp parallel for
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        xyz_mm[i].x -= x_mean_mm;
+        xyz_mm[i].y -= y_mean_mm;
+        xyz_mm[i].z -= z_mean_mm;
+    }
+
+    vector<double> radial_list_mm(radial_list.size());
+
+#pragma omp parallel for
+    for (int i = 0; i < radial_list.size(); ++i) {
+        radial_list_mm[i] = radial_list[i] * 100 / acc_unit;
+    }
+
+
+    double x_mm_min = numeric_limits<double>::infinity();
+    double y_mm_min = numeric_limits<double>::infinity();
+    double z_mm_min = numeric_limits<double>::infinity();
+
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        x_mm_min = min(x_mm_min, xyz_mm[i].x);
+        y_mm_min = min(y_mm_min, xyz_mm[i].y);
+        z_mm_min = min(z_mm_min, xyz_mm[i].z);
+    }
+
+    double xyz_mm_min = min(x_mm_min, min(y_mm_min, z_mm_min));
+
+    double radius_max = radial_list_mm[0];
+
+
+    for (int i = 0; i < radial_list_mm.size(); i++) {
+        if (radius_max < radial_list_mm[i]) {
+            radius_max = radial_list_mm[i];
+        }
+    }
+
+    int zero_boundary = static_cast<int>(xyz_mm_min - radius_max) + 1;
+
+    if (zero_boundary < 0) {
+#pragma omp parallel for
+        for (int i = 0; i < xyz_mm.size(); i++) {
+            xyz_mm[i].x -= zero_boundary;
+            xyz_mm[i].y -= zero_boundary;
+            xyz_mm[i].z -= zero_boundary;
+        }
+    }
+
+    vector<Sphere> sphere_list(xyz.size());
+
+    vector<Vector3d> sphere_centers(xyz.size());
+
+#pragma omp parallel for
+    for (int i = 0; i < xyz_mm.size(); i++) {
+        Vector3d center(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
+        sphere_centers[i] = center;
+        sphere_list[i].center = center;
+        sphere_list[i].radius = radial_list_mm[i];
+    }
+
+
+    unordered_map<int, vector<Sphere>> sphere_map;
+
+    for (int i = 0; i < sphere_list.size(); i++) {
+        int key = static_cast<int>(floor(sphere_list[i].radius / epsilon));
+        sphere_map[key].push_back(sphere_list[i]);
+    }
+
+    sphere_list.clear();
+
+    int sphere_count = 0, three_count = 0;
+    vector<int> keys_w_three;
+
+    for (auto [key, spheres] : sphere_map) {
+        int size = spheres.size();
+        sphere_count += size;
+        if (size >= 3) {
+            keys_w_three.push_back(key);
+            three_count++;
+        }
+    }
+
+    if (debug) {
+        cout << "\tSpheres : " << sphere_count << endl;
+        cout << "\tRadial Levels: " << sphere_map.size() << endl;
+        cout << "\tRadial Levels with 3 or more points: " << three_count << endl;
+    }
+
+    if (three_count == 0) {
+        return Vector3d(0,0,0);
+    }
+
+    //unordered_map<string, unsigned int> sphere_votes;
+    vector<Vote> sphere_votes;
+
+
+    int iterations = 100;
+
+#pragma omp parallel for
+    for (int i = 0; i < iterations; i++) {
+        assert(keys_w_three.size() > 0);
+
+        int keys_w_three_index = rand() % keys_w_three.size();
+
+        int key_index = keys_w_three[keys_w_three_index];
+
+        vector<Sphere> spheres = sphere_map[key_index];
+
+        if (spheres.size() < 3) {
+            if (debug) {
+                cout << "Error in RANSAC: sphere size less than 3\n";
+            }
+            continue;
+        }
+
+        int p1_index, p2_index, p3_index;
+
+        p1_index = rand() % spheres.size();
+
+        do {
+            p2_index = rand() % spheres.size();
+        } while (p2_index == p1_index);
+
+        do {
+            p3_index = rand() % spheres.size();
+        } while (p3_index == p1_index || p3_index == p2_index);
+
+
+
+        Sphere p1 = spheres[p1_index];
+        Sphere p2 = spheres[p2_index];
+        Sphere p3 = spheres[p3_index];
+        Sphere r1, r2;
+
+        if (!findIntersectionSphere(p1, p2, p3, r1, r2)) {
+            continue;
+        }
+
+
+        double avg1 = 0, avg2 = 0;
+        for (auto [key, spheres] : sphere_map) {
+            for (const Sphere& p : spheres) {
+                double dist1 = (r1.center - p.center).norm();
+                double dist2 = (r2.center - p.center).norm();
+
+                avg1 += abs(dist1 - p.radius);
+                avg2 += abs(dist2 - p.radius);
+            }
+        }
+
+        avg1 /= sphere_count;
+        avg2 /= sphere_count;
+
+        Vote v1, v2;
+        v1.s = r1;
+        v2.s = r2;
+        v1.error = avg1;
+        v2.error = avg2;
+
+    #pragma omp critical
+        {
+            sphere_votes.push_back(v1);
+            sphere_votes.push_back(v2);
+        }
+    }
+
+    if (sphere_votes.size() == 0) {
+        cerr << "RANSAC failed: no center found" << endl;
+        return Vector3d(0, 0, 0);
+    }
+
+    sort(sphere_votes.begin(), sphere_votes.end(), [](const Vote& v1, const Vote& v2) {return v1.error < v2.error; });
+
+    Sphere max_vote_sphere = sphere_votes[0].s;
+    double avg_error1 = sqrt(sphere_votes[0].error);
+
+    Vector3d vote_center = max_vote_sphere.center;
+
+    if (debug) {
+        cout << "\tCenter through avg error: [" << vote_center[0] << ", " << vote_center[1] << ", " << vote_center[2] << "], Average Error: " << avg_error1 << "\n";
+    }
+
+    vector<Sphere> spheres_no_outliers;
+
+    for (auto [key, spheres] : sphere_map) {
+        for (const Sphere& s : spheres) {
+            double dist = (vote_center - s.center).norm();
+            if (abs(dist - s.radius) < avg_error1) {
+                spheres_no_outliers.push_back(s);
+            }
+        }
+    }
+
+    if (spheres_no_outliers.size() == 0) {
+        return Vector3d(0, 0, 0);
+    }
+
+    if (zero_boundary < 0) {
+        for (int i = 0; i < spheres_no_outliers.size(); i++) {
+			spheres_no_outliers[i].center.array() += zero_boundary;
+		}
+    }
+
+    for (int i = 0; i < spheres_no_outliers.size(); i++) {
+		spheres_no_outliers[i].center[0] = (spheres_no_outliers[i].center[0] + x_mean_mm) * acc_unit / 1000;
+		spheres_no_outliers[i].center[1] = (spheres_no_outliers[i].center[1] + y_mean_mm) * acc_unit / 1000;
+		spheres_no_outliers[i].center[2] = (spheres_no_outliers[i].center[2] + z_mean_mm) * acc_unit / 1000;
+        spheres_no_outliers[i].radius = spheres_no_outliers[i].radius * acc_unit / 100;
+	}
+
+    if (debug) {
+        cout << "\tRemaining non-outlier spheres: " << spheres_no_outliers.size() << endl;
+    }
+
+    vector<Vertex> new_xyz(spheres_no_outliers.size());
+    vector<double> new_radial_list(spheres_no_outliers.size());
+
+
+    for (int i = 0; i < spheres_no_outliers.size(); i++) {
+        new_xyz[i].x = spheres_no_outliers[i].center[0];
+        new_xyz[i].y = spheres_no_outliers[i].center[1];
+        new_xyz[i].z = spheres_no_outliers[i].center[2];
+        new_radial_list[i] = spheres_no_outliers[i].radius;
+    }
+
+    Vector3d new_centerest = Accumulator_3D(new_xyz, new_radial_list, debug);
+    
+    return new_centerest;
+}

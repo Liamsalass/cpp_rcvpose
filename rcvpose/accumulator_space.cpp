@@ -653,7 +653,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             auto acc_start = chrono::high_resolution_clock::now();
 
 
-            Eigen::Vector3d estimated_center_mm;
+            Eigen::Vector3d acc_center;
             try {
             
             
@@ -661,7 +661,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             
                 if (future_result.wait_for(std::chrono::milliseconds(60000)) == std::future_status::ready) {
             
-                    estimated_center_mm = future_result.get();
+                    acc_center = future_result.get();
                 }
                 else {
                     cout << "Accumulator timed out\n\tImage: " << test_img << "\tKeypoint: " << keypoint_count << endl;
@@ -680,7 +680,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             // Print the number of centers returned and the estimate if verbose option is enabled
             if (opts.verbose) {
                 cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
-                cout << "\tEstimate: " << estimated_center_mm[0] << " " << estimated_center_mm[1] << " " << estimated_center_mm[2] << endl << endl;
+                cout << "\tEstimate: " << acc_center[0] << " " << acc_center[1] << " " << acc_center[2] << endl << endl;
                 cout << "Calculating center using RANSAC:" << endl;
             }
 
@@ -728,7 +728,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             Eigen::Vector3d transformed_gt_center_mm_vector(transformed_gt_center_mm(0, 0), transformed_gt_center_mm(0, 1), transformed_gt_center_mm(0, 2));
 
             // Calculate the offset
-            Eigen::Vector3d diff = transformed_gt_center_mm_vector - estimated_center_mm;
+            Eigen::Vector3d diff = transformed_gt_center_mm_vector - acc_center;
 
             Eigen::Vector3d ransac_diff = transformed_gt_center_mm_vector - ransac_center;
 
@@ -755,7 +755,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Save the estimation to the centers 
             for (int i = 0; i < 3; i++) {
-                estimated_kpts[keypoint_count - 1][i] = ransac_center[i];
+                estimated_kpts[keypoint_count - 1][i] = acc_center[i];
             }
 
 
@@ -1081,6 +1081,8 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         if (opts.verbose) {
             cout << "Image Count: " << general_counter << endl;
             cout << "Image number " << test_img << " took " << sec << " seconds and " << ms << " miliseconds to calculate offset." << endl;
+            cout << "Ransac count: " << ransac_counter << endl;
+            cout << "Acc Space count: " << acc_space_counter << endl;
             cout << "Before ICP Count " << bf_icp << endl;
             cout << "After ICP Count " << af_icp << endl;
             cout << "Before ICP ADDs " << avg_correct_bf_icp << "%" << endl;

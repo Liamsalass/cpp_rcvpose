@@ -27,6 +27,7 @@ Options testing_options() {
     opts.test_occ = false;
     opts.mask_threshold = 0.8;
     opts.epsilon = 0.02;
+    opts.use_gt = true;
     return opts;
 }
 

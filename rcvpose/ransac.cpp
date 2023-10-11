@@ -9,45 +9,35 @@ struct Vote {
 };
 
 
-Vector3d centerest(const unordered_map<int, vector<Sphere>>& sphere_map, const int& sphere_count) {
-  
+Vector3d centerest(const vector<Vector3d>& point_list, const vector<double>& radius_list) {
+    assert(point_list.size() == radius_list.size());
+    assert(point_list.size() >= 4);
 
-    MatrixXd A(sphere_count, 4);
-    VectorXd b(sphere_count);
+    MatrixXd A(point_list.size(), 5);
+    VectorXd b(point_list.size());
 
-    int i = 0;
-    for (auto [key, spheres] : sphere_map) {
-        for (const Sphere& sphere : spheres) {
-            double x = sphere.center[0];
-            double y = sphere.center[1];
-            double z = sphere.center[2];
-            double r = sphere.radius;
+    for (size_t i = 0; i < point_list.size(); i++) {
+        const Vector3d& p = point_list[i];
+        double r = radius_list[i];
 
-            A(i, 0) = -2 * x;
-            A(i, 1) = -2 * y;
-            A(i, 2) = -2 * z;
-            A(i, 3) = 1;
-            b(i) = x * x + y * y + z * z - r * r;
+        A(i, 0) = -2 * p(0);
+        A(i, 1) = -2 * p(1);
+        A(i, 2) = -2 * p(2);
+        A(i, 3) = 1;
+        A(i, 4) = p.dot(p) - r * r;  
 
-            i++;
-        }
+        b(i) = 0;
     }
 
-    MatrixXd AtA = A.transpose() * A;
-    VectorXd Atb = A.transpose() * b;
+    BDCSVD<MatrixXd> svd(A, ComputeThinU | ComputeThinV);
+    VectorXd X = svd.matrixV().col(4);  
 
-    //cout << "AtA size: " << AtA.size() << endl;
-    //cout << "Atb size: " << Atb.size() << endl;
+    
+    //X /= X(3);
 
-    VectorXd X = AtA.colPivHouseholderQr().solve(Atb);
-
-    Vector3d center;
-    center[0] = X(0) / (-2);
-    center[1] = X(1) / (-2);
-    center[2] = X(2) / (-2);
-
-    return center;
+    return Vector3d(X(0), X(1), X(2));
 }
+
 
 
 /**
@@ -198,6 +188,7 @@ Vector3d Hash_Vote(const vector<Vertex>& xyz, const vector<double>& radial_list,
     }
 
     vector<Sphere> sphere_list(xyz.size());
+
 
     #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
@@ -468,9 +459,13 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
 
     vector<Sphere> sphere_list(xyz.size());
 
+    vector<Vector3d> sphere_centers(xyz.size());
+
     #pragma omp parallel for
     for (int i = 0; i < xyz_mm.size(); i++) {
-        sphere_list[i].center = Vector3d(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
+        Vector3d center(xyz_mm[i].x, xyz_mm[i].y, xyz_mm[i].z);
+        sphere_centers[i] = center;
+        sphere_list[i].center = center;
         sphere_list[i].radius = radial_list_mm[i];
     }
 
@@ -615,14 +610,14 @@ Vector3d Ransac_3D(const vector<Vertex>& xyz, const vector<double>& radial_list,
         cout << "\tRemaining non-outlier spheres: " << sphere_count << endl;
     }
 
-    Vector3d new_centerest = centerest(sphere_map_no_outliers, sphere_count);
+    Vector3d new_centerest = centerest(sphere_centers, radial_list);
 
 
     if (debug) {
         cout << "\tUnshifted Center: [" << new_centerest[0] << ", " << new_centerest[1] << ", " << new_centerest[2] << "]\n";
     }
 
-    Vector3d center_vec(new_centerest[0], new_centerest[1], new_centerest[2]);
+    Vector3d center_vec(center[0], center[1], center[2]);
 
     if (zero_boundary < 0) {
         center_vec.array() += zero_boundary;

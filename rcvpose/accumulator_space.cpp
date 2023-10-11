@@ -342,26 +342,32 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         // Record the current time before executing the FCResBackbone
         auto start = chrono::high_resolution_clock::now();
 
+        if (opts.use_gt) {
 
-        //FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
+            // Use GT for testing
+            string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
+            string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
+            string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
+            radial_output1 = npy_to_tensor(gt1_path);
+            radial_output2 = npy_to_tensor(gt2_path);
+            radial_output3 = npy_to_tensor(gt3_path);
 
-        // Use GT for testing
-        string gt1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt1_dm/" + test_img + ".npy";
-        string gt2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt2_dm/" + test_img + ".npy";
-        string gt3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Out_pt3_dm/" + test_img + ".npy";
-        radial_output1 = npy_to_tensor(gt1_path);
-        radial_output2 = npy_to_tensor(gt2_path);
-        radial_output3 = npy_to_tensor(gt3_path);
 
-        // Use python estimated radii maps (paper backend)
-        //string r1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
-        //string r2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
-        //string r3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
-        //radial_output1 = npy_to_tensor(r1_path);
-        //radial_output2 = npy_to_tensor(r2_path);
-        //radial_output3 = npy_to_tensor(r3_path);
+            // Use python estimated radii maps (paper backend)
+            //string r1_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt1_dm/" + test_img + ".npy";
+            //string r2_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt2_dm/" + test_img + ".npy";
+            //string r3_path = opts.root_dataset + "/LINEMOD/" + class_name + "/Estimated_out_pt3_dm/" + test_img + ".npy";
+            //radial_output1 = npy_to_tensor(r1_path);
+            //radial_output2 = npy_to_tensor(r2_path);
+            //radial_output3 = npy_to_tensor(r3_path);
 
-        semantic_output = torch::where(radial_output1 > 0, torch::ones_like(radial_output1), -torch::ones_like(radial_output1));
+
+            semantic_output = torch::where(radial_output1 > 0, torch::ones_like(radial_output1), -torch::ones_like(radial_output1));
+        }
+        else {
+            FCResBackbone(model, img, semantic_output, radial_output1, radial_output2, radial_output3, device_type, false);
+        }
+
         
         auto end = chrono::high_resolution_clock::now();
 
@@ -491,10 +497,12 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Transpose the semantic and radial matrices for correct orientation
 
-            //cv::transpose(sem_cv, sem_cv);
-            //cv::transpose(rad_cv, rad_cv);
-            //
-            //cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
+            if (!opts.use_gt) {
+                cv::transpose(sem_cv, sem_cv);
+                cv::transpose(rad_cv, rad_cv);
+                
+                cv::normalize(sem_cv, sem_cv, 0, 1, cv::NORM_MINMAX);
+            }
 
             // Check if the images have the same dimensions
             if (sem_cv.size() != rad_cv.size() || sem_cv.type() != rad_cv.type()) {
@@ -689,7 +697,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             if (opts.verbose) {
                 cout << "\tRANSAC Time: " << chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count() << "ms" << endl;
                 cout << "\tRANSAC center: " << ransac_center[0] << " " << ransac_center[1] << " " << ransac_center[2] << endl << endl;
-                cout << "Calculating center using Hash Vote: " << endl;
+                //cout << "Calculating center using Hash Vote: " << endl;
                 //cout << "Press Enter to continue:";
                 //cin.get();
                 //cout << "\n";

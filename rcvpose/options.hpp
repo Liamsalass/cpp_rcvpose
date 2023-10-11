@@ -42,6 +42,7 @@ struct Options {
     float mask_threshold = 0.8;
     // Epsilon value
     double epsilon = 0.01;
+    bool use_gt = false;
     // Configs
     std::map<std::string, std::vector<float>> cfg;
 };

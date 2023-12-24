@@ -9,6 +9,7 @@ if(POLICY CMP0141)
 endif()
 
 set(TARGET_NAME "rcvpose")
+
 project(${TARGET_NAME})
 
 find_package(OpenMP)

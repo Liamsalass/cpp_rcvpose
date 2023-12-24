@@ -13,6 +13,7 @@ from numba import prange
 import math
 from sklearn import metrics
 import scipy
+from ransac import RANSAC_3D
 import struct
 
 
@@ -584,8 +585,9 @@ def estimate_6d_pose_lm():
                 img_start_timer = time.time_ns()
 
                 estimated_kpts = np.zeros((3,3))
-                RTGT = np.load(root_dataset + "LINEMOD/"+class_name+"/pose/pose"+os.path.splitext(filename)[0][5:]+'.npy')
-             
+                RTGT_path = (root_dataset + "LINEMOD/"+class_name+"/pose/pose"+str(int(os.path.splitext(filename)[0]))+'.npy')
+                RTGT = np.load(RTGT_path)
+        
 
 
                 keypoint_count = 1
@@ -632,7 +634,7 @@ def estimate_6d_pose_lm():
 
                     # Paper output
                     radial_path = root_dataset + "/LINEMOD/"+class_name+"/"+"Out_pt"+str(keypoint_count)+"_dm/"+os.path.splitext(filename)[0][:] + '.npy'
-                    #print(radial_path)
+            
                     radial_out = np.load(radial_path)   
 
                     sem_out = np.where(radial_out!=0,1,0)
@@ -673,7 +675,18 @@ def estimate_6d_pose_lm():
                         continue
 
 
-                    center_mm_s = Accumulator_3D(xyz, radial_list, keypoint_count)
+                    #center_mm_s = Accumulator_3D(xyz, radial_list, keypoint_count)
+                    ransac_center = RANSAC_3D(xyz, radial_list)
+
+                    #print ("Accumulator center: ", center_mm_s)
+                    #print ("RANSAC center: ", ransac_center)
+
+                    ransac_off = ((transformed_gt_center_mm[0]-ransac_center[0])**2+(transformed_gt_center_mm[1]-ransac_center[1])**2+(transformed_gt_center_mm[2]-ransac_center[2])**2)**0.5
+                    #print ("RANSAC offset: ", ransac_off)
+
+                    #acc_off = ((transformed_gt_center_mm[0]-acc_center[0])**2+(transformed_gt_center_mm[1]-acc_center[1])**2+(transformed_gt_center_mm[2]-acc_center[2])**2)**0.5
+                    #ransac_off = ((transformed_gt_center_mm[0]-ransac_center[0])**2+(transformed_gt_center_mm[1]-ransac_center[1])**2+(transformed_gt_center_mm[2]-ransac_center[2])**2)**0.5
+
                     #gt_center = Accumulator_3D(xyz, gt_list)
                     #center_mm_s = Accumulator_3D_no_depth(xyz, radial_list, pixel_coor)
                     toc = time.time_ns()
@@ -683,12 +696,12 @@ def estimate_6d_pose_lm():
                     
                     pre_center_off_mm = math.inf
                     
-                    estimated_center_mm = center_mm_s[0]
+                    #estimated_center_mm = center_mm_s[0]
 
-                    center_off_mm = ((transformed_gt_center_mm[0]-estimated_center_mm[0])**2+
-                                    (transformed_gt_center_mm[1]-estimated_center_mm[1])**2+
-                                    (transformed_gt_center_mm[2]-estimated_center_mm[2])**2)**0.5
-                    
+                    #center_off_mm = ((transformed_gt_center_mm[0]-estimated_center_mm[0])**2+
+                    #                (transformed_gt_center_mm[1]-estimated_center_mm[1])**2+
+                    #                (transformed_gt_center_mm[2]-estimated_center_mm[2])**2)**0.5
+                    #print("Center offset: ", center_off_mm)
                     #save estimations
                     '''
                     index 0: original keypoint
@@ -698,9 +711,9 @@ def estimate_6d_pose_lm():
                     centers = np.zeros((1,3,3))
                     centers[0,0] = keypoint
                     centers[0,1] = transformed_gt_center_mm*0.001
-                    centers[0,2] = estimated_center_mm*0.001
+                    centers[0,2] = ransac_center*0.001
                     
-                    estimated_kpts[keypoint_count - 1] = estimated_center_mm
+                    estimated_kpts[keypoint_count - 1] = ransac_center
                     
                     if(iter_count==0):
                         centers_list = centers

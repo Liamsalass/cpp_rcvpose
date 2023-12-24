@@ -4674,3 +4674,4 @@ gpu_models/duck/current/optim.pt
 gpu_models/duck/model_best/info.pt
 gpu_models/duck/model_best/model.pt
 gpu_models/duck/model_best/optim.pt
+/acc_space/python/__pycache__

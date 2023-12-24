@@ -175,9 +175,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     int bf_icp = 0;
     int af_icp = 0;
 
-    int ransac_counter = 0;
-    int acc_space_counter = 0;
-    int hash_counter = 0;
+    vector<double> offsets;
 
     vector<double> bf_icp_distances, bf_icp_min_distances, bf_icp_max_distances, bf_icp_median_distances, bf_icp_std_deviations;
     vector<double> af_icp_distances, af_icp_min_distances, af_icp_max_distances, af_icp_median_distances, af_icp_std_deviations;
@@ -366,8 +364,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         if (opts.verbose) {
             cout << "FCResBackbone Speed: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << "ms" << endl << endl;
         }
-
-    
 
         // Loop over each keypoint for estimation
         for (const auto& keypoint : keypoints) {
@@ -633,14 +629,14 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         
 
             if (opts.verbose) {
-                cout << "Calculating 3D vector center (Accumulator_3D)" << endl;
+                cout << "Calculating 3D vector center" << endl;
             
             }
             auto acc_start = chrono::high_resolution_clock::now();
 
             Eigen::Vector3d acc_center;
 
-            acc_center = Ransac_Accumulator(xyz, radial_list, opts.epsilon, opts.verbose);
+            acc_center = RANSAC_3D_3(xyz, radial_list, 4500, opts.verbose);
 
             //try {
             //    std::future<Eigen::Vector3d> future_result = std::async(std::launch::async, Accumulator_3D, new_xyz, new_radial_list, opts.verbose);
@@ -665,48 +661,10 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
 
             // Print the number of centers returned and the estimate if verbose option is enabled
             if (opts.verbose) {
-                cout << "\tAcc Space Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
+                cout << "\t Frontend Time: " << chrono::duration_cast<chrono::milliseconds>(acc_end - acc_start).count() << "ms" << endl;
                 cout << "\tEstimate: " << acc_center[0] << " " << acc_center[1] << " " << acc_center[2] << endl << endl;
-                cout << "Calculating center using RANSAC:" << endl;
             }
 
-            auto ransac_start = chrono::high_resolution_clock::now();
-
-            Eigen::Vector3d ransac_center;
-
-            //ransac_center = Ransac_3D(xyz, radial_list, opts.epsilon, opts.verbose);
-
-            auto ransac_end = chrono::high_resolution_clock::now();
-
-            ransac_time += chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count();
-
-            if (opts.verbose) {
-                //cout << "\tRANSAC Time: " << chrono::duration_cast<chrono::milliseconds>(ransac_end - ransac_start).count() << "ms" << endl;
-                //cout << "\tRANSAC center: " << ransac_center[0] << " " << ransac_center[1] << " " << ransac_center[2] << endl << endl;
-                //cout << "Calculating center using Hash Vote: " << endl;
-                //cout << "Press Enter to continue:";
-                //cin.get();
-                //cout << "\n";
-            }
-
-
-            auto hash_start = chrono::high_resolution_clock::now();
-
-            Eigen::Vector3d hash_center;
-
-            //hash_center = Hash_Vote(xyz, radial_list, opts.epsilon, opts.verbose);
-
-            auto hash_end = chrono::high_resolution_clock::now();
-
-            hash_time += chrono::duration_cast<chrono::milliseconds>(hash_end - hash_start).count();
-
-            //if (opts.verbose) {
-            //    cout << "\tHash Time: " << chrono::duration_cast<chrono::milliseconds>(hash_end - hash_start).count() << "ms" << endl;
-            //    cout << "\tHash center: " << hash_center[0] << " " << hash_center[1] << " " << hash_center[2] << endl << endl;
-            //    //cout << "Press Enter to continue:";
-            //    //cin.get();
-            //    //cout << "\n";
-            //}
 
 
             // Define a vector for storing the transformed pointcloud
@@ -716,29 +674,13 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
             // Calculate the offset
             Eigen::Vector3d diff = transformed_gt_center_mm_vector - acc_center;
 
-            Eigen::Vector3d ransac_diff = transformed_gt_center_mm_vector - ransac_center;
-
-            //Eigen::Vector3d hash_diff = transformed_gt_center_mm_vector - hash_center;
-
             double acc_off_mm = diff.norm();
-            double ransac_off_mm = ransac_diff.norm();
-            //double hash_off_mm = hash_diff.norm();
 
             if (opts.verbose) {
-                cout << "Estimated offsets:\n";
-                cout << "\tAcc Space : " << acc_off_mm << endl;
-                //cout << "\tRANSAC: " << ransac_off_mm << endl;
-                //cout << "\tHash: " << hash_off_mm << endl;
+                cout << "Offset from GT: " << acc_off_mm << endl;
             }
 
-            if (acc_off_mm < ransac_off_mm) {
-                acc_space_counter++;
-            }
-            else {
-                ransac_counter++;
-            }
-
-
+            offsets.push_back(acc_off_mm);
 
             // Save the estimation to the centers 
             for (int i = 0; i < 3; i++) {
@@ -806,8 +748,6 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         }
 
         matrix xy, xyz_load_est_transformed;
-
-
 
         // Project the estimated position 
         project(xyz_load_matrix * 1000, linemod_K_matrix, RT_matrix, xy, xyz_load_est_transformed);
@@ -1066,21 +1006,22 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
         avg_correct_bf_icp = (bf_icp / static_cast<double>(general_counter)) * 100;
         avg_correct_af_icp = (af_icp / static_cast<double>(general_counter)) * 100;
         percent_processed = (static_cast<double>(general_counter) / static_cast<double>(total_num_img)) * 100;
+        double avg_offset = accumulate(offsets.begin(), offsets.end(), 0.0) / offsets.size();
 
         if (opts.verbose) {
             cout << "Image Count: " << general_counter << endl;
             cout << "Image number " << test_img << " took " << sec << " seconds and " << ms << " miliseconds to calculate offset." << endl;
-            cout << "Ransac count: " << ransac_counter << endl;
-            cout << "Acc Space count: " << acc_space_counter << endl;
             cout << "Before ICP Count " << bf_icp << endl;
             cout << "After ICP Count " << af_icp << endl;
             cout << "Before ICP ADDs " << avg_correct_bf_icp << "%" << endl;
             cout << "After ICP ADDs " << avg_correct_af_icp << "%" << endl;
+            cout << "Offset: " << avg_offset << endl;
             cout << "Processed: " << percent_processed << "%" << endl;
         }
         else {
             cout << "\r" << string(100, ' ') << "\r";
             cout << "ADD: " << (static_cast<double>(bf_icp)/ static_cast<double>(general_counter)) * 100.0 << "%\t";
+            cout << "| OFF: " << avg_offset << "\t";
             cout << "| " << to_string(general_counter) << "/" << to_string(total_num_img) << " ";
             printProgressBar(general_counter, total_num_img, 50);
  
@@ -1100,8 +1041,7 @@ void estimate_6d_pose_lm(const Options& opts, DenseFCNResNet152& model)
     cout << "ADD of " << class_name << " before ICP: " << total_avg_correct_bf_icp << endl;
     cout << "ADD of " << class_name << " after ICP: " << total_avg_correct_af_icp << endl;
 
-    cout << "RANSAC count: " << ransac_counter << endl;
-    cout << "Acc Space count: " << acc_space_counter << endl;
+
     auto duration = chrono::duration_cast<chrono::seconds>(acc_end - acc_start);
     auto hours = duration.count() / 3600;
     auto min = (duration.count() % 3600) / 60;

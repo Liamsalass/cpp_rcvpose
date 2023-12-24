@@ -22,8 +22,8 @@ Options testing_options() {
     opts.initial_lr = 0.0001;
     opts.reduce_on_plateau = true;
     opts.patience = 10;
-    opts.demo_mode = true;
-    opts.verbose = true;
+    opts.demo_mode = false;
+    opts.verbose = false;
     opts.test_occ = false;
     opts.mask_threshold = 0.8;
     opts.epsilon = 0.01;
@@ -55,8 +55,8 @@ int main(int argc, char* args[]) {
     else {
         cout << "Usage: " << args[0] << " <train/validate/estimate>" << endl;
         cout << "Defaulting to validating" << endl;
-        validate = false;
-        estimate = true;
+        validate = true;
+        estimate = false;
     }
 
     Options opts;
